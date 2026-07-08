@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: `dark:` responds to a .dark ancestor (set by ThemeProvider),
+   not only the OS media query — so a manual toggle can override the system. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ * INSPECTRA design tokens — bright, photography-forward real estate.
+ * Semantic surface/text tokens carry LIGHT defaults here and are
+ * overridden under .dark below. Brand stays constant across themes.
+ * ------------------------------------------------------------------ */
+@theme {
+  /* Surfaces (light defaults) */
+  --color-bg: #fafaf8;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f3f7;
+  --color-line: #e6e8ee;
+
+  /* Text (light defaults) */
+  --color-ink: #0e1b2c;
+  --color-muted: #56677e;
+  --color-faint: #8593a7;
+
+  /* Brand */
+  --color-brand: #1aacf0;
+  --color-cyan: #0e8fd6;
+  --color-deep: #1565d8;
+
+  /* Verification status (light defaults — tuned for contrast on white) */
+  --color-verified: #059669;
+  --color-pending: #d97706;
+  --color-disputed: #e11d48;
+
+  /* Type */
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+/* Dark theme overrides */
+.dark {
+  --color-bg: #071428;
+  --color-surface: #0c1e38;
+  --color-surface-2: #102a4c;
+  --color-line: #1c3557;
+
+  --color-ink: #eaf2ff;
+  --color-muted: #8ca3c4;
+  --color-faint: #5a7196;
+
+  --color-cyan: #38d4ff;
+
+  --color-verified: #34d399;
+  --color-pending: #fbbf24;
+  --color-disputed: #fb7185;
+}
+
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-brand) 24%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@layer utilities {
+  /* Soft eyebrow — tracked sans, not mono registry codes */
+  .eyebrow {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { RootLayout } from "@/layouts/RootLayout";
 import { Landing } from "@/pages/Landing";
 import { Listings } from "@/pages/Listings";
+import { ListingDetail } from "@/pages/ListingDetail";
 import { Placeholder } from "@/pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -11,6 +12,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Landing /> },
       { path: "listings", element: <Listings /> },
+      { path: "listings/:id", element: <ListingDetail /> },
       { path: "realtors", element: <Placeholder title="Realtors" /> },
       { path: "enablement", element: <Placeholder title="Get Certified" /> },
       { path: "pricing", element: <Placeholder title="Pricing" /> },

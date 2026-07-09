@@ -113,6 +113,14 @@
     letter-spacing: -0.02em;
     line-height: 1.03;
   }
+
+  /* Hide the scrollbar while keeping the element scrollable. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -145,7 +153,6 @@ html body[data-scroll-locked] {
     opacity: 0;
   }
 }
-
 /* Responsive rem scaling — everything sized in rem shrinks proportionally on
    smaller screens, tightening layout and type down toward ~85%. */
 /* small laptop / tablet-landscape — gentle step so structure doesn't shrink early */

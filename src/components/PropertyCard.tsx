@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { Heart, BadgeCheck, BedDouble, Bath, Ruler, Video } from "lucide-react";
 import type { Property } from "@/types";
 import { realtorById } from "@/data/mock";
@@ -10,7 +11,13 @@ export function PropertyCard({ property }: { property: Property }) {
   const [saved, setSaved] = useState(false);
 
   return (
-    <article className="group flex flex-col">
+    <article className="group relative flex flex-col">
+      <Link
+        to={`/listings/${property.id}`}
+        aria-label={`View ${property.title}`}
+        className="absolute inset-0 z-[1] rounded-2xl"
+      />
+
       {/* media */}
       <div className="relative aspect-[10/9] overflow-hidden rounded-2xl transform-gpu">
         <img
@@ -32,7 +39,7 @@ export function PropertyCard({ property }: { property: Property }) {
           onClick={() => setSaved((v) => !v)}
           aria-pressed={saved}
           aria-label={saved ? "Remove from saved" : "Save property"}
-          className="absolute right-3 top-3 transition-transform hover:scale-110"
+          className="absolute right-3 top-3 z-10 transition-transform hover:scale-110"
         >
           <Heart
             className={cn(

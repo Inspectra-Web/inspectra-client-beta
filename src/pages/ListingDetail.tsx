@@ -350,7 +350,7 @@ function RealtorPanel({ realtor }: { realtor: Realtor }) {
           </span>
         </p>
       </div>
-      <Link to="/realtors" className={cn(buttonClasses("outline", "md"), "shrink-0 max-sm:w-full")}>
+      <Link to={`/realtors/${realtor.id}`} className={cn(buttonClasses("outline", "md"), "shrink-0 max-sm:w-full")}>
         View profile <ArrowRight className="size-4" aria-hidden />
       </Link>
     </div>

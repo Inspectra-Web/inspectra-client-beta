@@ -7,14 +7,15 @@ import { cn } from "@/lib/cn";
 
 export function RootLayout() {
   const { pathname } = useLocation();
-  const isHome = pathname === "/";
+  // Pages whose dark hero/intro sits under the fixed transparent header.
+  const hasDarkHero = pathname === "/" || pathname === "/realtors" || pathname === "/listings";
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <ScrollToTop />
       <Header />
-      {/* Home's hero sits under the fixed transparent header; other pages need offset. */}
-      <main className={cn("flex-1", !isHome && "pt-16")}>
+      {/* Dark-hero pages sit under the fixed transparent header; other pages need offset. */}
+      <main className={cn("flex-1", !hasDarkHero && "pt-16")}>
         <Outlet />
       </main>
       <Footer />

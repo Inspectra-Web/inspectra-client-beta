@@ -3,6 +3,8 @@ import { RootLayout } from "@/layouts/RootLayout";
 import { Landing } from "@/pages/Landing";
 import { Listings } from "@/pages/Listings";
 import { ListingDetail } from "@/pages/ListingDetail";
+import { Realtors } from "@/pages/Realtors";
+import { RealtorDetail } from "@/pages/RealtorDetail";
 import { Placeholder } from "@/pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -13,7 +15,8 @@ export const router = createBrowserRouter([
       { index: true, element: <Landing /> },
       { path: "listings", element: <Listings /> },
       { path: "listings/:id", element: <ListingDetail /> },
-      { path: "realtors", element: <Placeholder title="Realtors" /> },
+      { path: "realtors", element: <Realtors /> },
+      { path: "realtors/:id", element: <RealtorDetail /> },
       { path: "enablement", element: <Placeholder title="Get Certified" /> },
       { path: "pricing", element: <Placeholder title="Pricing" /> },
       { path: "about", element: <Placeholder title="About INSPECTRA" /> },

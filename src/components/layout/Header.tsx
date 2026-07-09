@@ -27,14 +27,17 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Landing has a full-bleed dark hero; the header floats over it until scroll.
-  const onDarkHero = pathname === "/" && !scrolled && !open;
+  // The header is transparent on every page until you scroll (or open the menu).
+  // White nav is only used while floating over a dark hero/intro.
+  const hasDarkHero = pathname === "/" || pathname === "/realtors" || pathname === "/listings";
+  const solid = scrolled || open;
+  const onDarkHero = hasDarkHero && !solid;
 
   return (
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-colors duration-300",
-        onDarkHero ? "bg-transparent" : "bg-bg/85 backdrop-blur-xl",
+        solid ? "bg-bg/85 backdrop-blur-xl" : "bg-transparent",
       )}
     >
       <Container className="flex h-16 items-center justify-between gap-4">

@@ -171,8 +171,10 @@ export function Listings() {
             photographic banner rather than a stark black block on warm paper. */}
         <div className="absolute inset-0 bg-deep/66 dark:bg-[#06121b]/82" />
         <div className="absolute inset-0 bg-linear-to-t from-deep/70 via-transparent to-transparent dark:from-[#06121b] dark:via-[#06121b]/60 dark:to-[#06121b]/40" />
+        {/* top scrim so the floating (transparent) header's nav stays legible */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-[#06121b]/70 to-transparent" />
 
-        <Container className="relative z-10 py-20 max-lg:py-16 max-sm:py-14">
+        <Container className="relative z-10 pb-16 pt-28 max-lg:pb-14 max-lg:pt-24 max-sm:pb-12">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
             Browse listings
           </p>

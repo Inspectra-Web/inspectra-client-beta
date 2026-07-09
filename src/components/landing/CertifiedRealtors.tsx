@@ -25,7 +25,7 @@ export function CertifiedRealtors() {
         </div>
 
         <div className="mt-14 grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
-          {realtors.map((realtor, i) => (
+          {realtors.filter((r) => r.certified).slice(0, 3).map((realtor, i) => (
             <Reveal key={realtor.id} delay={(i % 3) * 0.08}>
               <RealtorCard realtor={realtor} />
             </Reveal>

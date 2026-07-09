@@ -38,7 +38,7 @@ export function RealtorCard({ realtor }: { realtor: Realtor }) {
           <Stat value={realtor.verifiedListings} label="Verified" />
         </div>
         <Link
-          to="/realtors"
+          to={`/realtors/${realtor.id}`}
           className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
         >
           View profile

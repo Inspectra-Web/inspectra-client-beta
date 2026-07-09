@@ -1,50 +1,59 @@
-import { BadgeCheck, Star, MapPin } from "lucide-react";
+import { Link } from "react-router";
+import { BadgeCheck, ArrowUpRight } from "lucide-react";
 import type { Realtor } from "@/types";
 
 export function RealtorCard({ realtor }: { realtor: Realtor }) {
+  const photo = `${realtor.avatar}?auto=format&fit=crop&crop=faces&w=640&h=800&q=80`;
+
   return (
-    <article className="flex flex-col items-center rounded-2xl border border-line bg-surface p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative">
+    <article className="group isolate w-full overflow-hidden rounded-2xl border border-line bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_16px_36px_-22px_rgba(10,30,45,0.2)] max-sm:mx-auto max-sm:max-w-sm">
+      {/* headshot */}
+      <div className="relative aspect-[4/5] overflow-hidden rounded-t-2xl">
         <img
-          src={realtor.avatar}
+          src={photo}
           alt={realtor.name}
-          className="size-20 rounded-full object-cover ring-2 ring-surface"
+          loading="lazy"
+          className="size-full object-cover object-[center_20%]"
         />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
         {realtor.certified && (
-          <span className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full bg-surface">
-            <BadgeCheck className="size-6 text-verified" aria-hidden />
+          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
+            <BadgeCheck className="size-3.5 text-emerald-600" aria-hidden />
+            Certified
           </span>
         )}
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <h3 className="display text-2xl text-white">{realtor.name}</h3>
+          <p className="text-sm text-white/75">
+            {realtor.agency} · {realtor.city}
+          </p>
+        </div>
       </div>
 
-      <h3 className="mt-4 font-display text-lg font-semibold text-ink">
-        {realtor.name}
-      </h3>
-      <p className="text-sm text-muted">{realtor.agency}</p>
-      <p className="mt-1 flex items-center gap-1 text-xs text-faint">
-        <MapPin className="size-3.5" aria-hidden />
-        {realtor.city}
-      </p>
-
-      <div className="mt-5 flex w-full items-center justify-center gap-6 border-t border-line pt-4">
-        <div>
-          <div className="flex items-center justify-center gap-1 font-display text-lg font-bold text-ink">
-            <Star className="size-4 fill-amber-400 text-amber-400" aria-hidden />
-            {realtor.trustScore}
-          </div>
-          <div className="text-[0.68rem] uppercase tracking-wide text-faint">
-            Trust score
-          </div>
+      {/* stats + cta */}
+      <div className="p-5">
+        <div className="flex items-center justify-around text-center">
+          <Stat value={realtor.completedDeals} label="Deals closed" />
+          <span className="h-9 w-px bg-line" aria-hidden />
+          <Stat value={realtor.verifiedListings} label="Verified" />
         </div>
-        <div>
-          <div className="font-display text-lg font-bold text-ink">
-            {realtor.completedDeals}
-          </div>
-          <div className="text-[0.68rem] uppercase tracking-wide text-faint">
-            Deals closed
-          </div>
-        </div>
+        <Link
+          to="/realtors"
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
+        >
+          View profile
+          <ArrowUpRight className="size-4" aria-hidden />
+        </Link>
       </div>
     </article>
+  );
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div>
+      <div className="text-xl font-semibold text-ink">{value}</div>
+      <div className="mt-0.5 text-[0.68rem] uppercase tracking-wide text-faint">{label}</div>
+    </div>
   );
 }

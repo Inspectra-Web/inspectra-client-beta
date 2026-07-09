@@ -1,8 +1,6 @@
 import { Link } from "react-router";
-import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
-import logoWhite from "@/assets/inspectra-logo-white-lg.png";
+import logo from "@/assets/inspectra-logo-primary-lg.png";
 import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 
 const COLUMNS = [
   {
@@ -36,46 +34,21 @@ const COLUMNS = [
 export function Footer() {
   return (
     <footer className="relative border-t border-line bg-surface-2/50">
-      <Container className="grid gap-12 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        {/* brand + newsletter */}
-        <div className="space-y-5">
-          <img
-            src={logoPrimary}
-            alt="INSPECTRA"
-            className="h-7 w-auto dark:hidden"
-          />
-          <img
-            src={logoWhite}
-            alt="INSPECTRA"
-            className="hidden h-7 w-auto dark:block"
-          />
+      <Container className="grid grid-cols-[1.5fr_1fr_1fr_1fr] gap-12 py-16 max-lg:grid-cols-2 max-lg:gap-10 max-sm:grid-cols-1 max-sm:py-12">
+        <div className="space-y-5 max-lg:col-span-2 max-sm:col-span-1">
+          <img src={logo} alt="INSPECTRA" className="h-10 w-auto" />
           <p className="max-w-xs text-sm leading-relaxed text-muted">
-            Verified homes and certified realtors — so every step of your search is one
-            you can trust.
+            Verified homes and certified realtors, so every step of your search is one you
+            can trust.
           </p>
-          <form
-            className="flex max-w-sm gap-2"
-            onSubmit={(e) => e.preventDefault()}
-            aria-label="Newsletter signup"
-          >
-            <input
-              type="email"
-              required
-              placeholder="you@email.com"
-              className="h-10 w-full rounded-full border border-line bg-surface px-4 text-sm text-ink placeholder:text-faint focus:border-brand/60 focus:outline-none"
-            />
-            <Button size="sm" type="submit">
-              Notify me
-            </Button>
-          </form>
         </div>
 
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <h3 className="mb-4 text-[0.72rem] font-semibold uppercase tracking-widest text-faint">
+            <h3 className="mb-4 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-faint">
               {col.title}
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {col.links.map((link) => (
                 <li key={link.label}>
                   <Link
@@ -92,9 +65,9 @@ export function Footer() {
       </Container>
 
       <div className="border-t border-line">
-        <Container className="flex flex-col items-center justify-between gap-3 py-6 text-xs text-faint sm:flex-row">
+        <Container className="flex items-center justify-between gap-3 py-6 text-xs text-faint max-sm:flex-col">
           <p>© {new Date().getFullYear()} INSPECTRA Real Estate Technologies Ltd.</p>
-          <p>A home you can trust, start to finish.</p>
+          <p className="font-display italic">Trust, built into every address.</p>
         </Container>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-import type { Property, Realtor, Stat } from "@/types";
+import type { Property, Realtor } from "@/types";
 
 const img = (id: string) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1000&q=70`;
@@ -13,7 +13,7 @@ export const realtors: Realtor[] = [
     trustScore: 96,
     verifiedListings: 24,
     completedDeals: 61,
-    avatar: "https://i.pravatar.cc/160?img=45",
+    avatar: "https://images.unsplash.com/photo-1573497019418-b400bb3ab074",
   },
   {
     id: "r2",
@@ -24,7 +24,7 @@ export const realtors: Realtor[] = [
     trustScore: 91,
     verifiedListings: 18,
     completedDeals: 43,
-    avatar: "https://i.pravatar.cc/160?img=12",
+    avatar: "https://images.unsplash.com/photo-1495603889488-42d1d66e5523",
   },
   {
     id: "r3",
@@ -35,7 +35,7 @@ export const realtors: Realtor[] = [
     trustScore: 88,
     verifiedListings: 15,
     completedDeals: 37,
-    avatar: "https://i.pravatar.cc/160?img=32",
+    avatar: "https://images.unsplash.com/photo-1573496799515-eebbb63814f2",
   },
 ];
 
@@ -56,6 +56,7 @@ export const properties: Property[] = [
     status: "verified",
     documents: ["C of O", "Survey Plan", "Deed of Assignment"],
     remoteReady: true,
+    hasVideo: true,
     image: img("1613977257363-707ba9348227"),
     realtorId: "r1",
     coords: { lat: 6.4281, lng: 3.4219 },
@@ -93,9 +94,10 @@ export const properties: Property[] = [
     beds: 2,
     baths: 2,
     areaSqm: 145,
-    status: "pending",
+    status: "verified",
     documents: ["Deed of Assignment", "Survey Plan"],
     remoteReady: false,
+    hasVideo: true,
     image: img("1522708323590-d24dbb6b0267"),
     realtorId: "r1",
     coords: { lat: 6.4478, lng: 3.4723 },
@@ -123,18 +125,20 @@ export const properties: Property[] = [
   {
     id: "p5",
     ref: "LA-2024-07612",
-    title: "800sqm Residential Plot",
-    type: "Land",
+    title: "Modern 3-Bedroom Semi-Detached",
+    type: "Terrace",
     listingFor: "sale",
     location: "Ajah, Sangotedo",
     city: "Lagos",
-    price: 45_000_000,
+    price: 95_000_000,
     currency: "NGN",
-    areaSqm: 800,
-    status: "disputed",
-    documents: ["Survey Plan", "Excision Gazette"],
+    beds: 3,
+    baths: 3,
+    areaSqm: 300,
+    status: "verified",
+    documents: ["C of O", "Survey Plan"],
     remoteReady: false,
-    image: img("1500382017468-9049fed747ef"),
+    image: img("1512917774080-9991f1c4c750"),
     realtorId: "r2",
     coords: { lat: 6.4698, lng: 3.5852 },
   },
@@ -154,17 +158,11 @@ export const properties: Property[] = [
     status: "verified",
     documents: ["C of O", "Governor's Consent", "Survey Plan", "Deed of Assignment"],
     remoteReady: true,
+    hasVideo: true,
     image: img("1600607687939-ce8a6c25118c"),
     realtorId: "r3",
     coords: { lat: 9.0876, lng: 7.4951 },
   },
-];
-
-export const stats: Stat[] = [
-  { value: "3,412", label: "Properties verified" },
-  { value: "9,180", label: "Documents checked" },
-  { value: "640+", label: "Certified realtors" },
-  { value: "12,700", label: "Inspections booked" },
 ];
 
 export const realtorById = (id: string) => realtors.find((r) => r.id === id);

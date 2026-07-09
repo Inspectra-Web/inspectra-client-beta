@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router";
-import { Menu, X } from "lucide-react";
-import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
-import logoWhite from "@/assets/inspectra-logo-white-lg.png";
+import { Link, NavLink, useLocation } from "react-router";
+import { Menu, X, LogIn, UserPlus } from "lucide-react";
+import logo from "@/assets/inspectra-logo-primary-lg.png";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -16,54 +15,49 @@ const NAV = [
   { label: "About", to: "/about" },
 ];
 
-function Logo() {
-  return (
-    <>
-      <img src={logoPrimary} alt="INSPECTRA" className="h-7 w-auto dark:hidden" />
-      <img
-        src={logoWhite}
-        alt="INSPECTRA"
-        className="hidden h-7 w-auto dark:block"
-      />
-    </>
-  );
-}
-
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Landing has a full-bleed dark hero; the header floats over it until scroll.
+  const onDarkHero = pathname === "/" && !scrolled && !open;
+
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 transition-colors duration-300",
-        scrolled
-          ? "border-b border-line bg-bg/85 backdrop-blur-xl"
-          : "border-b border-transparent",
+        "fixed inset-x-0 top-0 z-50 transition-colors duration-300",
+        onDarkHero ? "bg-transparent" : "bg-bg/85 shadow-sm backdrop-blur-xl",
       )}
     >
       <Container className="flex h-16 items-center justify-between gap-4">
         <Link to="/" className="flex items-center" aria-label="INSPECTRA home">
-          <Logo />
+          <img src={logo} alt="INSPECTRA" className="h-10 w-auto" />
         </Link>
 
         {/* desktop nav */}
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="flex items-center gap-1 max-lg:hidden">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  "rounded-full px-3.5 py-2 text-sm transition-colors",
-                  isActive ? "text-ink" : "text-muted hover:text-ink",
+                  "rounded-full px-3.5 py-2 text-sm font-medium transition-colors max-xl:px-3",
+                  isActive
+                    ? onDarkHero
+                      ? "bg-white/15 text-white"
+                      : "bg-surface-2 text-ink"
+                    : onDarkHero
+                      ? "text-white/75 hover:bg-white/10 hover:text-white"
+                      : "text-muted hover:bg-surface-2 hover:text-ink",
                 )
               }
             >
@@ -72,22 +66,33 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <ThemeToggle />
-          <Link to="/login" className={buttonClasses("ghost", "sm")}>
+        {/* desktop actions */}
+        <div className="flex items-center gap-3 max-lg:hidden">
+          <ThemeToggle onDark={onDarkHero} />
+          <Link
+            to="/login"
+            className={cn(
+              "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
+              onDarkHero
+                ? "text-white/80 hover:text-white"
+                : "text-muted hover:text-ink",
+            )}
+          >
+            <LogIn className="size-4" aria-hidden />
             Log in
           </Link>
-          <Link to="/register" className={buttonClasses("primary", "sm")}>
+          <Link to="/register" className={buttonClasses("brand", "sm")}>
+            <UserPlus className="size-4" aria-hidden />
             Sign up
           </Link>
         </div>
 
-        {/* mobile toggle */}
-        <div className="flex items-center gap-3 lg:hidden">
-          <ThemeToggle />
+        {/* mobile cluster */}
+        <div className="hidden items-center gap-3 max-lg:flex">
+          <ThemeToggle onDark={onDarkHero} />
           <button
             type="button"
-            className="text-ink"
+            className={onDarkHero ? "text-white" : "text-ink"}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -99,7 +104,7 @@ export function Header() {
 
       {/* mobile drawer */}
       {open && (
-        <div className="border-t border-line bg-bg/95 backdrop-blur-xl lg:hidden">
+        <div className="hidden border-b border-line bg-bg/95 backdrop-blur-xl max-lg:block">
           <Container className="flex flex-col gap-1 py-4">
             {NAV.map((item) => (
               <NavLink
@@ -108,7 +113,7 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    "rounded-lg px-3 py-2.5 text-sm",
+                    "rounded-lg px-3 py-2.5 text-sm font-medium",
                     isActive ? "bg-surface-2 text-ink" : "text-muted",
                   )
                 }
@@ -122,13 +127,15 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className={buttonClasses("outline", "md")}
               >
+                <LogIn className="size-4" aria-hidden />
                 Log in
               </Link>
               <Link
                 to="/register"
                 onClick={() => setOpen(false)}
-                className={buttonClasses("primary", "md")}
+                className={buttonClasses("brand", "md")}
               >
+                <UserPlus className="size-4" aria-hidden />
                 Sign up
               </Link>
             </div>

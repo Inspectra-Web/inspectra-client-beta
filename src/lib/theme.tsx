@@ -14,9 +14,7 @@ export type ResolvedTheme = "light" | "dark";
 const STORAGE_KEY = "inspectra-theme";
 
 interface ThemeContextValue {
-  /** The user's choice, including "system". */
   theme: ThemeChoice;
-  /** The concrete theme currently applied. */
   resolved: ResolvedTheme;
   setTheme: (t: ThemeChoice) => void;
 }
@@ -37,15 +35,13 @@ function readStored(): ThemeChoice {
 }
 
 function apply(resolved: ResolvedTheme) {
-  const root = document.documentElement;
-  root.classList.toggle("dark", resolved === "dark");
+  document.documentElement.classList.toggle("dark", resolved === "dark");
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeChoice>(() => readStored());
   const [systemDark, setSystemDark] = useState<boolean>(() => systemPrefersDark());
 
-  // Track OS preference so "system" stays live.
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);

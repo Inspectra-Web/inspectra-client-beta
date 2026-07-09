@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "outline" | "ghost";
+type Variant = "primary" | "brand" | "outline" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 const base =
@@ -10,18 +10,17 @@ const base =
   "whitespace-nowrap select-none";
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-brand text-[#04121f] font-semibold shadow-[0_8px_20px_-8px_rgba(26,172,240,0.7)] " +
-    "hover:bg-cyan hover:shadow-[0_10px_26px_-6px_rgba(26,172,240,0.8)] hover:-translate-y-0.5",
-  outline:
-    "border border-line bg-surface text-ink hover:border-brand/60 hover:bg-surface-2",
-  ghost: "text-muted hover:text-ink hover:bg-surface-2",
+  primary: "bg-ink text-bg hover:opacity-90",
+  brand:
+    "bg-brand text-[#04121f] font-semibold shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] hover:-translate-y-0.5",
+  outline: "border border-line bg-transparent text-ink hover:bg-surface-2",
+  ghost: "text-muted hover:text-ink",
 };
 
 const sizes: Record<Size, string> = {
   sm: "h-9 px-4 text-sm",
   md: "h-11 px-5 text-sm",
-  lg: "h-13 px-7 text-base",
+  lg: "h-13 px-8 text-base max-sm:h-12 max-sm:px-6",
 };
 
 /** Shared class recipe — use on <button>, or spread onto a react-router <Link>. */

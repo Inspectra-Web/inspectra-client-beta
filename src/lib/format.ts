@@ -9,3 +9,8 @@ export function formatPrice(value: number): string {
 function trim(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
+
+/** Full Naira price with grouping, e.g. 480_000_000 -> "₦480,000,000". */
+export function formatPriceFull(value: number): string {
+  return `₦${value.toLocaleString("en-NG")}`;
+}

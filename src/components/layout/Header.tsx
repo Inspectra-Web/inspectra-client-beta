@@ -34,7 +34,7 @@ export function Header() {
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-colors duration-300",
-        onDarkHero ? "bg-transparent" : "bg-bg/85 shadow-sm backdrop-blur-xl",
+        onDarkHero ? "bg-transparent" : "bg-bg/85 backdrop-blur-xl",
       )}
     >
       <Container className="flex h-16 items-center justify-between gap-4">

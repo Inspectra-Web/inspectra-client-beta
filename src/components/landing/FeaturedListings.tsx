@@ -25,7 +25,7 @@ export function FeaturedListings() {
         </div>
 
         <div className="mt-14 grid grid-cols-3 gap-x-6 gap-y-10 max-lg:grid-cols-2 max-sm:grid-cols-1">
-          {properties.map((property, i) => (
+          {properties.slice(0, 6).map((property, i) => (
             <Reveal key={property.id} delay={(i % 3) * 0.08}>
               <PropertyCard property={property} />
             </Reveal>

@@ -115,6 +115,27 @@
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * Radix popup (Select/Popover) fixes — active while <body> carries
+ * `data-scroll-locked` (set by react-remove-scroll whenever a popup is open).
+ * Kept UNLAYERED (a cascade layer would always lose to the library's own
+ * unlayered rule) and given higher specificity so these win.
+ *
+ * 1. react-remove-scroll injects `overflow:hidden !important; margin-right:<gap>px
+ *    !important`, hiding the scrollbar and shifting the fixed header / sticky
+ *    toolbar. Undo it.
+ * 2. DismissableLayer sets an inline `body { pointer-events: none }` to block the
+ *    background. That makes clicking a second Select trigger take two clicks (the
+ *    first only dismisses the open one). Re-enable pointer events so one click
+ *    closes the open popup and opens the next.
+ * ------------------------------------------------------------------ */
+html body[data-scroll-locked] {
+  overflow: auto !important;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  pointer-events: auto !important;
+}
+
 @keyframes caret {
   0%,
   100% {

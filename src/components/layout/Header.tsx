@@ -29,7 +29,11 @@ export function Header() {
 
   // The header is transparent on every page until you scroll (or open the menu).
   // White nav is only used while floating over a dark hero/intro.
-  const hasDarkHero = pathname === "/" || pathname === "/realtors" || pathname === "/listings";
+  const hasDarkHero =
+    pathname === "/" ||
+    pathname === "/realtors" ||
+    pathname === "/listings" ||
+    pathname === "/enablement";
   const solid = scrolled || open;
   const onDarkHero = hasDarkHero && !solid;
 

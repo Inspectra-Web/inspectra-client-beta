@@ -132,6 +132,60 @@
     background-clip: text;
     color: transparent;
   }
+
+  /* Credential foil — reserved for the Get Certified credential object only.
+     A metallic gold sweep that reads as "earned / merit", distinct from the
+     platform's brand blue. Use for hairline seals, edges and credential marks. */
+  .bg-foil {
+    background-image: linear-gradient(
+      135deg,
+      #f2dc9a 0%,
+      #c99a49 34%,
+      #9a7330 58%,
+      #e7c983 100%
+    );
+  }
+  .text-foil {
+    background-image: linear-gradient(115deg, #d8ac5e 0%, #b1863a 50%, #e6cd86 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Tabular, tracked small-caps for credential/exam data — the "data of
+     certification". No mono (per brand): DM Sans with lined figures instead. */
+  .credential-meta {
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}
+
+/* Signature: the Certified badge stamps onto the realtor's photo on load —
+   the one orchestrated motion moment on the page. Suppressed under reduced motion. */
+@keyframes cert-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.28) rotate(-4deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.97) rotate(0.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+.cert-stamp {
+  animation: cert-stamp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cert-stamp {
+    animation: none;
+  }
 }
 
 /* ------------------------------------------------------------------ *

@@ -5,6 +5,7 @@ import { Listings } from "@/pages/Listings";
 import { ListingDetail } from "@/pages/ListingDetail";
 import { Realtors } from "@/pages/Realtors";
 import { RealtorDetail } from "@/pages/RealtorDetail";
+import { GetCertified } from "@/pages/GetCertified";
 import { Placeholder } from "@/pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -17,7 +18,7 @@ export const router = createBrowserRouter([
       { path: "listings/:id", element: <ListingDetail /> },
       { path: "realtors", element: <Realtors /> },
       { path: "realtors/:id", element: <RealtorDetail /> },
-      { path: "enablement", element: <Placeholder title="Get Certified" /> },
+      { path: "enablement", element: <GetCertified /> },
       { path: "pricing", element: <Placeholder title="Pricing" /> },
       { path: "about", element: <Placeholder title="About INSPECTRA" /> },
       { path: "login", element: <Placeholder title="Log in" /> },

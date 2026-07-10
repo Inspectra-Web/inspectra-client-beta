@@ -8,7 +8,12 @@ import { cn } from "@/lib/cn";
 export function RootLayout() {
   const { pathname } = useLocation();
   // Pages whose dark hero/intro sits under the fixed transparent header.
-  const hasDarkHero = pathname === "/" || pathname === "/realtors" || pathname === "/listings";
+  // Keep this list in sync with `hasDarkHero` in Header.tsx.
+  const hasDarkHero =
+    pathname === "/" ||
+    pathname === "/realtors" ||
+    pathname === "/listings" ||
+    pathname === "/enablement";
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">

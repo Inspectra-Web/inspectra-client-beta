@@ -14,7 +14,8 @@ export function RootLayout() {
     pathname === "/realtors" ||
     pathname === "/listings" ||
     pathname === "/enablement" ||
-    pathname === "/pricing";
+    pathname === "/pricing" ||
+    pathname === "/about";
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">

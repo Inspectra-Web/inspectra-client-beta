@@ -34,7 +34,8 @@ export function Header() {
     pathname === "/realtors" ||
     pathname === "/listings" ||
     pathname === "/enablement" ||
-    pathname === "/pricing";
+    pathname === "/pricing" ||
+    pathname === "/about";
   const solid = scrolled || open;
   const onDarkHero = hasDarkHero && !solid;
 

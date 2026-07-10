@@ -33,7 +33,8 @@ export function Header() {
     pathname === "/" ||
     pathname === "/realtors" ||
     pathname === "/listings" ||
-    pathname === "/enablement";
+    pathname === "/enablement" ||
+    pathname === "/pricing";
   const solid = scrolled || open;
   const onDarkHero = hasDarkHero && !solid;
 

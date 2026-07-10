@@ -6,6 +6,7 @@ import { ListingDetail } from "@/pages/ListingDetail";
 import { Realtors } from "@/pages/Realtors";
 import { RealtorDetail } from "@/pages/RealtorDetail";
 import { GetCertified } from "@/pages/GetCertified";
+import { Pricing } from "@/pages/Pricing";
 import { Placeholder } from "@/pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -19,7 +20,7 @@ export const router = createBrowserRouter([
       { path: "realtors", element: <Realtors /> },
       { path: "realtors/:id", element: <RealtorDetail /> },
       { path: "enablement", element: <GetCertified /> },
-      { path: "pricing", element: <Placeholder title="Pricing" /> },
+      { path: "pricing", element: <Pricing /> },
       { path: "about", element: <Placeholder title="About INSPECTRA" /> },
       { path: "login", element: <Placeholder title="Log in" /> },
       { path: "register", element: <Placeholder title="Sign up" /> },

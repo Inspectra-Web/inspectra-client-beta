@@ -8,6 +8,10 @@ import { RealtorDetail } from "@/pages/RealtorDetail";
 import { GetCertified } from "@/pages/GetCertified";
 import { Pricing } from "@/pages/Pricing";
 import { About } from "@/pages/About";
+import { SignIn } from "@/pages/SignIn";
+import { SignUp } from "@/pages/SignUp";
+import { ForgotPassword } from "@/pages/ForgotPassword";
+import { ResetPassword } from "@/pages/ResetPassword";
 import { Placeholder } from "@/pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -23,8 +27,10 @@ export const router = createBrowserRouter([
       { path: "enablement", element: <GetCertified /> },
       { path: "pricing", element: <Pricing /> },
       { path: "about", element: <About /> },
-      { path: "login", element: <Placeholder title="Log in" /> },
-      { path: "register", element: <Placeholder title="Sign up" /> },
+      { path: "login", element: <SignIn /> },
+      { path: "register", element: <SignUp /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
       { path: "terms", element: <Placeholder title="Terms of Service" /> },
       { path: "privacy", element: <Placeholder title="Privacy Policy" /> },
       { path: "*", element: <Placeholder title="Page not found" /> },

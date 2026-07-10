@@ -4,7 +4,13 @@ import { Search, ArrowUpRight, SearchX } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/Select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/Select";
 import { Reveal } from "@/components/ui/Reveal";
 import { CredentialCard } from "@/components/realtor/CredentialCard";
 import { realtors } from "@/data/mock";
@@ -26,18 +32,27 @@ export function Realtors() {
   const results = useMemo(() => {
     const query = q.trim().toLowerCase();
     const list = CERTIFIED.filter((r) => {
-      if (query && !`${r.name} ${r.agency} ${r.city}`.toLowerCase().includes(query)) return false;
+      if (
+        query &&
+        !`${r.name} ${r.agency} ${r.city}`.toLowerCase().includes(query)
+      )
+        return false;
       if (city !== "all" && r.city !== city) return false;
       return true;
     });
-    if (sort === "verified") return [...list].sort((a, b) => b.verifiedListings - a.verifiedListings);
-    if (sort === "newest") return [...list].sort((a, b) => realtorMeta(b).since - realtorMeta(a).since);
+    if (sort === "verified")
+      return [...list].sort((a, b) => b.verifiedListings - a.verifiedListings);
+    if (sort === "newest")
+      return [...list].sort(
+        (a, b) => realtorMeta(b).since - realtorMeta(a).since,
+      );
     return [...list].sort((a, b) => b.completedDeals - a.completedDeals);
   }, [q, city, sort]);
 
   const selectProps = (id: string) => ({
     open: openId === id,
-    onOpenChange: (o: boolean) => setOpenId((prev) => (o ? id : prev === id ? null : prev)),
+    onOpenChange: (o: boolean) =>
+      setOpenId((prev) => (o ? id : prev === id ? null : prev)),
   });
 
   const reset = () => {
@@ -49,9 +64,14 @@ export function Realtors() {
   return (
     <div>
       {/* intro — dark band with a realtor image; the header floats over it */}
-      <section className="relative overflow-hidden bg-[#06121b] text-white">
-        <img src={INTRO_IMG} alt="" className="absolute inset-0 size-full object-cover object-center" fetchPriority="high" />
-        <div className="absolute inset-0 bg-[#06121b]/80" />
+      <section className="relative overflow-hidden bg-deep dark:bg-[#06121b] text-white">
+        <img
+          src={INTRO_IMG}
+          alt=""
+          className="absolute inset-0 size-full object-cover object-center"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 bg-deep/66 dark:bg-[#06121b]/82" />
         <div className="absolute inset-0 bg-linear-to-t from-[#06121b] via-[#06121b]/70 to-[#06121b]/45" />
 
         <Container className="relative z-10 pb-14 pt-28 max-lg:pt-24 max-sm:pb-12">
@@ -64,8 +84,9 @@ export function Realtors() {
                 Realtors you can actually vet
               </h1>
               <p className="mt-4 max-w-xl text-lg text-white/75 text-pretty max-sm:text-base">
-                Every realtor here passed a proctored certification in title law, valuation and ethics — so
-                the person guiding your biggest purchase has actually been tested.
+                Every realtor here passed a proctored certification in title
+                law, valuation and ethics — so the person guiding your biggest
+                purchase has actually been tested.
               </p>
             </div>
             <Link
@@ -84,7 +105,10 @@ export function Realtors() {
         <Container>
           <div className="flex items-center gap-2.5 py-4 max-md:flex-col max-md:items-stretch">
             <div className="relative min-w-56 flex-1 max-md:w-full">
-              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-faint" aria-hidden />
+              <Search
+                className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-faint"
+                aria-hidden
+              />
               <Input
                 type="search"
                 value={q}
@@ -100,7 +124,10 @@ export function Realtors() {
                 label="City"
                 value={city}
                 onChange={setCity}
-                options={[{ value: "all", label: "All cities" }, ...CITIES.map((c) => ({ value: c, label: c }))]}
+                options={[
+                  { value: "all", label: "All cities" },
+                  ...CITIES.map((c) => ({ value: c, label: c })),
+                ]}
               />
               <FilterSelect
                 {...selectProps("sort")}
@@ -137,11 +164,18 @@ export function Realtors() {
           ) : (
             <div className="mx-auto mt-6 max-w-md rounded-2xl border border-line bg-surface px-8 py-16 text-center">
               <SearchX className="mx-auto size-8 text-faint" aria-hidden />
-              <h3 className="display mt-4 text-2xl text-ink">No realtors match that</h3>
+              <h3 className="display mt-4 text-2xl text-ink">
+                No realtors match that
+              </h3>
               <p className="mt-2 text-muted text-pretty">
-                Try another city, or clear the search — we're certifying new realtors every month.
+                Try another city, or clear the search — we're certifying new
+                realtors every month.
               </p>
-              <button type="button" onClick={reset} className={cn(buttonClasses("primary", "md"), "mt-6")}>
+              <button
+                type="button"
+                onClick={reset}
+                className={cn(buttonClasses("primary", "md"), "mt-6")}
+              >
                 Clear filters
               </button>
             </div>
@@ -168,8 +202,16 @@ function FilterSelect({
   onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Select value={value} onValueChange={onChange} open={open} onOpenChange={onOpenChange}>
-      <SelectTrigger aria-label={label} className="h-10 w-full min-w-36 max-md:min-w-0">
+    <Select
+      value={value}
+      onValueChange={onChange}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <SelectTrigger
+        aria-label={label}
+        className="h-10 w-full min-w-36 max-md:min-w-0"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

@@ -17,6 +17,23 @@ export function RootLayout() {
     pathname === "/pricing" ||
     pathname === "/about";
 
+  // Auth routes own the full viewport with their own minimal chrome (see AuthShell):
+  // no global header, footer or scroll-to-top button.
+  const isAuth =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password";
+
+  if (isAuth) {
+    return (
+      <div className="min-h-screen bg-bg">
+        <ScrollToTop />
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <ScrollToTop />

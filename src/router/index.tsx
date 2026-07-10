@@ -12,6 +12,7 @@ import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 import { ForgotPassword } from "@/pages/ForgotPassword";
 import { ResetPassword } from "@/pages/ResetPassword";
+import { NotFound } from "@/pages/NotFound";
 import { Placeholder } from "@/pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -33,7 +34,8 @@ export const router = createBrowserRouter([
       { path: "reset-password", element: <ResetPassword /> },
       { path: "terms", element: <Placeholder title="Terms of Service" /> },
       { path: "privacy", element: <Placeholder title="Privacy Policy" /> },
-      { path: "*", element: <Placeholder title="Page not found" /> },
     ],
   },
+  // Standalone: rendered outside RootLayout so it has no global header/footer.
+  { path: "*", element: <NotFound /> },
 ]);

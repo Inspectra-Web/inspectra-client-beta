@@ -71,7 +71,7 @@ export function SignUp() {
     // certification (the prerequisite to list); seekers head into browsing.
     await new Promise((r) => setTimeout(r, 900));
     toast.success("Account created. Welcome to INSPECTRA.");
-    navigate(values.role === "realtor" ? "/enablement" : "/listings");
+    navigate(values.role === "realtor" ? "/enablement" : "/dashboard");
   }
 
   return (

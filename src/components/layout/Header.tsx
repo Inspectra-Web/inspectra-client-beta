@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
-import { Menu, X, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, LogIn, UserPlus, LayoutDashboard } from "lucide-react";
 import logo from "@/assets/inspectra-logo-primary-lg.png";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
@@ -79,6 +79,18 @@ export function Header() {
         <div className="flex items-center gap-3 max-lg:hidden">
           <ThemeToggle onDark={onDarkHero} />
           <Link
+            to="/dashboard"
+            className={cn(
+              "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
+              onDarkHero
+                ? "text-white/80 hover:text-white"
+                : "text-muted hover:text-ink",
+            )}
+          >
+            <LayoutDashboard className="size-4" aria-hidden />
+            Dashboard
+          </Link>
+          <Link
             to="/login"
             className={cn(
               "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
@@ -130,7 +142,15 @@ export function Header() {
                 {item.label}
               </NavLink>
             ))}
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link
+              to="/dashboard"
+              onClick={() => setOpen(false)}
+              className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted"
+            >
+              <LayoutDashboard className="size-4" aria-hidden />
+              Dashboard
+            </Link>
+            <div className="mt-2 grid grid-cols-2 gap-2">
               <Link
                 to="/login"
                 onClick={() => setOpen(false)}

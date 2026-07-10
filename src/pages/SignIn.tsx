@@ -21,7 +21,7 @@ export function SignIn() {
     // Mock auth: no backend yet, simulate a request then land the user in the app.
     await new Promise((r) => setTimeout(r, 900));
     toast.success(`Welcome back, ${values.email.split("@")[0]}`);
-    navigate("/listings");
+    navigate("/dashboard");
   }
 
   return (

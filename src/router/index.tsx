@@ -15,6 +15,15 @@ import { ResetPassword } from "@/pages/ResetPassword";
 import { NotFound } from "@/pages/NotFound";
 import { Terms } from "@/pages/Terms";
 import { Privacy } from "@/pages/Privacy";
+import { DashboardLayout } from "@/layouts/DashboardLayout";
+import { Overview } from "@/pages/dashboard/Overview";
+import { Saved } from "@/pages/dashboard/Saved";
+import { Inquiries } from "@/pages/dashboard/Inquiries";
+import { InquiryDetail } from "@/pages/dashboard/InquiryDetail";
+import { Inspections } from "@/pages/dashboard/Inspections";
+import { InspectionDetail } from "@/pages/dashboard/InspectionDetail";
+import { Account } from "@/pages/dashboard/Account";
+import { DashboardNotFound } from "@/pages/dashboard/DashboardNotFound";
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +44,21 @@ export const router = createBrowserRouter([
       { path: "reset-password", element: <ResetPassword /> },
       { path: "terms", element: <Terms /> },
       { path: "privacy", element: <Privacy /> },
+    ],
+  },
+  // Seeker dashboard: its own shell (sidebar + topbar), outside the marketing chrome.
+  {
+    path: "/dashboard",
+    element: <DashboardLayout />,
+    children: [
+      { index: true, element: <Overview /> },
+      { path: "saved", element: <Saved /> },
+      { path: "inquiries", element: <Inquiries /> },
+      { path: "inquiries/:id", element: <InquiryDetail /> },
+      { path: "inspections", element: <Inspections /> },
+      { path: "inspections/:id", element: <InspectionDetail /> },
+      { path: "account", element: <Account /> },
+      { path: "*", element: <DashboardNotFound /> },
     ],
   },
   // Standalone: rendered outside RootLayout so it has no global header/footer.

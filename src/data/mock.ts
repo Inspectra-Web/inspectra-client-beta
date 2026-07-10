@@ -522,3 +522,4 @@ export const properties: Property[] = [
 ];
 
 export const realtorById = (id: string) => realtors.find((r) => r.id === id);
+export const propertyById = (id: string) => properties.find((p) => p.id === id);

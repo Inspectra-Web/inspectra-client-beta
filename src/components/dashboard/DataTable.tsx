@@ -25,7 +25,7 @@ export function DataTable({
 }) {
   return (
     <div className={cn("overflow-hidden rounded-2xl border border-line bg-surface", className)}>
-      <div className="overflow-x-auto">
+      <div className="no-scrollbar overflow-x-auto">
         <table className={cn("w-full border-collapse text-sm", minWidthClass)}>
           <thead className="border-b border-line bg-surface-2/40">{head}</thead>
           <tbody className="divide-y divide-line">{children}</tbody>

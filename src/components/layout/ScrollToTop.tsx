@@ -7,7 +7,9 @@ export function ScrollToTop() {
 
   useEffect(() => {
     if (hash) return;
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    // Jump instantly on navigation. "instant" overrides the CSS
+    // `scroll-behavior: smooth` so only the scroll-to-top button animates.
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname, hash]);
 
   return null;

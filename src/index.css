@@ -63,6 +63,10 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Guard against stray horizontal overflow (off-canvas decor, wide grids)
+       on small screens. `clip` stops sideways scroll WITHOUT creating a scroll
+       container, so position: sticky headers/toolbars keep working. */
+    overflow-x: clip;
   }
 
   body {
@@ -72,6 +76,10 @@
     font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Belt-and-braces with the html guard above; also caps body to the
+       viewport so a rogue full-bleed child can't widen the page. */
+    overflow-x: clip;
+    max-width: 100%;
     transition:
       background-color 0.3s ease,
       color 0.3s ease;

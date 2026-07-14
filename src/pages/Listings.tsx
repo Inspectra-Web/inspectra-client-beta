@@ -277,7 +277,7 @@ export function Listings() {
                     <div
                       role="group"
                       aria-label="Filter by verification status"
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface p-1 max-sm:w-full max-sm:overflow-x-auto"
+                      className="no-scrollbar inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface p-1 max-sm:w-full max-sm:overflow-x-auto"
                     >
                       {SEGMENTS.map((s) => {
                         const active = status === s.key;

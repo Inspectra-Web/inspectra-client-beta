@@ -48,7 +48,6 @@ export const TIERS: Tier[] = [
       "Featured, boosted placement in search",
       "Listing analytics: views, inquiries, conversion",
       "Priority verification for faster go-live",
-      "In-app inspection payments and ledger",
       "Everything in Starter",
     ],
   },
@@ -99,10 +98,9 @@ export const COMPARE_GROUPS: { group: string; rows: CompareRow[] }[] = [
     ],
   },
   {
-    group: "Verification and payments",
+    group: "Verification",
     rows: [
       { label: "Verification queue", starter: "Standard", professional: "Priority", agency: "Top priority" },
-      { label: "In-app inspection payments and ledger", starter: false, professional: true, agency: true },
     ],
   },
   {

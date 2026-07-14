@@ -1,4 +1,5 @@
 import type { Property, Realtor } from "@/types";
+import { LISTING_INTENT_LABEL, isRecurringLet } from "@/lib/listing";
 
 /**
  * Derives the rich detail a listing page needs (gallery, dossier checks, fees,
@@ -160,34 +161,53 @@ function buildSpecs(property: Property, h: number, titleDoc: string): SpecLine[]
     specs.push({ label: "Year built", value: String(2015 + (h % 9)) });
     specs.push({
       label: "Furnishing",
-      value:
-        property.listingFor === "rent"
-          ? h % 2
-            ? "Fully furnished"
-            : "Serviced, part-furnished"
-          : h % 2
-            ? "Unfurnished"
-            : "Semi-furnished",
+      value: isRecurringLet(property.listingFor)
+        ? h % 2
+          ? "Fully furnished"
+          : "Serviced, part-furnished"
+        : h % 2
+          ? "Unfurnished"
+          : "Semi-furnished",
     });
     specs.push({ label: "Parking", value: `${1 + (h % 3)} cars` });
   }
   if (property.areaSqm)
     specs.push({ label: property.type === "Land" ? "Plot size" : "Total area", value: `${property.areaSqm} m²` });
   specs.push({ label: "Title", value: titleDoc });
-  specs.push({ label: "Listing", value: property.listingFor === "rent" ? "For rent" : "For sale" });
+  specs.push({ label: "Listing", value: LISTING_INTENT_LABEL[property.listingFor] });
   return specs;
 }
 
 function buildFees(property: Property): { fees: FeeLine[]; total: number; label: string; note: string } {
   const p = property.price;
-  if (property.listingFor === "rent") {
+  if (property.listingFor === "shortlet") {
+    const nights = 3;
+    const stay = p * nights;
+    const cleaning = naira(p * 0.4);
+    const service = naira(stay * 0.1);
+    const caution = naira(p * 2);
+    const fees: FeeLine[] = [
+      { label: `Nightly rate × ${nights} nights`, amount: stay },
+      { label: "Cleaning fee", amount: cleaning },
+      { label: "Service fee", amount: service, note: "10%" },
+      { label: "Caution deposit", amount: caution, note: "refundable" },
+    ];
+    return {
+      fees,
+      total: stay + cleaning + service + caution,
+      label: "Estimated for a 3-night stay",
+      note: "The caution deposit is refunded after check-out in good standing.",
+    };
+  }
+  if (property.listingFor === "rent" || property.listingFor === "lease") {
+    const isLease = property.listingFor === "lease";
     const agency = naira(p * 0.1);
     const legal = naira(p * 0.1);
     const caution = naira(p * 0.1);
     const serviced = property.type === "Apartment" || property.type === "Penthouse";
     const service = serviced ? naira(p * 0.15) : 0;
     const fees: FeeLine[] = [
-      { label: "Annual rent", amount: p },
+      { label: isLease ? "Annual lease" : "Annual rent", amount: p },
       { label: "Agency fee", amount: agency, note: "10%" },
       { label: "Legal & agreement", amount: legal, note: "10%" },
       { label: "Caution deposit", amount: caution, note: "refundable" },

@@ -2,8 +2,10 @@ import { Link } from "react-router";
 import { ArrowUpRight } from "lucide-react";
 import type { Property } from "@/types";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ListingIntentBadge } from "@/components/ui/ListingIntentBadge";
 import { buttonClasses } from "@/components/ui/Button";
 import { formatPriceFull } from "@/lib/format";
+import { priceSuffix } from "@/lib/listing";
 
 /** Compact property card for the detail-page aside. Links out to the full listing. */
 export function PropertySummary({ property }: { property: Property }) {
@@ -15,9 +17,10 @@ export function PropertySummary({ property }: { property: Property }) {
           alt={property.title}
           className="size-full object-cover"
         />
-        {property.status === "verified" && (
-          <StatusBadge status="verified" onPhoto className="absolute left-3 top-3" />
-        )}
+        <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
+          <ListingIntentBadge listingFor={property.listingFor} onPhoto />
+          {property.status === "verified" && <StatusBadge status="verified" onPhoto />}
+        </div>
       </div>
       <div className="p-4">
         <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-faint">
@@ -29,8 +32,8 @@ export function PropertySummary({ property }: { property: Property }) {
         </p>
         <p className="mt-2 font-semibold text-ink">
           {formatPriceFull(property.price)}
-          {property.listingFor === "rent" && (
-            <span className="font-normal text-muted"> /yr</span>
+          {priceSuffix(property.listingFor) && (
+            <span className="font-normal text-muted"> {priceSuffix(property.listingFor)}</span>
           )}
         </p>
         <Link

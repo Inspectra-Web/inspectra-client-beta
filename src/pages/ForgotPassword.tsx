@@ -13,7 +13,6 @@ export function ForgotPassword() {
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ForgotValues>({ resolver: zodResolver(forgotSchema) });
 

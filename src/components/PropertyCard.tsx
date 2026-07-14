@@ -4,6 +4,8 @@ import { Heart, BadgeCheck, BedDouble, Bath, Ruler, Video } from "lucide-react";
 import type { Property } from "@/types";
 import { realtorById } from "@/data/mock";
 import { formatPriceFull } from "@/lib/format";
+import { priceSuffix } from "@/lib/listing";
+import { ListingIntentBadge } from "@/components/ui/ListingIntentBadge";
 import { cn } from "@/lib/cn";
 
 export function PropertyCard({ property }: { property: Property }) {
@@ -27,12 +29,15 @@ export function PropertyCard({ property }: { property: Property }) {
           className="size-full object-cover object-center"
         />
 
-        {property.status === "verified" && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
-            <BadgeCheck className="size-3.5 text-emerald-600" strokeWidth={2.5} aria-hidden />
-            Verified
-          </span>
-        )}
+        <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
+          <ListingIntentBadge listingFor={property.listingFor} onPhoto />
+          {property.status === "verified" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
+              <BadgeCheck className="size-3.5 text-emerald-600" strokeWidth={2.5} aria-hidden />
+              Verified
+            </span>
+          )}
+        </div>
 
         <button
           type="button"
@@ -112,8 +117,8 @@ export function PropertyCard({ property }: { property: Property }) {
 
         <p className="mt-2 font-semibold text-ink">
           {formatPriceFull(property.price)}
-          {property.listingFor === "rent" && (
-            <span className="font-normal text-muted"> /yr</span>
+          {priceSuffix(property.listingFor) && (
+            <span className="font-normal text-muted"> {priceSuffix(property.listingFor)}</span>
           )}
         </p>
       </div>

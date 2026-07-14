@@ -14,10 +14,13 @@ export function Gallery({
   images,
   title,
   status,
+  heightClass = "h-[75vh] min-h-85 max-h-155 max-sm:h-[42vh] max-sm:min-h-0",
 }: {
   images: string[];
   title: string;
   status: VerificationStatus;
+  /** Override the hero height (the dashboard uses a shorter reel than the public page). */
+  heightClass?: string;
 }) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -68,7 +71,10 @@ export function Gallery({
         type="button"
         onClick={() => setLightbox(active)}
         aria-label="Open photo gallery"
-        className="group relative block h-[75vh] min-h-85 max-h-155 w-full overflow-hidden rounded-2xl bg-surface-2 max-sm:h-[42vh] max-sm:min-h-0"
+        className={cn(
+          "group relative block w-full overflow-hidden rounded-2xl bg-surface-2",
+          heightClass,
+        )}
       >
         <AnimatePresence initial={false}>
           <motion.img

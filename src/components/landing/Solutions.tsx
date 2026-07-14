@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { FileCheck2, Receipt, BadgeCheck, ShieldCheck } from "lucide-react";
+import { FileCheck2, Receipt, BadgeCheck, CalendarCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -22,7 +22,7 @@ const FEATURES: Feature[] = [
   {
     icon: Receipt,
     title: "Transparent fees",
-    body: "See every fee, from agency to legal to inspection, itemized upfront before you ever make contact.",
+    body: "See every fee, from agency to legal, itemized upfront before you ever make contact.",
     image:
       "https://images.unsplash.com/photo-1687422809654-579d81c29d32?auto=format&fit=crop&crop=faces&w=1100&q=80",
   },
@@ -34,9 +34,9 @@ const FEATURES: Feature[] = [
       "https://images.unsplash.com/photo-1573497161161-c3e73707e25c?auto=format&fit=crop&crop=faces&w=1100&q=80",
   },
   {
-    icon: ShieldCheck,
-    title: "Protected payments",
-    body: "Book and pay for inspections in-app, with a receipt and a record at every step.",
+    icon: CalendarCheck,
+    title: "Inspections on your terms",
+    body: "Book a viewing straight from any listing and coordinate with the certified realtor in-app. The exact address is shared once it's confirmed.",
     image:
       "https://images.unsplash.com/photo-1758526214018-a746f9554b8b?auto=format&fit=crop&crop=faces&w=1100&q=80",
   },

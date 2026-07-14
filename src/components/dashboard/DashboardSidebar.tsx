@@ -7,12 +7,21 @@ import {
   CalendarCheck,
   Heart,
   LayoutDashboard,
+  type LucideIcon,
   MessageSquare,
   UserCircle,
 } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
-const NAV = [
+type NavItem = {
+  label: string;
+  to: string;
+  Icon: LucideIcon;
+  end?: boolean;
+  count?: number;
+};
+
+const NAV: NavItem[] = [
   { label: "Overview", to: "/dashboard", Icon: LayoutDashboard, end: true },
   {
     label: "Saved homes",
@@ -28,7 +37,7 @@ const NAV = [
     count: upcomingInspections.length,
   },
   { label: "Account", to: "/dashboard/account", Icon: UserCircle },
-] as const;
+];
 
 /** Sidebar content, shared by the desktop rail and the mobile drawer. */
 export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {

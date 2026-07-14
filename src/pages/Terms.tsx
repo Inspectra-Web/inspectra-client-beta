@@ -107,8 +107,8 @@ const SECTIONS: LegalSection[] = [
     heading: "Fees and payments",
     body: (
       <p>
-        INSPECTRA may charge for realtor subscriptions, certification, and per-inspection
-        fees, as described on the <Link to="/pricing">Pricing</Link> page. Applicable fees,
+        INSPECTRA may charge for realtor subscriptions and certification, as described on
+        the <Link to="/pricing">Pricing</Link> page. Applicable fees,
         billing cycles, and any taxes are shown before you commit to a paid plan. Where
         payment processing is not yet enabled, no charges are taken.
       </p>

@@ -25,6 +25,7 @@ import {
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ListingIntentBadge } from "@/components/ui/ListingIntentBadge";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { PropertyCard } from "@/components/PropertyCard";
@@ -37,6 +38,7 @@ import {
   type NearbyLine,
 } from "@/lib/listingDetail";
 import { formatPriceFull } from "@/lib/format";
+import { priceSuffix, priceCadence, isRecurringLet } from "@/lib/listing";
 import type { Property, Realtor } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -56,7 +58,8 @@ export function ListingDetail() {
 
   const realtor = realtorById(property.realtorId);
   const detail = buildListingDetail(property, realtor);
-  const isRent = property.listingFor === "rent";
+  const priceTag = priceSuffix(property.listingFor);
+  const recurring = isRecurringLet(property.listingFor);
 
   const sameCity = properties.filter(
     (p) => p.id !== property.id && p.city === property.city,
@@ -108,6 +111,7 @@ export function ListingDetail() {
           <div className="min-w-0">
             <header className="border-b border-line pb-7">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <ListingIntentBadge listingFor={property.listingFor} />
                 <StatusBadge status={property.status} />
                 <span className="text-sm text-muted">Ref {property.ref}</span>
               </div>
@@ -122,7 +126,7 @@ export function ListingDetail() {
                 <span className="display text-3xl">
                   {formatPriceFull(property.price)}
                 </span>
-                {isRent && <span className="text-base text-muted"> /year</span>}
+                {priceTag && <span className="text-base text-muted"> {priceTag}</span>}
               </p>
             </header>
 
@@ -207,7 +211,13 @@ export function ListingDetail() {
             <Reveal>
               <Block
                 eyebrow="The numbers"
-                title={isRent ? "What it costs to move in" : "What you'll pay"}
+                title={
+                  property.listingFor === "shortlet"
+                    ? "What a stay costs"
+                    : recurring
+                      ? "What it costs to move in"
+                      : "What you'll pay"
+                }
               >
                 <div className="overflow-hidden rounded-2xl border border-line">
                   {detail.fees.map((line) => (
@@ -475,7 +485,7 @@ function ActionCard({
   realtor?: Realtor;
 }) {
   const [requested, setRequested] = useState(false);
-  const isRent = property.listingFor === "rent";
+  const cadence = priceCadence(property.listingFor);
   const first = realtor?.name.split(" ")[0];
   const pct = detail.checksTotal
     ? Math.round((detail.checksPassed / detail.checksTotal) * 100)
@@ -494,11 +504,12 @@ function ActionCard({
           <p className="display text-3xl text-ink">
             {formatPriceFull(property.price)}
           </p>
-          <p className="mt-1 text-sm text-muted">
-            {isRent ? "per year" : "for sale"}
-          </p>
+          <p className="mt-1 text-sm text-muted">{cadence}</p>
         </div>
-        <StatusBadge status={property.status} />
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <ListingIntentBadge listingFor={property.listingFor} />
+          <StatusBadge status={property.status} />
+        </div>
       </div>
 
       <div className="mt-5 rounded-2xl bg-surface-2/60 p-4">

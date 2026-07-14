@@ -30,7 +30,7 @@ const BENEFITS: { Icon: LucideIcon; title: string; body: string }[] = [
   {
     Icon: Filter,
     title: "Leads worth your time",
-    body: "Itemized fees shown upfront and paid inspections filter out tyre-kickers, so the inquiries that reach you come from buyers ready to move.",
+    body: "Itemized fees shown upfront and trust-ranked placement filter out tyre-kickers, so the inquiries that reach you come from buyers ready to move.",
   },
   {
     Icon: Sparkles,
@@ -40,7 +40,7 @@ const BENEFITS: { Icon: LucideIcon; title: string; body: string }[] = [
   {
     Icon: BarChart3,
     title: "Know what is working",
-    body: "See views, inquiries, and conversion on every listing, plus secure inspection payouts logged to a ledger that builds your on-record track record.",
+    body: "See views, inquiries, and conversion on every listing, so you know exactly what is landing and can build an on-record track record.",
   },
 ];
 

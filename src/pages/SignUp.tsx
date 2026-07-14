@@ -67,11 +67,11 @@ export function SignUp() {
   const role = watch("role");
 
   async function onSubmit(values: SignUpValues) {
-    // Mock signup: simulate the request, then route by role. Realtors head toward
-    // certification (the prerequisite to list); seekers head into browsing.
+    // Mock signup: simulate the request, then route by role. Realtors land in their
+    // dashboard; seekers head into browsing.
     await new Promise((r) => setTimeout(r, 900));
     toast.success("Account created. Welcome to INSPECTRA.");
-    navigate(values.role === "realtor" ? "/enablement" : "/dashboard");
+    navigate(values.role === "realtor" ? "/realtor" : "/dashboard");
   }
 
   return (

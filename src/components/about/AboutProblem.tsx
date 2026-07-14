@@ -1,4 +1,4 @@
-import { FileWarning, Copy, EyeOff, Banknote } from "lucide-react";
+import { FileWarning, Copy, EyeOff, UserX } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -24,10 +24,10 @@ const PROBLEMS: { Icon: LucideIcon; title: string; body: string; answer: string 
     answer: "Every fee is itemized and disclosed upfront, before you inspect.",
   },
   {
-    Icon: Banknote,
-    title: "Money moving off-platform",
-    body: "Inspection and deposit payments happen in cash or private transfers, with no record and no recourse when something goes wrong.",
-    answer: "Payments run in-app with a record on both sides of the deal.",
+    Icon: UserX,
+    title: "Anyone can pose as an agent",
+    body: "With no training, no track record and no accountability, there is nothing to tell a real professional from someone who vanishes when a deal goes wrong.",
+    answer: "Every realtor is certified and accountable before they can list.",
   },
 ];
 

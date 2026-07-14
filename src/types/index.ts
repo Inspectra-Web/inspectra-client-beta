@@ -1,12 +1,15 @@
 /** Verification status carried by a listing — independent of the agent. */
 export type VerificationStatus = "verified" | "pending" | "disputed";
 
+/** What a listing is offered as. Sale is one-off; the rest are recurring lets. */
+export type ListingFor = "sale" | "rent" | "lease" | "shortlet";
+
 export interface Property {
   id: string;
   ref: string;
   title: string;
   type: "Apartment" | "Duplex" | "Bungalow" | "Land" | "Terrace" | "Penthouse";
-  listingFor: "sale" | "rent";
+  listingFor: ListingFor;
   location: string;
   city: string;
   price: number;

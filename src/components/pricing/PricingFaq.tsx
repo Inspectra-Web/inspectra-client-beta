@@ -23,12 +23,8 @@ const FAQS = [
     a: "Same features either way. Paying yearly costs the equivalent of ten months instead of twelve, so you get two months free for committing up front.",
   },
   {
-    q: "What are inspection fees, and who pays them?",
-    a: "Buyers pay a small in-app fee to book a physical viewing, on Professional and Agency plans. It filters out casual browsers and pays you securely through the platform. Seekers browsing and searching listings is always free.",
-  },
-  {
     q: "Do buyers pay to use INSPECTRA?",
-    a: "Browsing, searching, and contacting realtors is free for buyers. The only time money changes hands on their side is the inspection fee when they choose to book a viewing.",
+    a: "No. Browsing, searching, saving homes, booking a viewing, and contacting realtors is always free for buyers. Only realtors pay, through certification and a subscription.",
   },
 ];
 

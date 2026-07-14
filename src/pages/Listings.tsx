@@ -14,7 +14,8 @@ import {
 import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
 import { properties } from "@/data/mock";
-import type { VerificationStatus } from "@/types";
+import type { VerificationStatus, ListingFor } from "@/types";
+import { LISTING_INTENT_LABEL } from "@/lib/listing";
 import { cn } from "@/lib/cn";
 
 const INTRO_IMAGE =
@@ -41,9 +42,11 @@ const TYPES = ["Apartment", "Duplex", "Terrace", "Bungalow", "Penthouse", "Land"
 const CITIES = Array.from(new Set(properties.map((p) => p.city)));
 
 const FOR_OPTIONS = [
-  { value: "all", label: "For sale or rent" },
+  { value: "all", label: "Any offer type" },
   { value: "sale", label: "For sale" },
   { value: "rent", label: "For rent" },
+  { value: "lease", label: "For lease" },
+  { value: "shortlet", label: "Shortlet" },
 ];
 
 const BEDS_OPTIONS = [
@@ -127,7 +130,7 @@ export function Listings() {
   if (listingFor !== "all")
     chips.push({
       key: "for",
-      label: listingFor === "sale" ? "For sale" : "For rent",
+      label: LISTING_INTENT_LABEL[listingFor as ListingFor],
       clear: () => setListingFor("all"),
     });
   if (beds !== "all") chips.push({ key: "beds", label: `${beds}+ beds`, clear: () => setBeds("all") });

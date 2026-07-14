@@ -75,7 +75,7 @@ export function RealtorLeads() {
       {list.length ? (
         <Reveal y={16}>
           <DataTable
-            minWidthClass="min-w-[560px]"
+            minWidthClass="sm:min-w-[560px]"
             head={
               <tr>
                 <th className={thCls}>Buyer</th>

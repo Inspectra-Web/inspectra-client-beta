@@ -79,7 +79,7 @@ export function RealtorInspections() {
       {list.length ? (
         <Reveal y={16}>
           <DataTable
-            minWidthClass="min-w-[620px]"
+            minWidthClass="sm:min-w-[620px]"
             head={
               <tr>
                 <th className={thCls}>Date</th>

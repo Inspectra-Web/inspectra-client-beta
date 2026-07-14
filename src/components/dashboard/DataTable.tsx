@@ -11,11 +11,15 @@ export const rowCls = "group cursor-pointer transition-colors hover:bg-surface-2
  * Dashboard table shell: a bordered card with a tinted, sticky-feeling header and
  * hairline-divided rows. Horizontally scrollable below its min width so columns never
  * crush. Pass the header row as `head` and the body rows as children.
+ *
+ * `minWidthClass` should be an `sm:`-prefixed min-width so it only applies from the
+ * sm breakpoint up. Below sm most columns are hidden, so the table drops its min-width
+ * and fits the phone viewport with no horizontal scroll.
  */
 export function DataTable({
   head,
   children,
-  minWidthClass = "min-w-[640px]",
+  minWidthClass = "sm:min-w-[640px]",
   className,
 }: {
   head: ReactNode;

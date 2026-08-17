@@ -25,8 +25,8 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
           <div className="px-7 pb-7 max-sm:px-5">
             <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div className="flex items-end gap-4 max-sm:items-center">
-                <span className="relative -mt-12 shrink-0">
-                  <img src={r.avatar} alt={r.name} className="size-24 rounded-2xl object-cover ring-4 ring-surface" />
+                <span className="relative -mt-16 shrink-0 max-sm:-mt-14">
+                  <img src={r.avatar} alt={r.name} className="size-32 rounded-2xl object-cover ring-4 ring-surface max-sm:size-28" />
                   {r.certified && (
                     <span className="absolute -bottom-1.5 -right-1.5 grid size-7 place-items-center rounded-full bg-foil ring-2 ring-surface" title="Certified realtor">
                       <BadgeCheck className="size-4 text-[#3a2c0f]" aria-hidden />

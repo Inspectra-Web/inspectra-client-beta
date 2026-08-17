@@ -35,8 +35,22 @@ import { RealtorInspections } from "@/pages/realtor/Inspections";
 import { RealtorInspectionDetail } from "@/pages/realtor/InspectionDetail";
 import { RealtorVerification } from "@/pages/realtor/Verification";
 import { RealtorCertification } from "@/pages/realtor/Certification";
+import { RealtorSubscription } from "@/pages/realtor/Subscription";
 import { RealtorAccount } from "@/pages/realtor/Account";
 import { RealtorNotFound } from "@/pages/realtor/RealtorNotFound";
+import { AdminDashboardLayout } from "@/layouts/AdminDashboardLayout";
+import { AdminOverview } from "@/pages/admin/Overview";
+import { AdminVerification } from "@/pages/admin/Verification";
+import { AdminVerificationDetail } from "@/pages/admin/VerificationDetail";
+import { AdminListings } from "@/pages/admin/Listings";
+import { AdminListingDetail } from "@/pages/admin/ListingDetail";
+import { AdminRealtors } from "@/pages/admin/Realtors";
+import { AdminRealtorDetail } from "@/pages/admin/RealtorDetail";
+import { AdminUsers } from "@/pages/admin/Users";
+import { AdminUserDetail } from "@/pages/admin/UserDetail";
+import { AdminPayments } from "@/pages/admin/Payments";
+import { AdminAccount } from "@/pages/admin/Account";
+import { AdminNotFound } from "@/pages/admin/AdminNotFound";
 
 export const router = createBrowserRouter([
   {
@@ -90,8 +104,28 @@ export const router = createBrowserRouter([
       { path: "inspections/:id", element: <RealtorInspectionDetail /> },
       { path: "verification", element: <RealtorVerification /> },
       { path: "certification", element: <RealtorCertification /> },
+      { path: "subscription", element: <RealtorSubscription /> },
       { path: "account", element: <RealtorAccount /> },
       { path: "*", element: <RealtorNotFound /> },
+    ],
+  },
+  // Admin console: its own shell (grouped sidebar + topbar), outside the marketing chrome.
+  {
+    path: "/admin",
+    element: <AdminDashboardLayout />,
+    children: [
+      { index: true, element: <AdminOverview /> },
+      { path: "verification", element: <AdminVerification /> },
+      { path: "verification/:id", element: <AdminVerificationDetail /> },
+      { path: "listings", element: <AdminListings /> },
+      { path: "listings/:id", element: <AdminListingDetail /> },
+      { path: "realtors", element: <AdminRealtors /> },
+      { path: "realtors/:id", element: <AdminRealtorDetail /> },
+      { path: "users", element: <AdminUsers /> },
+      { path: "users/:id", element: <AdminUserDetail /> },
+      { path: "payments", element: <AdminPayments /> },
+      { path: "account", element: <AdminAccount /> },
+      { path: "*", element: <AdminNotFound /> },
     ],
   },
   // Standalone: rendered outside RootLayout so it has no global header/footer.

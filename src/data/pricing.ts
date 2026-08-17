@@ -6,7 +6,7 @@
 export type BillingCadence = "monthly" | "annual";
 
 export type Tier = {
-  id: "starter" | "professional" | "agency";
+  id: "starter" | "professional" | "max";
   name: string;
   tagline: string;
   /** Naira per month. 0 means free. */
@@ -44,7 +44,7 @@ export const TIERS: Tier[] = [
     highlighted: true,
     ctaLabel: "Choose Professional",
     features: [
-      "25 active listings",
+      "30 active listings",
       "Featured, boosted placement in search",
       "Listing analytics: views, inquiries, conversion",
       "Priority verification for faster go-live",
@@ -52,19 +52,19 @@ export const TIERS: Tier[] = [
     ],
   },
   {
-    id: "agency",
-    name: "Agency",
-    tagline: "For brokerages running a team of certified realtors under one roof.",
+    id: "max",
+    name: "Max",
+    tagline: "For the high-volume realtor running a serious listing pipeline.",
     monthly: 60_000,
     annual: 600_000,
     highlighted: false,
-    ctaLabel: "Talk to us",
+    ctaLabel: "Go Max",
     features: [
-      "Unlimited active listings",
-      "Up to 10 team seats and sub-agent tools",
-      "Branded agency storefront",
+      "100 active listings",
+      "Featured, top-priority placement",
       "Advanced analytics with exports",
-      "Top-priority verification and dedicated support",
+      "Top-priority verification",
+      "Priority support",
       "Everything in Professional",
     ],
   },
@@ -77,38 +77,37 @@ export type CompareRow = {
   label: string;
   starter: CompareValue;
   professional: CompareValue;
-  agency: CompareValue;
+  max: CompareValue;
 };
 
 export const COMPARE_GROUPS: { group: string; rows: CompareRow[] }[] = [
   {
     group: "Listings and visibility",
     rows: [
-      { label: "Active listings", starter: "3", professional: "25", agency: "Unlimited" },
-      { label: "Dual-verified listings", starter: true, professional: true, agency: true },
-      { label: "Trust-ranked placement", starter: true, professional: true, agency: true },
-      { label: "Featured, boosted placement", starter: false, professional: true, agency: "Priority" },
+      { label: "Active listings", starter: "3", professional: "30", max: "100" },
+      { label: "Dual-verified listings", starter: true, professional: true, max: true },
+      { label: "Trust-ranked placement", starter: true, professional: true, max: true },
+      { label: "Featured, boosted placement", starter: false, professional: true, max: "Priority" },
     ],
   },
   {
     group: "Leads and insight",
     rows: [
-      { label: "Inquiry inbox", starter: "Basic", professional: "Full, with lead capture", agency: "Full, with lead capture" },
-      { label: "Listing analytics", starter: false, professional: "Standard", agency: "Advanced, with export" },
+      { label: "Inquiry inbox", starter: "Basic", professional: "Full, with lead capture", max: "Full, with lead capture" },
+      { label: "Listing analytics", starter: false, professional: "Standard", max: "Advanced, with export" },
     ],
   },
   {
     group: "Verification",
     rows: [
-      { label: "Verification queue", starter: "Standard", professional: "Priority", agency: "Top priority" },
+      { label: "Verification queue", starter: "Standard", professional: "Priority", max: "Top priority" },
     ],
   },
   {
-    group: "Team",
+    group: "Support and extras",
     rows: [
-      { label: "Team seats and sub-agent tools", starter: false, professional: false, agency: "Up to 10" },
-      { label: "Branded agency storefront", starter: false, professional: false, agency: true },
-      { label: "Dedicated support", starter: false, professional: false, agency: true },
+      { label: "Branded storefront", starter: false, professional: false, max: true },
+      { label: "Priority support", starter: false, professional: true, max: "Dedicated" },
     ],
   },
 ];

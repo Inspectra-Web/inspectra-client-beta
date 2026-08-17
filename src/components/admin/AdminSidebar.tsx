@@ -1,53 +1,51 @@
 import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { realtor } from "@/data/realtor";
+import { admin, queueCount } from "@/data/admin";
 import { cn } from "@/lib/cn";
 import {
   BadgeCheck,
   Building2,
-  CalendarCheck,
-  CreditCard,
-  Inbox,
   LayoutDashboard,
   type LucideIcon,
-  Plus,
   ShieldCheck,
   UserCircle,
+  UsersRound,
+  Wallet,
 } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
 type NavItem = { label: string; to: string; Icon: LucideIcon; end?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
 
-// Grouped so trust is a first-class part of the realtor's workspace, not buried in a flat list.
+// Grouped so trust operations read as the heart of the console, not a flat list of pages.
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Main",
+    label: "Command",
+    items: [{ label: "Overview", to: "/admin", Icon: LayoutDashboard, end: true }],
+  },
+  {
+    label: "Trust operations",
     items: [
-      { label: "Overview", to: "/realtor", Icon: LayoutDashboard, end: true },
-      { label: "Listings", to: "/realtor/listings", Icon: Building2 },
-      { label: "Leads", to: "/realtor/leads", Icon: Inbox },
-      { label: "Inspections", to: "/realtor/inspections", Icon: CalendarCheck },
+      { label: "Verification", to: "/admin/verification", Icon: ShieldCheck },
+      { label: "Realtors", to: "/admin/realtors", Icon: BadgeCheck },
     ],
   },
   {
-    label: "Standing",
+    label: "Platform",
     items: [
-      { label: "Verification", to: "/realtor/verification", Icon: ShieldCheck },
-      { label: "Certification", to: "/realtor/certification", Icon: BadgeCheck },
+      { label: "Listings", to: "/admin/listings", Icon: Building2 },
+      { label: "Users", to: "/admin/users", Icon: UsersRound },
+      { label: "Payments", to: "/admin/payments", Icon: Wallet },
     ],
   },
   {
-    label: "Business",
-    items: [
-      { label: "Subscription", to: "/realtor/subscription", Icon: CreditCard },
-      { label: "Account", to: "/realtor/account", Icon: UserCircle },
-    ],
+    label: "System",
+    items: [{ label: "Account", to: "/admin/account", Icon: UserCircle }],
   },
 ] as const;
 
 /** Sidebar content, shared by the desktop rail and the mobile drawer. */
-export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col p-5">
       <Link
@@ -59,7 +57,11 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
         <img src={logoPrimary} alt="INSPECTRA" className="h-10 w-auto" />
       </Link>
 
-      <nav className="scrollbar-slim mt-8 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pr-1">
+      <p className="mt-3 px-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-faint">
+        Trust Operations
+      </p>
+
+      <nav className="scrollbar-slim mt-6 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pr-1">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-1">
             <p className="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-faint">
@@ -82,6 +84,12 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
               >
                 <Icon className="size-4.5 shrink-0" />
                 <span className="flex-1">{label}</span>
+                {/* live queue badge on Verification */}
+                {to === "/admin/verification" && queueCount > 0 && (
+                  <span className="rounded-full bg-gold/15 px-1.5 text-xs font-semibold tabular-nums text-gold">
+                    {queueCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </div>
@@ -89,42 +97,35 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <Link
-        to="/realtor/listings/new"
+        to="/admin/verification"
         onClick={onNavigate}
         className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5"
       >
-        <Plus className="size-4" aria-hidden />
-        New listing
+        <ShieldCheck className="size-4" aria-hidden />
+        Review queue
+        {queueCount > 0 && (
+          <span className="rounded-full bg-[#04121f]/15 px-1.5 text-xs tabular-nums">
+            {queueCount}
+          </span>
+        )}
       </Link>
 
       <div className="mt-4 space-y-4 pt-2">
         <ThemeToggle className="w-full justify-center" />
         <Link
-          to="/realtor/account"
+          to="/admin/account"
           onClick={onNavigate}
           className="flex items-center gap-3 rounded-xl border border-line bg-surface p-2.5 transition-colors hover:bg-surface-2"
         >
           <img
-            src={realtor.avatar}
-            alt={realtor.name}
+            src={admin.avatar}
+            alt={admin.name}
             className="size-9 shrink-0 rounded-full object-cover ring-1 ring-line"
           />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">{realtor.name}</p>
-            <p className="truncate text-xs text-faint">{realtor.agency}</p>
+            <p className="truncate text-sm font-semibold text-ink">{admin.name}</p>
+            <p className="truncate text-xs text-faint">{admin.role}</p>
           </div>
-          {realtor.certified && (
-            // Signature credential moment: a hairline foil ring (the one place foil is allowed).
-            <span
-              className="grid size-6 shrink-0 place-items-center rounded-full bg-foil p-px"
-              title="Certified realtor"
-              aria-label="Certified realtor"
-            >
-              <span className="grid size-full place-items-center rounded-full bg-surface">
-                <BadgeCheck className="size-3.5 text-foil" aria-hidden />
-              </span>
-            </span>
-          )}
         </Link>
       </div>
     </div>

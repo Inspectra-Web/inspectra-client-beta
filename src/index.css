@@ -225,14 +225,19 @@
  *
  * 1. react-remove-scroll injects `overflow:hidden !important; margin-right:<gap>px
  *    !important`, hiding the scrollbar and shifting the fixed header / sticky
- *    toolbar. Undo it.
+ *    toolbar. Undo it by restoring the body's NATURAL overflow (clip-x / visible-y,
+ *    matching the base rule) — NOT `overflow: auto`. `auto` makes <body> a scroll
+ *    container, which re-anchors the dashboards' sticky topbar/sidebar and makes
+ *    them jump when a Select opens; keeping overflow visible leaves the viewport as
+ *    the scroller (scrollbar preserved via overflow propagation, no shift).
  * 2. DismissableLayer sets an inline `body { pointer-events: none }` to block the
  *    background. That makes clicking a second Select trigger take two clicks (the
  *    first only dismisses the open one). Re-enable pointer events so one click
  *    closes the open popup and opens the next.
  * ------------------------------------------------------------------ */
 html body[data-scroll-locked] {
-  overflow: auto !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
   margin-right: 0 !important;
   padding-right: 0 !important;
   pointer-events: auto !important;

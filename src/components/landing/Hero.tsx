@@ -25,7 +25,7 @@ export function Hero() {
   const reduced = useReducedMotion();
 
   return (
-    <section className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#06121b] text-center max-md:min-h-0">
+    <section className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#06121b] text-center">
       {/* backdrop */}
       <img
         src={HERO_IMAGE}

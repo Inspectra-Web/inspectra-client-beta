@@ -41,6 +41,10 @@ export const realtorSettingsSchema = z.object({
   agencyAddress: z.string().trim().optional(),
   availabilityStatus: z.string().optional(),
   contactMeans: z.string().optional(),
+  instagram: z.string().trim().optional(),
+  linkedin: z.string().trim().optional(),
+  facebook: z.string().trim().optional(),
+  x: z.string().trim().optional(),
 });
 export type RealtorSettingsValues = z.infer<typeof realtorSettingsSchema>;
 

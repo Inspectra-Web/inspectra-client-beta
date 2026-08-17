@@ -165,6 +165,7 @@ export function RealtorListings() {
             minWidthClass="sm:min-w-[720px]"
             head={
               <tr>
+                <th className={cn(thCls, "w-12")}>S/N</th>
                 <th className={thCls}>Listing</th>
                 <th className={thCls}>Offer</th>
                 <th className={cn(thCls, "max-lg:hidden")}>Type</th>
@@ -178,12 +179,13 @@ export function RealtorListings() {
               </tr>
             }
           >
-            {results.map((l) => (
+            {results.map((l, i) => (
               <tr
                 key={l.id}
                 onClick={() => navigate(`/realtor/listings/${l.id}`)}
                 className={rowCls}
               >
+                <td className={cn(tdCls, "tabular-nums text-muted")}>{i + 1}</td>
                 <td className={tdCls}>
                   <div className="flex items-center gap-3">
                     <img

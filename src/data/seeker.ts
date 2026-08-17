@@ -116,7 +116,7 @@ export const inspections: Inspection[] = [
     realtorId: "r1",
     date: "2026-07-18",
     time: "2:00 PM",
-    mode: "virtual",
+    mode: "in-person",
     status: "upcoming",
   },
   {
@@ -134,7 +134,7 @@ export const inspections: Inspection[] = [
     realtorId: "r1",
     date: "2026-06-27",
     time: "4:30 PM",
-    mode: "virtual",
+    mode: "in-person",
     status: "cancelled",
   },
 ];

@@ -39,6 +39,10 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
       gender: r.gender, experience: r.experience, specialization: r.specialization,
       agencyName: r.agency, region: r.region, agencyAddress: r.agencyAddress,
       availabilityStatus: r.availabilityStatus, contactMeans: r.contactMeans,
+      instagram: r.socials.find((s) => s.kind === "instagram")?.href ?? "",
+      linkedin: r.socials.find((s) => s.kind === "linkedin")?.href ?? "",
+      facebook: r.socials.find((s) => s.kind === "facebook")?.href ?? "",
+      x: r.socials.find((s) => s.kind === "x")?.href ?? "",
     },
   });
 
@@ -74,7 +78,7 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
       {/* profile photo */}
       <Panel title="Profile photo">
         <div className="flex items-center gap-6 max-sm:flex-col max-sm:items-start">
-          <img src={photo} alt="Profile" className="size-24 shrink-0 rounded-2xl object-cover ring-1 ring-line" />
+          <img src={photo} alt="Profile" className="size-32 shrink-0 rounded-2xl object-cover ring-1 ring-line max-sm:size-28" />
           <label className="group flex flex-1 cursor-pointer flex-col items-center rounded-2xl border border-dashed border-line bg-surface-2/40 px-6 py-7 text-center transition-colors hover:border-brand/50 hover:bg-surface-2/70 max-sm:w-full">
             <span className="grid size-11 place-items-center rounded-2xl bg-linear-to-br from-brand/25 to-brand/5 text-brand-ink ring-1 ring-brand/15">
               <ImagePlus className="size-5" aria-hidden />
@@ -162,6 +166,19 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
             </LabeledSelect>
           </div>
         </div>
+      </Panel>
+
+      {/* social handles */}
+      <Panel title="Social handles">
+        <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+          <AuthField label="Instagram" placeholder="instagram.com/yourhandle" {...register("instagram")} />
+          <AuthField label="LinkedIn" placeholder="linkedin.com/in/yourname" {...register("linkedin")} />
+          <AuthField label="Facebook" placeholder="facebook.com/yourpage" {...register("facebook")} />
+          <AuthField label="X (Twitter)" placeholder="x.com/yourhandle" {...register("x")} />
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          These appear on your public profile so buyers can reach you. Leave any blank to hide it.
+        </p>
       </Panel>
 
       <div className="flex justify-end">

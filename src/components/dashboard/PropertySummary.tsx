@@ -7,8 +7,9 @@ import { buttonClasses } from "@/components/ui/Button";
 import { formatPriceFull } from "@/lib/format";
 import { priceSuffix } from "@/lib/listing";
 
-/** Compact property card for the detail-page aside. Links out to the full listing. */
-export function PropertySummary({ property }: { property: Property }) {
+/** Compact property card for the detail-page aside. Links out to the full listing.
+ *  `to` overrides the destination (e.g. the admin uses it to stay in the dashboard). */
+export function PropertySummary({ property, to }: { property: Property; to?: string }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface">
       <div className="relative aspect-16/10">
@@ -37,7 +38,7 @@ export function PropertySummary({ property }: { property: Property }) {
           )}
         </p>
         <Link
-          to={`/listings/${property.id}`}
+          to={to ?? `/listings/${property.id}`}
           className={buttonClasses("outline", "sm", "mt-4 w-full")}
         >
           <ArrowUpRight className="size-4" aria-hidden />

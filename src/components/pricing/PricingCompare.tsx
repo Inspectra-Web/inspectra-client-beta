@@ -139,7 +139,7 @@ function GroupRows({ group, rows }: { group: string; rows: CompareRow[] }) {
             <CellValue value={row.professional} />
           </td>
           <td className="px-4 py-4 text-center">
-            <CellValue value={row.agency} />
+            <CellValue value={row.max} />
           </td>
         </tr>
       ))}

@@ -27,7 +27,7 @@ export function Inspections() {
       <Reveal>
         <PageHeader
           title="Inspections"
-          subtitle="Your booked property viewings, in person and virtual."
+          subtitle="Your booked property viewings."
         />
       </Reveal>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, BadgeCheck, MapPin, Map, ShieldCheck, MessageCircle, Check } from "lucide-react";
+import { ArrowLeft, BadgeCheck, MapPin, Map, ShieldCheck, MessageCircle, Check, Clock } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
 import { PropertyCard } from "@/components/PropertyCard";
@@ -49,6 +49,7 @@ export function RealtorDetail() {
                 <Fact icon={MapPin} label="Based in" value={realtor.city} />
                 <Fact icon={Map} label="Covers" value={meta.areas} />
                 <Fact icon={ShieldCheck} label="Certified since" value={String(meta.since)} />
+                <Fact icon={Clock} label="Response" value={meta.responseLabel} />
               </dl>
             </div>
           </aside>
@@ -70,6 +71,12 @@ export function RealtorDetail() {
                 </div>
               )}
             </header>
+
+            <div className="grid grid-cols-3 gap-4 border-b border-line py-6 max-sm:gap-2">
+              <TrackStat value={realtor.completedDeals} label="Deals closed" />
+              <TrackStat value={realtor.verifiedListings} label="Verified listings" />
+              <TrackStat value={meta.since} label="Certified since" />
+            </div>
 
             <Block eyebrow="About" title={`Working with ${first}`}>
               <p className="leading-relaxed text-muted">
@@ -148,6 +155,15 @@ function Fact({
       <Icon className="size-4 shrink-0 text-faint" aria-hidden />
       <dt className="text-muted">{label}</dt>
       <dd className="ml-auto text-right font-medium text-ink">{value}</dd>
+    </div>
+  );
+}
+
+function TrackStat({ value, label }: { value: string | number; label: string }) {
+  return (
+    <div>
+      <p className="display text-3xl tabular-nums text-ink max-sm:text-2xl">{value}</p>
+      <p className="mt-1 text-xs uppercase tracking-wide text-faint">{label}</p>
     </div>
   );
 }

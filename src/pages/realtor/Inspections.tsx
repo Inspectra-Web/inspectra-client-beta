@@ -41,7 +41,7 @@ export function RealtorInspections() {
       <Reveal>
         <PageHeader
           title="Inspections"
-          subtitle="Viewings buyers have booked on your listings, in person and virtual."
+          subtitle="Viewings buyers have booked on your listings."
         />
       </Reveal>
 
@@ -82,6 +82,7 @@ export function RealtorInspections() {
             minWidthClass="sm:min-w-[620px]"
             head={
               <tr>
+                <th className={cn(thCls, "w-12")}>S/N</th>
                 <th className={thCls}>Date</th>
                 <th className={thCls}>Listing</th>
                 <th className={cn(thCls, "max-md:hidden")}>Buyer</th>
@@ -93,7 +94,7 @@ export function RealtorInspections() {
               </tr>
             }
           >
-            {list.map((ins) => {
+            {list.map((ins, i) => {
               const property = propertyById(ins.propertyId);
               const ModeIcon = ins.mode === "virtual" ? Video : MapPin;
               return (
@@ -102,6 +103,7 @@ export function RealtorInspections() {
                   onClick={() => navigate(`/realtor/inspections/${ins.id}`)}
                   className={rowCls}
                 >
+                  <td className={cn(tdCls, "tabular-nums text-muted")}>{i + 1}</td>
                   <td className={cn(tdCls, "whitespace-nowrap")}>
                     <p className="font-semibold text-ink">{shortDate(ins.date)}</p>
                     <p className="text-xs text-muted">{ins.time}</p>

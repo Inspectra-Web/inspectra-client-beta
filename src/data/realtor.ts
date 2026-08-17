@@ -4,6 +4,7 @@
 // resolve. UI over mock data (Phase 6): no backend, no persistence.
 
 import type { VerificationStatus } from "@/types";
+import type { BillingCadence } from "@/data/pricing";
 
 export type SocialKind = "instagram" | "linkedin" | "facebook" | "x";
 
@@ -70,8 +71,8 @@ export const realtor: RealtorProfile = {
   contactMeans: "Phone & WhatsApp",
   gender: "Female",
   socials: [
-    { label: "Instagram", href: "#", kind: "instagram" },
-    { label: "LinkedIn", href: "#", kind: "linkedin" },
+    { label: "Instagram", href: "https://instagram.com/adaeze.realty", kind: "instagram" },
+    { label: "LinkedIn", href: "https://linkedin.com/in/adaeze-okonkwo", kind: "linkedin" },
   ],
   governmentId: { label: "Government-issued ID", status: "pending" },
 };
@@ -205,7 +206,7 @@ export const realtorInspections: RealtorInspection[] = [
     buyerName: "Amara Okeke",
     date: "2026-07-16",
     time: "3:30 PM",
-    mode: "virtual",
+    mode: "in-person",
     status: "upcoming",
   },
   {
@@ -232,7 +233,7 @@ export const realtorInspections: RealtorInspection[] = [
     buyerName: "Emeka Nwafor",
     date: "2026-07-05",
     time: "4:00 PM",
-    mode: "virtual",
+    mode: "in-person",
     status: "completed",
   },
   {
@@ -273,3 +274,59 @@ export const myListingStat = (id: string) => myListings.find((l) => l.id === id)
 export const leadById = (id: string) => leads.find((l) => l.id === id);
 export const realtorInspectionById = (id: string) =>
   realtorInspections.find((i) => i.id === id);
+
+/* ------------------------------------------------------------------ *
+ * Subscription — the realtor's current plan, usage, payment method and
+ * billing history. Mock/marketing only (no Flutterwave yet, Phase 9+):
+ * plan changes and payment updates just toast.
+ * ------------------------------------------------------------------ */
+
+export type SubscriptionStatus = "active" | "past_due" | "canceled";
+export type InvoiceStatus = "paid" | "pending" | "failed";
+
+export interface Invoice {
+  id: string;
+  date: string; // display label, e.g. "1 Jul 2026"
+  plan: string; // "Agency"
+  cadence: BillingCadence;
+  amount: number; // naira charged
+  status: InvoiceStatus;
+}
+
+export interface Subscription {
+  tierId: "starter" | "professional" | "max";
+  cadence: BillingCadence;
+  status: SubscriptionStatus;
+  startedOn: string;
+  renewsOn: string;
+  paymentBrand: string; // "Visa"
+  paymentLast4: string; // "4242"
+  /** How many active listings the realtor is currently using. */
+  listingsUsed: number;
+  invoices: Invoice[];
+}
+
+export const subscription: Subscription = {
+  tierId: "max",
+  cadence: "monthly",
+  status: "active",
+  startedOn: "12 Jan 2025",
+  renewsOn: "1 Aug 2026",
+  paymentBrand: "Visa",
+  paymentLast4: "4242",
+  listingsUsed: myListings.length,
+  invoices: [
+    { id: "inv1", date: "1 Jul 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv2", date: "1 Jun 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv3", date: "1 May 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv4", date: "1 Apr 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv5", date: "1 Mar 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
+  ],
+};
+
+/** Active-listing allowance per tier (Infinity = unlimited). */
+export const TIER_LISTING_LIMIT: Record<Subscription["tierId"], number> = {
+  starter: 3,
+  professional: 30,
+  max: 100,
+};

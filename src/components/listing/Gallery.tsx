@@ -5,7 +5,13 @@ import {
   useReducedMotion,
   type Variants,
 } from "motion/react";
-import { Expand, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Expand,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { VerificationStatus } from "@/types";
 import { cn } from "@/lib/cn";
@@ -14,7 +20,7 @@ export function Gallery({
   images,
   title,
   status,
-  heightClass = "h-[75vh] min-h-85 max-h-155 max-sm:h-[42vh] max-sm:min-h-0",
+  heightClass = "h-[82vh] min-h-100 max-h-175 max-sm:h-[46vh] max-sm:min-h-0",
 }: {
   images: string[];
   title: string;
@@ -167,6 +173,14 @@ function Lightbox({
   }, [onClose, prev, next]);
 
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const onPrev = (e: React.MouseEvent) => {
+    stop(e);
+    prev();
+  };
+  const onNext = (e: React.MouseEvent) => {
+    stop(e);
+    next();
+  };
 
   return (
     <div
@@ -194,18 +208,13 @@ function Lightbox({
         </button>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-16 pb-8 max-sm:px-3">
-        <button
-          type="button"
-          onClick={(e) => {
-            stop(e);
-            prev();
-          }}
-          aria-label="Previous photo"
-          className="absolute left-4 inline-flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 max-sm:left-1"
-        >
-          <ChevronLeft className="size-6" aria-hidden />
-        </button>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-16 pb-8 max-sm:px-4 max-sm:pb-3">
+        <NavButton
+          label="Previous photo"
+          Icon={ChevronLeft}
+          onClick={onPrev}
+          className="absolute left-4 max-sm:hidden"
+        />
         <AnimatePresence initial={false} custom={dir} mode="popLayout">
           <motion.img
             key={i}
@@ -224,18 +233,49 @@ function Lightbox({
             className="max-h-full max-w-full rounded-lg object-contain"
           />
         </AnimatePresence>
-        <button
-          type="button"
-          onClick={(e) => {
-            stop(e);
-            next();
-          }}
-          aria-label="Next photo"
-          className="absolute right-4 inline-flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 max-sm:right-1"
-        >
-          <ChevronRight className="size-6" aria-hidden />
-        </button>
+        <NavButton
+          label="Next photo"
+          Icon={ChevronRight}
+          onClick={onNext}
+          className="absolute right-4 max-sm:hidden"
+        />
+      </div>
+
+      {/* Below sm the arrows sit in a row under the photo instead of flanking
+          it, so on a narrow screen they never cover the image or crowd its edges. */}
+      <div
+        onClick={stop}
+        className="hidden items-center justify-center gap-5 pb-7 max-sm:flex"
+      >
+        <NavButton label="Previous photo" Icon={ChevronLeft} onClick={onPrev} />
+        <NavButton label="Next photo" Icon={ChevronRight} onClick={onNext} />
       </div>
     </div>
+  );
+}
+
+function NavButton({
+  label,
+  Icon,
+  onClick,
+  className,
+}: {
+  label: string;
+  Icon: LucideIcon;
+  onClick: (e: React.MouseEvent) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={cn(
+        "inline-flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20",
+        className,
+      )}
+    >
+      <Icon className="size-6" aria-hidden />
+    </button>
   );
 }

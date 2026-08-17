@@ -100,7 +100,7 @@ export function AdminListingDetail() {
           images={detail.gallery}
           title={property.title}
           status={property.status}
-          heightClass="h-[48vh] min-h-72 max-h-[30rem] max-sm:h-[38vh] max-sm:min-h-0"
+          heightClass="h-[64vh] min-h-96 max-h-152 max-sm:h-[44vh] max-sm:min-h-0"
         />
       </Reveal>
 

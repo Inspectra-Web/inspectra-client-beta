@@ -94,6 +94,47 @@
     outline-offset: 2px;
     border-radius: 2px;
   }
+
+  /* ------------------------------------------------------------------ *
+   * Autofill — kill the browser's yellow/blue fill.
+   *
+   * The UA paints that fill on a layer `background-color` cannot reach, so a
+   * huge inset shadow is the only way to cover it. It follows border-radius,
+   * so pill inputs stay pill-shaped. Two properties, deliberately:
+   *   - `box-shadow` covers the resting state;
+   *   - `--tw-inset-shadow` is what Tailwind composes into its own
+   *     `box-shadow` for ring utilities, so the fill survives focus (our
+   *     inputs use `focus-visible:ring-2`, whose box-shadow would otherwise
+   *     replace the rule above and let the yellow back through).
+   * Override `--autofill-bg` on an input that sits on a non-surface ground.
+   * The absurd transition delay stops Chrome re-flashing the fill after a beat.
+   * ------------------------------------------------------------------ */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    --tw-inset-shadow: 0 0 0 100px var(--autofill-bg, var(--color-surface))
+      inset;
+    box-shadow: 0 0 0 100px var(--autofill-bg, var(--color-surface)) inset;
+    -webkit-text-fill-color: var(--color-ink);
+    caret-color: var(--color-ink);
+    transition: background-color 600000s 0s;
+  }
+
+  /* Same for engines on the standard selector (Firefox). Kept as its own rule:
+     one unknown selector would invalidate the whole list above. */
+  input:autofill,
+  textarea:autofill,
+  select:autofill {
+    --tw-inset-shadow: 0 0 0 100px var(--autofill-bg, var(--color-surface))
+      inset;
+    box-shadow: 0 0 0 100px var(--autofill-bg, var(--color-surface)) inset;
+    -webkit-text-fill-color: var(--color-ink);
+    caret-color: var(--color-ink);
+    filter: none;
+  }
 }
 
 @layer utilities {

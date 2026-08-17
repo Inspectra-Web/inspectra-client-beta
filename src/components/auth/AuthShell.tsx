@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import logoLight from "@/assets/inspectra-logo-primary-lg.png";
-import logoWhite from "@/assets/inspectra-logo-white-lg.png";
+import logo from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 // Subtle architectural backdrop for the dark side panel, kept faint so it reads as
@@ -61,17 +60,9 @@ export function AuthShell({
         {/* minimal top bar */}
         <div className="relative z-10 flex items-center justify-between">
           <Link to="/" className="flex items-center" aria-label="INSPECTRA home">
-            {/* desktop follows the theme; on the dark mobile backdrop the logo is always white */}
-            <img
-              src={logoLight}
-              alt="INSPECTRA"
-              className="hidden h-9 w-auto lg:block dark:lg:hidden"
-            />
-            <img
-              src={logoWhite}
-              alt="INSPECTRA"
-              className="h-9 w-auto max-lg:block lg:hidden dark:lg:block"
-            />
+            {/* the gradient mark carries the brand in every context here: the blue reads
+                on the light form panel, in dark mode and on the dark mobile backdrop alike */}
+            <img src={logo} alt="INSPECTRA" className="h-9 w-auto" />
           </Link>
           <ThemeToggle className="max-lg:hidden" />
           <ThemeToggle onDark className="hidden max-lg:inline-flex" />

@@ -25,7 +25,7 @@ export interface AdminProfile {
 
 export const admin: AdminProfile = {
   name: "Ifeoma Balogun",
-  email: "ifeoma@inspectra.ng",
+  email: "ifeoma@inspectraweb.com",
   role: "Trust Operations",
   avatar:
     "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80",
@@ -308,7 +308,7 @@ export function adminRealtorProfile(r: Realtor): AdminRealtorProfile {
   return {
     role,
     phone,
-    email: account?.email ?? `${first.toLowerCase()}@inspectra.ng`,
+    email: account?.email ?? `${first.toLowerCase()}@inspectraweb.com`,
     address: `${street}, ${r.city}`,
     agencyAddress: `${street}, ${r.city}`,
     region: meta.areas,

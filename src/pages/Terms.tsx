@@ -179,7 +179,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         Questions about these terms? Reach us at{" "}
-        <a href="mailto:legal@inspectra.ng">legal@inspectra.ng</a>.
+        <a href="mailto:legal@inspectraweb.com">legal@inspectraweb.com</a>.
       </p>
     ),
   },

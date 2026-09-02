@@ -167,7 +167,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         For any privacy questions or requests, reach our team at{" "}
-        <a href="mailto:privacy@inspectra.ng">privacy@inspectra.ng</a>.
+        <a href="mailto:privacy@inspectraweb.com">privacy@inspectraweb.com</a>.
       </p>
     ),
   },

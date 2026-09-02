@@ -21,12 +21,13 @@ import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
 import {
   adminActivity,
-  admin,
   kpis,
   reviewQueue,
   type AdminActivityKind,
 } from "@/data/admin";
 import type { VerificationStatus } from "@/types";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 function greeting() {
@@ -54,12 +55,13 @@ const ACTIVITY_TONE: Record<AdminActivityKind, string> = {
 
 export function AdminOverview() {
   const peek = reviewQueue.slice(0, 4);
+  const firstName = displayName(useAuthUser().fullname).split(" ")[0];
 
   return (
     <div className="space-y-8">
       <Reveal>
         <PageHeader
-          title={`${greeting()}, ${admin.name.split(" ")[0]}`}
+          title={`${greeting()}, ${firstName}`}
           subtitle="The trust desk. Here is what is waiting on a human today."
         />
       </Reveal>

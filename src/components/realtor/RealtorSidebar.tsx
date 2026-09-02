@@ -1,6 +1,10 @@
 import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { realtor } from "@/data/realtor";
+import { LogoutButton } from "@/components/auth/LogoutButton";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import {
   BadgeCheck,
@@ -48,6 +52,9 @@ const NAV_GROUPS: NavGroup[] = [
 
 /** Sidebar content, shared by the desktop rail and the mobile drawer. */
 export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const user = useAuthUser();
+  const name = displayName(user.fullname);
+
   return (
     <div className="flex h-full flex-col p-5">
       <Link
@@ -104,14 +111,10 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className="flex items-center gap-3 rounded-xl border border-line bg-surface p-2.5 transition-colors hover:bg-surface-2"
         >
-          <img
-            src={realtor.avatar}
-            alt={realtor.name}
-            className="size-9 shrink-0 rounded-full object-cover ring-1 ring-line"
-          />
+          <UserAvatar name={name} avatar={user.avatar} className="size-9" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">{realtor.name}</p>
-            <p className="truncate text-xs text-faint">{realtor.agency}</p>
+            <p className="truncate text-sm font-semibold text-ink">{name}</p>
+            <p className="truncate text-xs text-faint">{user.email}</p>
           </div>
           {realtor.certified && (
             // Signature credential moment: a hairline foil ring (the one place foil is allowed).
@@ -126,6 +129,7 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
             </span>
           )}
         </Link>
+        <LogoutButton onNavigate={onNavigate} />
       </div>
     </div>
   );

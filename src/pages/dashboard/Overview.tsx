@@ -20,7 +20,6 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
 import {
-  seeker,
   savedPropertyIds,
   inquiries,
   upcomingInspections,
@@ -28,6 +27,8 @@ import {
   activity,
 } from "@/data/seeker";
 import { properties, propertyById, realtorById } from "@/data/mock";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 
 function greeting() {
   const h = new Date().getHours();
@@ -40,7 +41,7 @@ const recommended = properties.filter((p) => p.status === "verified").slice(0, 3
 const awaitingReply = inquiries.filter((q) => q.status === "new").length;
 
 export function Overview() {
-  const firstName = seeker.name.split(" ")[0];
+  const firstName = displayName(useAuthUser().fullname).split(" ")[0];
 
   return (
     <div className="space-y-8">

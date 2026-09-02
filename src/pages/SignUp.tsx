@@ -1,13 +1,23 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router";
-import { ArrowRight, Loader2, Search, BadgeCheck, Check } from "lucide-react";
+import { Link } from "react-router";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BadgeCheck,
+  Check,
+  Loader2,
+  MailCheck,
+  Search,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthField, PasswordField } from "@/components/auth/AuthField";
 import { GoogleButton, OrDivider } from "@/components/auth/SocialAuth";
 import { VerifiedProof, CredentialProof } from "@/components/auth/authProof";
 import { signUpSchema, type SignUpValues } from "@/lib/authSchemas";
+import { apiMessage, apiStatus, registerAccount, resendVerification } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 const ROLES = [
@@ -52,12 +62,17 @@ const SIDE = {
 } as const;
 
 export function SignUp() {
-  const navigate = useNavigate();
+  // Registration does not sign you in, so the page flips to a reassurance state
+  // holding the address rather than navigating anywhere.
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
@@ -67,12 +82,78 @@ export function SignUp() {
   const role = watch("role");
 
   async function onSubmit(values: SignUpValues) {
-    // Mock signup: simulate the request, then route by role. Realtors land in their
-    // dashboard; seekers head into browsing.
-    await new Promise((r) => setTimeout(r, 900));
-    toast.success("Account created. Welcome to INSPECTRA.");
-    navigate(values.role === "realtor" ? "/realtor" : "/dashboard");
+    try {
+      await registerAccount({
+        fullname: values.fullname,
+        email: values.email,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        role: values.role,
+      });
+      setSentTo(values.email);
+    } catch (error) {
+      const message = apiMessage(error);
+
+      // A taken email belongs on the field that caused it, not in a toast.
+      if (apiStatus(error) === 409) {
+        setError("email", { message });
+        return;
+      }
+
+      toast.error(message);
+    }
   }
+
+  async function handleResend() {
+    if (!sentTo) return;
+
+    setResending(true);
+    try {
+      toast.success(await resendVerification(sentTo));
+    } catch (error) {
+      toast.error(apiMessage(error));
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (sentTo)
+    return (
+      <AuthShell side={SIDE[role ?? "seeker"]}>
+        <div className="text-center">
+          <span className="inline-grid size-14 place-items-center rounded-2xl bg-brand/10 text-brand">
+            <MailCheck className="size-7" />
+          </span>
+          <h1 className="display mt-6 text-4xl max-sm:text-3xl">Check your inbox</h1>
+          <p className="mt-3 text-muted">
+            We sent a verification link to{" "}
+            <span className="font-medium text-ink">{sentTo}</span>. Open it to activate
+            your account, then sign in. The link expires in 24 hours.
+          </p>
+
+          <p className="mt-8 text-sm text-muted">
+            Nothing yet? Check your spam folder, or{" "}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="font-medium text-brand-ink hover:underline disabled:opacity-60"
+            >
+              {resending ? "sending..." : "resend the link"}
+            </button>
+            .
+          </p>
+
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-ink"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            Back to sign in
+          </Link>
+        </div>
+      </AuthShell>
+    );
 
   return (
     <AuthShell side={SIDE[role ?? "seeker"]}>
@@ -143,8 +224,8 @@ export function SignUp() {
           label="Full name"
           autoComplete="name"
           placeholder="Chinedu Okeke"
-          error={errors.name?.message}
-          {...register("name")}
+          error={errors.fullname?.message}
+          {...register("fullname")}
         />
 
         <AuthField

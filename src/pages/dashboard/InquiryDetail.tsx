@@ -9,11 +9,15 @@ import { PropertySummary } from "@/components/dashboard/PropertySummary";
 import { RealtorSummary } from "@/components/dashboard/RealtorSummary";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
-import { inquiryById, seeker } from "@/data/seeker";
+import { inquiryById } from "@/data/seeker";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 import { propertyById, realtorById } from "@/data/mock";
 import { cn } from "@/lib/cn";
 
 export function InquiryDetail() {
+  const user = useAuthUser();
   const { id } = useParams();
   const inquiry = id ? inquiryById(id) : undefined;
   const property = inquiry ? propertyById(inquiry.propertyId) : undefined;
@@ -68,8 +72,9 @@ export function InquiryDetail() {
             <div className="space-y-5">
               <Bubble
                 side="out"
-                avatar={seeker.avatar}
+                avatar={user.avatar}
                 name="You"
+                avatarName={displayName(user.fullname)}
                 at={inquiry.sentAt}
                 text={inquiry.message}
               />
@@ -135,23 +140,22 @@ function Bubble({
   side,
   avatar,
   name,
+  avatarName,
   at,
   text,
 }: {
   side: "in" | "out";
   avatar: string;
   name: string;
+  /** Falls back to `name`. The "You" bubble labels itself "You" but wants real initials. */
+  avatarName?: string;
   at: string;
   text: string;
 }) {
   const out = side === "out";
   return (
     <div className={cn("flex gap-3", out && "flex-row-reverse")}>
-      <img
-        src={avatar}
-        alt={name}
-        className="size-9 shrink-0 rounded-full object-cover ring-1 ring-line"
-      />
+      <UserAvatar name={avatarName ?? name} avatar={avatar} className="size-9" />
       <div className={cn("max-w-[80%]", out && "text-right")}>
         <div className="mb-1 flex items-center gap-2 text-xs text-faint">
           <span className="font-medium text-muted">{name}</span>

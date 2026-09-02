@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// Shared field rules for the auth forms. Client-side only in this phase (no backend);
-// these define the mock validation that gates the simulated submit.
+// Shared field rules for the auth forms. These mirror the server-side Zod schemas in
+// server/src/validators/auth.validator.ts, so both ends agree on the rules.
 
 export const emailSchema = z
   .string()
@@ -24,7 +24,7 @@ export type SignInValues = z.infer<typeof signInSchema>;
 export const signUpSchema = z
   .object({
     role: z.enum(["seeker", "realtor"]),
-    name: z.string().min(2, "Enter your full name"),
+    fullname: z.string().min(2, "Enter your full name"),
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Confirm your password"),

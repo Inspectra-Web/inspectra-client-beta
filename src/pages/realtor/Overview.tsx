@@ -18,7 +18,6 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { StatusPill } from "@/components/dashboard/StatusPill";
 import { Reveal } from "@/components/ui/Reveal";
 import {
-  realtor,
   myListings,
   leads,
   newLeadCount,
@@ -27,6 +26,8 @@ import {
   type RealtorActivityKind,
 } from "@/data/realtor";
 import { propertyById } from "@/data/mock";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 import type { VerificationStatus } from "@/types";
 
 function greeting() {
@@ -48,7 +49,7 @@ const verifiedRate = total ? Math.round((counts.verified / total) * 100) : 0;
 const needAttention = counts.pending + counts.disputed;
 
 export function RealtorOverview() {
-  const firstName = realtor.name.split(" ")[0];
+  const firstName = displayName(useAuthUser().fullname).split(" ")[0];
 
   return (
     <div className="space-y-8">

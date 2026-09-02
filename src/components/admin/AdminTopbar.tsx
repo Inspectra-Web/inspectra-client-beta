@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router";
 import { Menu, Bell } from "lucide-react";
-import { admin } from "@/data/admin";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 
 const TITLES: Record<string, string> = {
   "/admin": "Overview",
@@ -14,6 +16,7 @@ const TITLES: Record<string, string> = {
 
 /** Sticky top bar: mobile menu trigger, page title, notifications, avatar. */
 export function AdminTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
+  const user = useAuthUser();
   const { pathname } = useLocation();
   const title =
     TITLES[pathname] ??
@@ -52,10 +55,10 @@ export function AdminTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
           </button>
 
           <Link to="/admin/account" aria-label="Account" className="shrink-0">
-            <img
-              src={admin.avatar}
-              alt={admin.name}
-              className="size-10 rounded-full object-cover ring-1 ring-line transition-shadow hover:ring-brand/40"
+            <UserAvatar
+              name={displayName(user.fullname)}
+              avatar={user.avatar}
+              className="size-10 transition-shadow hover:ring-brand/40"
             />
           </Link>
         </div>

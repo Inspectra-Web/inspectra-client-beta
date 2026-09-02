@@ -3,10 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router";
 import { ArrowLeft, ArrowRight, Loader2, MailCheck } from "lucide-react";
+import { toast } from "react-toastify";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthField } from "@/components/auth/AuthField";
 import { SecurityProof } from "@/components/auth/authProof";
 import { forgotSchema, type ForgotValues } from "@/lib/authSchemas";
+import { apiMessage, requestPasswordReset } from "@/lib/api";
 
 export function ForgotPassword() {
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -17,9 +19,14 @@ export function ForgotPassword() {
   } = useForm<ForgotValues>({ resolver: zodResolver(forgotSchema) });
 
   async function onSubmit(values: ForgotValues) {
-    // Mock: no email is actually sent. Swap to the reassurance state.
-    await new Promise((r) => setTimeout(r, 900));
-    setSentTo(values.email);
+    try {
+      await requestPasswordReset(values.email);
+      setSentTo(values.email);
+    } catch (error) {
+      // The route always answers 200 when it works, so anything here is a real
+      // fault: the hourly rate limit, or a mail delivery failure.
+      toast.error(apiMessage(error));
+    }
   }
 
   return (

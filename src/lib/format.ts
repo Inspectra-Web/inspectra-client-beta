@@ -14,3 +14,23 @@ function trim(n: number): string {
 export function formatPriceFull(value: number): string {
   return `₦${value.toLocaleString("en-NG")}`;
 }
+
+/** The API stores fullname lowercased, so title-case it for display: "ada obi" -> "Ada Obi". */
+export function displayName(fullname: string): string {
+  return fullname
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/** Avatar fallback when the user has no image: "ada obi" -> "AO". */
+export function initials(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+
+  const first = words[0]!.charAt(0);
+  const last = words.length > 1 ? words[words.length - 1]!.charAt(0) : "";
+
+  return (first + last).toUpperCase();
+}

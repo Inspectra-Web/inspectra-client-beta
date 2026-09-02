@@ -1,27 +1,78 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router";
+import { ArrowRight, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "react-toastify";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthField, PasswordField } from "@/components/auth/AuthField";
 import { GoogleButton, OrDivider } from "@/components/auth/SocialAuth";
 import { VerifiedProof } from "@/components/auth/authProof";
 import { signInSchema, type SignInValues } from "@/lib/authSchemas";
+import { apiMessage, apiStatus, resendVerification } from "@/lib/api";
+import { homeFor, useLogin } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 
 export function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const login = useLogin();
+
+  // Set by RequireAuth when it bounced someone off a protected URL.
+  const from = (location.state as { from?: string } | null)?.from;
+
+  const [unverified, setUnverified] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
+
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<SignInValues>({ resolver: zodResolver(signInSchema) });
 
   async function onSubmit(values: SignInValues) {
-    // Mock auth: no backend yet, simulate a request then land the user in the app.
-    await new Promise((r) => setTimeout(r, 900));
-    toast.success(`Welcome back, ${values.email.split("@")[0]}`);
-    navigate("/dashboard");
+    try {
+      const user = await login.mutateAsync({
+        email: values.email,
+        password: values.password,
+      });
+      toast.success(`Welcome back, ${displayName(user.fullname).split(" ")[0]}`);
+      navigate(from ?? homeFor(user.role), { replace: true });
+    } catch (error) {
+      const status = apiStatus(error);
+      const message = apiMessage(error);
+
+      // The server will not say whether the email or the password was wrong, so
+      // neither do we: one inline error, and the email field is left untouched.
+      if (status === 401) {
+        setError("password", { message });
+        return;
+      }
+
+      // Unverified and suspended are both 403 and differ only in prose.
+      if (status === 403 && /verify/i.test(message)) {
+        setUnverified(values.email);
+        return;
+      }
+
+      toast.error(message);
+    }
+  }
+
+  async function handleResend() {
+    if (!unverified) return;
+
+    setResending(true);
+    try {
+      await resendVerification(unverified);
+      setResent(true);
+    } catch (error) {
+      toast.error(apiMessage(error));
+    } finally {
+      setResending(false);
+    }
   }
 
   return (
@@ -87,6 +138,29 @@ export function SignIn() {
           />
           Keep me signed in
         </label>
+
+        {/* Login is refused until the address is verified. Offer the way out here. */}
+        {unverified && (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-muted">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+            <p>
+              Your email address is not verified yet. Check your inbox for the link we
+              sent to <span className="font-medium text-ink">{unverified}</span>.{" "}
+              {resent ? (
+                <span className="font-medium text-ink">Sent. Check your inbox.</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="font-medium text-brand-ink hover:underline disabled:opacity-60"
+                >
+                  {resending ? "Sending..." : "Resend the link"}
+                </button>
+              )}
+            </p>
+          </div>
+        )}
 
         <button
           type="submit"

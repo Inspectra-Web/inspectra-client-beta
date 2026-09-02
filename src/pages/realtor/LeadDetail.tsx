@@ -9,11 +9,15 @@ import { PropertySummary } from "@/components/dashboard/PropertySummary";
 import { BuyerSummary } from "@/components/realtor/BuyerSummary";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
-import { leadById, realtor } from "@/data/realtor";
+import { leadById } from "@/data/realtor";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 import { propertyById } from "@/data/mock";
 import { cn } from "@/lib/cn";
 
 export function RealtorLeadDetail() {
+  const user = useAuthUser();
   const { id } = useParams();
   const lead = id ? leadById(id) : undefined;
   const property = lead ? propertyById(lead.propertyId) : undefined;
@@ -73,7 +77,14 @@ export function RealtorLeadDetail() {
                 text={lead.message}
               />
               {lead.status === "responded" && lead.reply && (
-                <Bubble side="out" avatar={realtor.avatar} name="You" at="Replied" text={lead.reply} />
+                <Bubble
+                  side="out"
+                  avatar={user.avatar}
+                  name="You"
+                  avatarName={displayName(user.fullname)}
+                  at="Replied"
+                  text={lead.reply}
+                />
               )}
             </div>
 
@@ -119,23 +130,22 @@ function Bubble({
   side,
   avatar,
   name,
+  avatarName,
   at,
   text,
 }: {
   side: "in" | "out";
   avatar: string;
   name: string;
+  /** Falls back to `name`. The "You" bubble labels itself "You" but wants real initials. */
+  avatarName?: string;
   at: string;
   text: string;
 }) {
   const out = side === "out";
   return (
     <div className={cn("flex gap-3", out && "flex-row-reverse")}>
-      <img
-        src={avatar}
-        alt={name}
-        className="size-9 shrink-0 rounded-full object-cover ring-1 ring-line"
-      />
+      <UserAvatar name={avatarName ?? name} avatar={avatar} className="size-9" />
       <div className={cn("max-w-[80%]", out && "text-right")}>
         <div className="mb-1 flex items-center gap-2 text-xs text-faint">
           <span className="font-medium text-muted">{name}</span>

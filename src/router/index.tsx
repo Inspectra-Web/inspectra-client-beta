@@ -51,6 +51,8 @@ import { AdminUserDetail } from "@/pages/admin/UserDetail";
 import { AdminPayments } from "@/pages/admin/Payments";
 import { AdminAccount } from "@/pages/admin/Account";
 import { AdminNotFound } from "@/pages/admin/AdminNotFound";
+import { VerifyEmail } from "@/pages/VerifyEmail";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 
 export const router = createBrowserRouter([
   {
@@ -69,63 +71,82 @@ export const router = createBrowserRouter([
       { path: "register", element: <SignUp /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
+      { path: "verify-email", element: <VerifyEmail /> },
       { path: "terms", element: <Terms /> },
       { path: "privacy", element: <Privacy /> },
     ],
   },
-  // Seeker dashboard: its own shell (sidebar + topbar), outside the marketing chrome.
+  // The guards are pathless layout routes wrapping each shell rather than logic
+  // inside it: a layout renders its sidebar (which reads the user) before any
+  // check inside it could run.
   {
-    path: "/dashboard",
-    element: <DashboardLayout />,
+    element: <RequireAuth roles={["seeker"]} />,
     children: [
-      { index: true, element: <Overview /> },
-      { path: "saved", element: <Saved /> },
-      { path: "inquiries", element: <Inquiries /> },
-      { path: "inquiries/:id", element: <InquiryDetail /> },
-      { path: "inspections", element: <Inspections /> },
-      { path: "inspections/:id", element: <InspectionDetail /> },
-      { path: "account", element: <Account /> },
-      { path: "*", element: <DashboardNotFound /> },
+      // Seeker dashboard: its own shell (sidebar + topbar), outside the marketing chrome.
+      {
+        path: "/dashboard",
+        element: <DashboardLayout />,
+        children: [
+          { index: true, element: <Overview /> },
+          { path: "saved", element: <Saved /> },
+          { path: "inquiries", element: <Inquiries /> },
+          { path: "inquiries/:id", element: <InquiryDetail /> },
+          { path: "inspections", element: <Inspections /> },
+          { path: "inspections/:id", element: <InspectionDetail /> },
+          { path: "account", element: <Account /> },
+          { path: "*", element: <DashboardNotFound /> },
+        ],
+      },
     ],
   },
-  // Realtor dashboard: its own shell (grouped sidebar + topbar), outside the marketing chrome.
   {
-    path: "/realtor",
-    element: <RealtorDashboardLayout />,
+    element: <RequireAuth roles={["realtor"]} />,
     children: [
-      { index: true, element: <RealtorOverview /> },
-      { path: "listings", element: <RealtorListings /> },
-      { path: "listings/new", element: <RealtorListingNew /> },
-      { path: "listings/:id", element: <RealtorListingDetail /> },
-      { path: "listings/:id/edit", element: <RealtorListingEdit /> },
-      { path: "leads", element: <RealtorLeads /> },
-      { path: "leads/:id", element: <RealtorLeadDetail /> },
-      { path: "inspections", element: <RealtorInspections /> },
-      { path: "inspections/:id", element: <RealtorInspectionDetail /> },
-      { path: "verification", element: <RealtorVerification /> },
-      { path: "certification", element: <RealtorCertification /> },
-      { path: "subscription", element: <RealtorSubscription /> },
-      { path: "account", element: <RealtorAccount /> },
-      { path: "*", element: <RealtorNotFound /> },
+      // Realtor dashboard: its own shell (grouped sidebar + topbar), outside the marketing chrome.
+      {
+        path: "/realtor",
+        element: <RealtorDashboardLayout />,
+        children: [
+          { index: true, element: <RealtorOverview /> },
+          { path: "listings", element: <RealtorListings /> },
+          { path: "listings/new", element: <RealtorListingNew /> },
+          { path: "listings/:id", element: <RealtorListingDetail /> },
+          { path: "listings/:id/edit", element: <RealtorListingEdit /> },
+          { path: "leads", element: <RealtorLeads /> },
+          { path: "leads/:id", element: <RealtorLeadDetail /> },
+          { path: "inspections", element: <RealtorInspections /> },
+          { path: "inspections/:id", element: <RealtorInspectionDetail /> },
+          { path: "verification", element: <RealtorVerification /> },
+          { path: "certification", element: <RealtorCertification /> },
+          { path: "subscription", element: <RealtorSubscription /> },
+          { path: "account", element: <RealtorAccount /> },
+          { path: "*", element: <RealtorNotFound /> },
+        ],
+      },
     ],
   },
-  // Admin console: its own shell (grouped sidebar + topbar), outside the marketing chrome.
   {
-    path: "/admin",
-    element: <AdminDashboardLayout />,
+    element: <RequireAuth roles={["admin"]} />,
     children: [
-      { index: true, element: <AdminOverview /> },
-      { path: "verification", element: <AdminVerification /> },
-      { path: "verification/:id", element: <AdminVerificationDetail /> },
-      { path: "listings", element: <AdminListings /> },
-      { path: "listings/:id", element: <AdminListingDetail /> },
-      { path: "realtors", element: <AdminRealtors /> },
-      { path: "realtors/:id", element: <AdminRealtorDetail /> },
-      { path: "users", element: <AdminUsers /> },
-      { path: "users/:id", element: <AdminUserDetail /> },
-      { path: "payments", element: <AdminPayments /> },
-      { path: "account", element: <AdminAccount /> },
-      { path: "*", element: <AdminNotFound /> },
+      // Admin console: its own shell (grouped sidebar + topbar), outside the marketing chrome.
+      {
+        path: "/admin",
+        element: <AdminDashboardLayout />,
+        children: [
+          { index: true, element: <AdminOverview /> },
+          { path: "verification", element: <AdminVerification /> },
+          { path: "verification/:id", element: <AdminVerificationDetail /> },
+          { path: "listings", element: <AdminListings /> },
+          { path: "listings/:id", element: <AdminListingDetail /> },
+          { path: "realtors", element: <AdminRealtors /> },
+          { path: "realtors/:id", element: <AdminRealtorDetail /> },
+          { path: "users", element: <AdminUsers /> },
+          { path: "users/:id", element: <AdminUserDetail /> },
+          { path: "payments", element: <AdminPayments /> },
+          { path: "account", element: <AdminAccount /> },
+          { path: "*", element: <AdminNotFound /> },
+        ],
+      },
     ],
   },
   // Standalone: rendered outside RootLayout so it has no global header/footer.

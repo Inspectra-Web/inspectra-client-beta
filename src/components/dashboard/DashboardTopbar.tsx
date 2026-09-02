@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router";
 import { Menu, Bell } from "lucide-react";
-import { seeker } from "@/data/seeker";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 
 const TITLES: Record<string, string> = {
   "/dashboard": "Overview",
@@ -14,6 +16,7 @@ const TITLES: Record<string, string> = {
 export function DashboardTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { pathname } = useLocation();
   const title = TITLES[pathname] ?? "Dashboard";
+  const user = useAuthUser();
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-xl">
@@ -44,10 +47,10 @@ export function DashboardTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
             aria-label="Account"
             className="shrink-0"
           >
-            <img
-              src={seeker.avatar}
-              alt={seeker.name}
-              className="size-10 rounded-full object-cover ring-1 ring-line transition-shadow hover:ring-brand/40"
+            <UserAvatar
+              name={displayName(user.fullname)}
+              avatar={user.avatar}
+              className="size-10 transition-shadow hover:ring-brand/40"
             />
           </Link>
         </div>

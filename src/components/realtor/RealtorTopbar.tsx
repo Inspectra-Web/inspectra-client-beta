@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router";
 import { Menu, Bell, Plus } from "lucide-react";
-import { realtor } from "@/data/realtor";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useAuthUser } from "@/lib/auth";
+import { displayName } from "@/lib/format";
 
 const TITLES: Record<string, string> = {
   "/realtor": "Overview",
@@ -15,6 +17,7 @@ const TITLES: Record<string, string> = {
 
 /** Sticky top bar: mobile menu trigger, page title, new-listing action, notifications, avatar. */
 export function RealtorTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
+  const user = useAuthUser();
   const { pathname } = useLocation();
   const title = pathname.endsWith("/listings/new")
     ? "New listing"
@@ -58,10 +61,10 @@ export function RealtorTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
           </button>
 
           <Link to="/realtor/account" aria-label="Account" className="shrink-0">
-            <img
-              src={realtor.avatar}
-              alt={realtor.name}
-              className="size-10 rounded-full object-cover ring-1 ring-line transition-shadow hover:ring-brand/40"
+            <UserAvatar
+              name={displayName(user.fullname)}
+              avatar={user.avatar}
+              className="size-10 transition-shadow hover:ring-brand/40"
             />
           </Link>
         </div>

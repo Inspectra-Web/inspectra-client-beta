@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useSearchParams } from "react-router";
@@ -12,6 +13,7 @@ import {
   type ResetValues,
 } from "@/lib/authSchemas";
 import { cn } from "@/lib/cn";
+import { apiMessage, apiStatus, resetPassword } from "@/lib/api";
 
 const STRENGTH = [
   { label: "Too weak", tone: "bg-rose-500", text: "text-rose-500" },
@@ -24,7 +26,12 @@ const STRENGTH = [
 export function ResetPassword() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const hasToken = !!params.get("token");
+  const token = params.get("token") ?? "";
+  const hasToken = token.length > 0;
+
+  // Set when the server rejects the token, so the page states the real reason
+  // instead of leaving the user retrying a link that can never work.
+  const [expired, setExpired] = useState(false);
 
   const {
     register,
@@ -37,12 +44,23 @@ export function ResetPassword() {
   const score = passwordStrength(pw);
   const meter = STRENGTH[score];
 
-  async function onSubmit(_values: ResetValues) {
-    // Mock: no token is verified against a backend. Simulate the update, then send the
-    // user to sign in with their new password.
-    await new Promise((r) => setTimeout(r, 900));
-    toast.success("Password updated. Please sign in.");
-    navigate("/login");
+  async function onSubmit(values: ResetValues) {
+    try {
+      await resetPassword({
+        token,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      });
+      toast.success("Password updated. Please sign in.");
+      navigate("/login", { replace: true });
+    } catch (error) {
+      if (apiStatus(error) === 400) {
+        setExpired(true);
+        return;
+      }
+
+      toast.error(apiMessage(error));
+    }
   }
 
   return (
@@ -67,11 +85,14 @@ export function ResetPassword() {
         </p>
       </header>
 
-      {!hasToken && (
+      {(!hasToken || expired) && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-muted">
           <ShieldAlert className="mt-0.5 size-4.5 shrink-0 text-amber-600" aria-hidden />
           <p>
-            This reset link looks incomplete. Open the link from your email, or{" "}
+            {expired
+              ? "This reset link has expired or has already been used."
+              : "This reset link looks incomplete. Open the link from your email."}{" "}
+            Please{" "}
             <Link
               to="/forgot-password"
               className="font-medium text-brand-ink hover:underline"
@@ -122,7 +143,7 @@ export function ResetPassword() {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !hasToken || expired}
           className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand text-base font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-60"
         >
           {isSubmitting ? (

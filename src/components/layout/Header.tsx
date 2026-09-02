@@ -6,6 +6,8 @@ import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { cn } from "@/lib/cn";
+import { homeFor, useMe } from "@/lib/auth";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 const NAV = [
   { label: "Listings", to: "/listings" },
@@ -16,6 +18,7 @@ const NAV = [
 ];
 
 export function Header() {
+  const { data: user, isPending } = useMe();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -78,34 +81,50 @@ export function Header() {
         {/* desktop actions */}
         <div className="flex items-center gap-3 max-lg:hidden">
           <ThemeToggle onDark={onDarkHero} />
-          <Link
-            to="/dashboard"
-            className={cn(
-              "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
-              onDarkHero
-                ? "text-white/80 hover:text-white"
-                : "text-muted hover:text-ink",
-            )}
-          >
-            <LayoutDashboard className="size-4" aria-hidden />
-            Dashboard
-          </Link>
-          <Link
-            to="/login"
-            className={cn(
-              "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
-              onDarkHero
-                ? "text-white/80 hover:text-white"
-                : "text-muted hover:text-ink",
-            )}
-          >
-            <LogIn className="size-4" aria-hidden />
-            Log in
-          </Link>
-          <Link to="/register" className={buttonClasses("brand", "sm")}>
-            <UserPlus className="size-4" aria-hidden />
-            Sign up
-          </Link>
+          {!isPending &&
+            (user ? (
+              <>
+                <Link
+                  to={homeFor(user.role)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
+                    onDarkHero
+                      ? "text-white/80 hover:text-white"
+                      : "text-muted hover:text-ink",
+                  )}
+                >
+                  <LayoutDashboard className="size-4" aria-hidden />
+                  Dashboard
+                </Link>
+                <LogoutButton
+                  className={cn(
+                    "w-auto px-0 py-0 hover:bg-transparent",
+                    onDarkHero
+                      ? "text-white/80 hover:text-white"
+                      : "text-muted hover:text-ink",
+                  )}
+                />
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
+                    onDarkHero
+                      ? "text-white/80 hover:text-white"
+                      : "text-muted hover:text-ink",
+                  )}
+                >
+                  <LogIn className="size-4" aria-hidden />
+                  Log in
+                </Link>
+                <Link to="/register" className={buttonClasses("brand", "sm")}>
+                  <UserPlus className="size-4" aria-hidden />
+                  Sign up
+                </Link>
+              </>
+            ))}
         </div>
 
         {/* mobile cluster */}
@@ -142,32 +161,42 @@ export function Header() {
                 {item.label}
               </NavLink>
             ))}
-            <Link
-              to="/dashboard"
-              onClick={() => setOpen(false)}
-              className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted"
-            >
-              <LayoutDashboard className="size-4" aria-hidden />
-              Dashboard
-            </Link>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Link
-                to="/login"
-                onClick={() => setOpen(false)}
-                className={buttonClasses("outline", "md")}
-              >
-                <LogIn className="size-4" aria-hidden />
-                Log in
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setOpen(false)}
-                className={buttonClasses("brand", "md")}
-              >
-                <UserPlus className="size-4" aria-hidden />
-                Sign up
-              </Link>
-            </div>
+            {!isPending &&
+              (user ? (
+                <>
+                  <Link
+                    to={homeFor(user.role)}
+                    onClick={() => setOpen(false)}
+                    className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted"
+                  >
+                    <LayoutDashboard className="size-4" aria-hidden />
+                    Dashboard
+                  </Link>
+                  <LogoutButton
+                    onNavigate={() => setOpen(false)}
+                    className={cn("mt-2", buttonClasses("outline", "md"))}
+                  />
+                </>
+              ) : (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    className={buttonClasses("outline", "md")}
+                  >
+                    <LogIn className="size-4" aria-hidden />
+                    Log in
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setOpen(false)}
+                    className={buttonClasses("brand", "md")}
+                  >
+                    <UserPlus className="size-4" aria-hidden />
+                    Sign up
+                  </Link>
+                </div>
+              ))}
           </Container>
         </div>
       )}

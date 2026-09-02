@@ -23,7 +23,8 @@ export function RootLayout() {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
-    pathname === "/reset-password";
+    pathname === "/reset-password" ||
+    pathname === "/verify-email";
 
   if (isAuth) {
     return (

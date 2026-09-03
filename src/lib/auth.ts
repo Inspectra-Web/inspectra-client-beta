@@ -22,7 +22,7 @@ interface UserResponse {
   data: { user: AuthUser };
 }
 
-const ME_KEY = ["me"];
+export const ME_KEY = ["me"];
 
 /** Where each role's app lives. The single source of truth for post-login routing. */
 export function homeFor(role: AuthRole): string {
@@ -86,5 +86,22 @@ export function useLogout() {
       queryClient.removeQueries();
       queryClient.setQueryData(ME_KEY, null);
     },
+  });
+}
+
+export function useUpdatePassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (values: {
+      currentPassword: string;
+      password: string;
+      confirmPassword: string;
+    }) => {
+      const res = await api.patch<UserResponse>("/auth/update-password", values);
+      return res.data.data.user;
+    },
+    // The server reissued the cookie, so the session survives the change.
+    onSuccess: (user) => queryClient.setQueryData(ME_KEY, user),
   });
 }

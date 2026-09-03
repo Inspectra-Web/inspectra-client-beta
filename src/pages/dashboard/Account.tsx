@@ -16,18 +16,29 @@ import {
 } from "@/components/ui/Select";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import {
-  profileSchema,
+  seekerProfileSchema,
   securitySchema,
-  type ProfileValues,
+  type SeekerProfileValues,
   type SecurityValues,
 } from "@/lib/accountSchema";
 import { passwordStrength } from "@/lib/authSchemas";
-import { seeker } from "@/data/seeker";
+import { apiMessage } from "@/lib/api";
+import { useAuthUser, useUpdatePassword } from "@/lib/auth";
+import {
+  AVATAR_MAX_MB,
+  avatarError,
+  PROPERTY_INTERESTS,
+  useProfile,
+  useRemoveAvatar,
+  useUpdateProfile,
+  useUploadAvatar,
+} from "@/lib/profile";
+import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const CITIES = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Kano"];
-const INTERESTS = ["Apartment", "Duplex", "Terrace", "Bungalow", "Penthouse", "Land"];
 const STRENGTH_LABELS = ["Too weak", "Weak", "Fair", "Good", "Strong"] as const;
 
 export function Account() {
@@ -43,9 +54,9 @@ export function Account() {
       <Reveal y={16}>
         <PreferencesSection />
       </Reveal>
-      <Reveal y={16}>
+      {/* <Reveal y={16}>
         <NotificationsSection />
-      </Reveal>
+      </Reveal> */}
       <Reveal y={16}>
         <SecuritySection />
       </Reveal>
@@ -54,58 +65,81 @@ export function Account() {
 }
 
 /* Profile ------------------------------------------------------------------ */
+function PanelSkeleton({ title }: { title: string }) {
+  return (
+    <Panel title={title}>
+      <div className="h-40 animate-pulse rounded-xl bg-surface-2" />
+    </Panel>
+  );
+}
+
 function ProfileSection() {
+  const user = useAuthUser();
+  const { data: profile, isPending } = useProfile();
+  const updateProfile = useUpdateProfile();
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ProfileValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: { name: seeker.name, email: seeker.email, phone: seeker.phone },
+  } = useForm<SeekerProfileValues>({
+    resolver: zodResolver(seekerProfileSchema),
+    // values, not defaultValues: the form fills in once the profile arrives.
+    values: {
+      firstName: profile?.firstName ?? "",
+      lastName: profile?.lastName ?? "",
+      phone: user.phone ?? "",
+    },
   });
 
-  async function onSubmit() {
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success("Profile updated");
+  async function onSubmit(input: SeekerProfileValues) {
+    try {
+      await updateProfile.mutateAsync(input);
+      toast.success("Profile updated");
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
   }
+
+  if (isPending) return <PanelSkeleton title="Profile" />;
 
   return (
     <Panel title="Profile">
-      <div className="mb-6 flex items-center gap-4">
-        <img
-          src={seeker.avatar}
-          alt={seeker.name}
-          className="size-16 rounded-full object-cover ring-1 ring-line"
-        />
-        <button type="button" className={buttonClasses("outline", "sm")}>
-          <Camera className="size-4" />
-          Change photo
-        </button>
-      </div>
+      <AvatarPicker />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
           <AuthField
-            label="Full name"
-            autoComplete="name"
-            error={errors.name?.message}
-            {...register("name")}
+            label="First name"
+            autoComplete="given-name"
+            error={errors.firstName?.message}
+            {...register("firstName")}
           />
           <AuthField
-            label="Phone"
-            type="tel"
-            autoComplete="tel"
-            error={errors.phone?.message}
-            {...register("phone")}
+            label="Last name"
+            autoComplete="family-name"
+            error={errors.lastName?.message}
+            {...register("lastName")}
           />
         </div>
         <AuthField
-          label="Email"
-          type="email"
-          autoComplete="email"
-          error={errors.email?.message}
-          {...register("email")}
+          label="Phone"
+          type="tel"
+          autoComplete="tel"
+          error={errors.phone?.message}
+          {...register("phone")}
         />
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-ink">Email</label>
+          <input
+            value={user.email}
+            readOnly
+            className="w-full cursor-not-allowed rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-muted"
+          />
+          <p className="mt-1.5 text-xs text-muted">
+            Your email is tied to sign-in. Contact support to change it.
+          </p>
+        </div>
         <div className="flex justify-end">
           <SaveButton pending={isSubmitting} label="Save changes" icon={Check} />
         </div>
@@ -114,30 +148,137 @@ function ProfileSection() {
   );
 }
 
+function AvatarPicker() {
+  const user = useAuthUser();
+  const uploadAvatar = useUploadAvatar();
+  const removeAvatar = useRemoveAvatar();
+  const busy = uploadAvatar.isPending || removeAvatar.isPending;
+  const [error, setError] = useState<string | null>(null);
+
+  async function onPick(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    // Checked here so an oversized file never leaves the browser.
+    const rejection = avatarError(file);
+    setError(rejection);
+    if (rejection) return;
+
+    try {
+      await uploadAvatar.mutateAsync(file);
+      toast.success("Photo updated");
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
+  }
+
+  async function onRemove() {
+    setError(null);
+
+    try {
+      await removeAvatar.mutateAsync();
+      toast.success("Photo removed");
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
+  }
+
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <UserAvatar
+        name={displayName(user.fullname)}
+        avatar={user.avatar}
+        className="size-16 text-base"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <label
+          className={cn(
+            buttonClasses("outline", "sm"),
+            "cursor-pointer",
+            busy && "pointer-events-none opacity-60",
+          )}
+        >
+          {uploadAvatar.isPending ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <Camera className="size-4" aria-hidden />
+          )}
+          Change photo
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onPick}
+            disabled={busy}
+            className="sr-only"
+          />
+        </label>
+        {user.avatar && (
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={busy}
+            className={cn(buttonClasses("ghost", "sm"), "disabled:opacity-60")}
+          >
+            Remove
+          </button>
+        )}
+        {error ? (
+          <p role="alert" className="w-full text-xs text-rose-500">
+            {error}
+          </p>
+        ) : (
+          <p className="w-full text-xs text-muted">
+            JPG, PNG or WebP, up to {AVATAR_MAX_MB}MB.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* Preferences -------------------------------------------------------------- */
 function PreferencesSection() {
-  const [city, setCity] = useState(seeker.city);
-  const [interests, setInterests] = useState<string[]>(["Apartment", "Terrace"]);
-  const [pending, setPending] = useState(false);
+  const { data: profile, isPending } = useProfile();
+  const updateProfile = useUpdateProfile();
 
-  const toggle = (t: string) =>
-    setInterests((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const [city, setCity] = useState<string | null>(null);
+  const [interests, setInterests] = useState<string[] | null>(null);
+
+  const currentCity = city ?? profile?.preferredCity ?? "";
+  const currentInterests = interests ?? profile?.propertyInterests ?? [];
+
+  const toggle = (slug: string) =>
+    setInterests(
+      currentInterests.includes(slug)
+        ? currentInterests.filter((x) => x !== slug)
+        : [...currentInterests, slug],
+    );
 
   async function save() {
-    setPending(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setPending(false);
-    toast.success("Preferences saved");
+    try {
+      await updateProfile.mutateAsync({
+        preferredCity: currentCity,
+        propertyInterests: currentInterests,
+      });
+      setCity(null);
+      setInterests(null);
+      toast.success("Preferences saved");
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
   }
+
+  if (isPending) return <PanelSkeleton title="Search preferences" />;
 
   return (
     <Panel title="Search preferences">
       <div className="space-y-6">
         <div className="max-w-xs">
           <label className="mb-1.5 block text-sm font-medium text-ink">Preferred city</label>
-          <Select value={city} onValueChange={setCity}>
+          <Select value={currentCity} onValueChange={setCity}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select a city" />
             </SelectTrigger>
             <SelectContent>
               {CITIES.map((c) => (
@@ -150,15 +291,15 @@ function PreferencesSection() {
         </div>
 
         <div>
-          <p className="mb-2.5 text-sm font-medium text-ink">Property types you're after</p>
+          <p className="mb-2.5 text-sm font-medium text-ink">Property types you are after</p>
           <div className="flex flex-wrap gap-2">
-            {INTERESTS.map((t) => {
-              const on = interests.includes(t);
+            {PROPERTY_INTERESTS.map((t) => {
+              const on = currentInterests.includes(t.slug);
               return (
                 <button
-                  key={t}
+                  key={t.slug}
                   type="button"
-                  onClick={() => toggle(t)}
+                  onClick={() => toggle(t.slug)}
                   aria-pressed={on}
                   className={cn(
                     "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
@@ -167,7 +308,7 @@ function PreferencesSection() {
                       : "border-line text-muted hover:border-brand/40 hover:text-ink",
                   )}
                 >
-                  {t}
+                  {t.label}
                 </button>
               );
             })}
@@ -175,81 +316,15 @@ function PreferencesSection() {
         </div>
 
         <div className="flex justify-end">
-          <SaveButton pending={pending} label="Save preferences" icon={Check} onClick={save} />
+          <SaveButton
+            pending={updateProfile.isPending}
+            label="Save preferences"
+            icon={Check}
+            onClick={save}
+          />
         </div>
       </div>
     </Panel>
-  );
-}
-
-/* Notifications ------------------------------------------------------------ */
-const NOTIFS = [
-  { key: "email", label: "Email updates", desc: "New verified matches and price changes." },
-  { key: "sms", label: "SMS alerts", desc: "Time-sensitive updates on homes you saved." },
-  { key: "inspections", label: "Inspection reminders", desc: "A nudge before each viewing." },
-  { key: "digest", label: "Weekly digest", desc: "A roundup of fresh listings for your search." },
-] as const;
-
-function NotificationsSection() {
-  const [state, setState] = useState<Record<string, boolean>>({
-    email: true,
-    sms: false,
-    inspections: true,
-    digest: true,
-  });
-
-  return (
-    <Panel title="Notifications">
-      <ul className="divide-y divide-line">
-        {NOTIFS.map((n) => (
-          <li key={n.key} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
-            <div>
-              <p className="text-sm font-medium text-ink">{n.label}</p>
-              <p className="mt-0.5 text-sm text-muted">{n.desc}</p>
-            </div>
-            <Toggle
-              on={state[n.key]}
-              onChange={() => {
-                setState((s) => ({ ...s, [n.key]: !s[n.key] }));
-                toast.success("Notification preference updated");
-              }}
-              label={n.label}
-            />
-          </li>
-        ))}
-      </ul>
-    </Panel>
-  );
-}
-
-function Toggle({
-  on,
-  onChange,
-  label,
-}: {
-  on: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      onClick={onChange}
-      className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-        on ? "bg-brand" : "bg-surface-2 ring-1 ring-inset ring-line",
-      )}
-    >
-      <span
-        className={cn(
-          "absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform duration-200",
-          on ? "translate-x-5" : "translate-x-0",
-        )}
-      />
-    </button>
   );
 }
 
@@ -263,13 +338,19 @@ function SecuritySection() {
     formState: { errors, isSubmitting },
   } = useForm<SecurityValues>({ resolver: zodResolver(securitySchema) });
 
+  const updatePassword = useUpdatePassword();
+
   const pw = watch("password") ?? "";
   const score = passwordStrength(pw);
 
-  async function onSubmit() {
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success("Password updated");
-    reset();
+  async function onSubmit(input: SecurityValues) {
+    try {
+      await updatePassword.mutateAsync(input);
+      toast.success("Password updated");
+      reset();
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
   }
 
   return (

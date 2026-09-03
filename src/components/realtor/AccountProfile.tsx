@@ -7,13 +7,41 @@ import {
 import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { buttonClasses } from "@/components/ui/Button";
-import { realtor } from "@/data/realtor";
+import { useAuthUser } from "@/lib/auth";
+import { useProfile } from "@/lib/profile";
+import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
-/** Read-only realtor profile overview (image_1). The trust-facing "who you are dealing with". */
+// Document verification is Phase 9, so this panel is still a placeholder rather
+// than reading a status the API does not serve yet.
+const GOVERNMENT_ID = { label: "Government-issued ID", status: "pending" as const };
+
+const SOCIAL_LABELS: { key: "instagram" | "linkedin" | "facebook" | "x"; label: string }[] = [
+  { key: "instagram", label: "Instagram" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "facebook", label: "Facebook" },
+  { key: "x", label: "X" },
+];
+
+/** Read-only realtor profile overview. The trust-facing "who you are dealing with". */
 export function AccountProfile({ onEdit }: { onEdit: () => void }) {
-  const r = realtor;
+  const user = useAuthUser();
+  const { data: profile, isPending } = useProfile();
+
+  if (isPending || !profile)
+    return (
+      <div className="space-y-6">
+        <div className="h-64 animate-pulse rounded-2xl border border-line bg-surface-2" />
+        <div className="h-40 animate-pulse rounded-2xl border border-line bg-surface-2" />
+      </div>
+    );
+
+  const name = displayName(user.fullname);
+  const socials = SOCIAL_LABELS.filter((s) => profile.socials?.[s.key]);
+  const location = [profile.address, profile.city].filter(Boolean).join(", ");
+
   return (
     <div className="space-y-6">
       {/* hero */}
@@ -26,8 +54,12 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
             <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div className="flex items-end gap-4 max-sm:items-center">
                 <span className="relative -mt-16 shrink-0 max-sm:-mt-14">
-                  <img src={r.avatar} alt={r.name} className="size-32 rounded-2xl object-cover ring-4 ring-surface max-sm:size-28" />
-                  {r.certified && (
+                  <UserAvatar
+                    name={name}
+                    avatar={user.avatar}
+                    className="size-32 rounded-2xl text-3xl ring-4 ring-surface max-sm:size-28"
+                  />
+                  {profile.certified && (
                     <span className="absolute -bottom-1.5 -right-1.5 grid size-7 place-items-center rounded-full bg-foil ring-2 ring-surface" title="Certified realtor">
                       <BadgeCheck className="size-4 text-[#3a2c0f]" aria-hidden />
                     </span>
@@ -35,15 +67,16 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
                 </span>
                 <div className="pb-1">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h2 className="display text-2xl text-ink">{r.name}</h2>
-                    {r.certified && (
+                    <h2 className="display text-2xl text-ink">{name}</h2>
+                    {profile.certified && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-foil/15 px-2.5 py-0.5 text-xs font-semibold text-foil">
                         <BadgeCheck className="size-3.5" aria-hidden /> Certified
                       </span>
                     )}
                   </div>
                   <p className="mt-1 text-sm text-muted">
-                    {r.role} · {r.agency}
+                    {[profile.jobTitle, profile.agencyName].filter(Boolean).join(" · ") ||
+                      "Add your job title and agency"}
                   </p>
                 </div>
               </div>
@@ -60,15 +93,15 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
 
             {/* quick facts */}
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-5 text-sm">
-              <Fact icon={MapPin} text={`${r.address}, ${r.city}`} />
-              <Fact icon={Phone} text={r.phone} />
-              <Fact icon={Mail} text={r.email} />
-              {r.socials.length > 0 && (
+              {location && <Fact icon={MapPin} text={location} />}
+              {user.phone && <Fact icon={Phone} text={user.phone} />}
+              <Fact icon={Mail} text={user.email} />
+              {socials.length > 0 && (
                 <div className="ml-auto flex items-center gap-2 max-sm:ml-0">
-                  {r.socials.map((s) => (
+                  {socials.map((s) => (
                     <a
-                      key={s.label}
-                      href={s.href}
+                      key={s.key}
+                      href={profile.socials[s.key]}
                       className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand/40 hover:text-brand-ink"
                     >
                       {s.label}
@@ -85,7 +118,9 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
       {/* self description */}
       <Reveal y={16}>
         <Panel title="Self description">
-          <p className="leading-relaxed text-muted">{r.selfDescription}</p>
+          <p className="whitespace-pre-line leading-relaxed text-muted">
+            {profile.bio || "Tell buyers what you specialize in and how you work."}
+          </p>
         </Panel>
       </Reveal>
 
@@ -94,25 +129,25 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
         <Reveal y={16}>
           <Panel title="Professional details">
             <dl>
-              <Detail icon={Briefcase} label="Experience" value={r.experience} />
+              <Detail icon={Briefcase} label="Experience" value={profile.experience} />
               <div className="flex items-start justify-between gap-4 border-b border-line/70 py-2.5">
                 <dt className="flex items-center gap-2.5 text-sm text-muted">
                   <Layers className="size-4 shrink-0 text-faint" aria-hidden />
                   Specialization
                 </dt>
                 <dd className="flex flex-wrap justify-end gap-1.5">
-                  {r.specialization.length ? (
-                    r.specialization.map((s) => (
+                  {profile.specialization.length ? (
+                    profile.specialization.map((s) => (
                       <span key={s} className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand-ink">{s}</span>
                     ))
                   ) : (
-                    <span className="text-sm font-medium text-ink">—</span>
+                    <span className="text-sm font-medium text-ink">&mdash;</span>
                   )}
                 </dd>
               </div>
-              <Detail icon={Building2} label="Agency" value={r.agency} />
-              <Detail icon={MapPinned} label="Agency address" value={r.agencyAddress} />
-              <Detail icon={MapPin} label="Region" value={r.region} />
+              <Detail icon={Building2} label="Agency" value={profile.agencyName} />
+              <Detail icon={MapPinned} label="Agency address" value={profile.agencyAddress} />
+              <Detail icon={MapPin} label="Region" value={profile.region} />
             </dl>
           </Panel>
         </Reveal>
@@ -120,13 +155,13 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
         <Reveal y={16}>
           <Panel title="Additional details">
             <dl>
-              <Detail icon={Languages} label="Languages spoken" value={r.languages} />
-              <Detail icon={CircleDot} label="Availability" value={r.availabilityStatus} />
-              <Detail icon={MessageSquare} label="Contact means" value={r.contactMeans} />
-              <Detail icon={User} label="Gender" value={r.gender} />
-              <Detail icon={MapPin} label="City" value={r.city} />
-              <Detail icon={MapPin} label="State" value={r.state} />
-              <Detail icon={MapPin} label="Country" value={r.country} />
+              <Detail icon={Languages} label="Languages spoken" value={profile.language} />
+              <Detail icon={CircleDot} label="Availability" value={profile.availabilityStatus} />
+              <Detail icon={MessageSquare} label="Contact means" value={profile.contactMeans} />
+              <Detail icon={User} label="Gender" value={profile.gender ?? ""} />
+              <Detail icon={MapPin} label="City" value={profile.city} />
+              <Detail icon={MapPin} label="State" value={profile.state} />
+              <Detail icon={MapPin} label="Country" value={profile.country} />
             </dl>
           </Panel>
         </Reveal>
@@ -140,14 +175,10 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
               <ShieldCheck className="size-5" aria-hidden />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-ink">{r.governmentId.label}</p>
-              <p className="text-xs text-muted">
-                {r.governmentId.status === "verified"
-                  ? "Confirmed by our team."
-                  : "Submitted, under review by our team."}
-              </p>
+              <p className="text-sm font-medium text-ink">{GOVERNMENT_ID.label}</p>
+              <p className="text-xs text-muted">Submitted, under review by our team.</p>
             </div>
-            <StatusBadge status={r.governmentId.status} />
+            <StatusBadge status={GOVERNMENT_ID.status} />
           </div>
         </Panel>
       </Reveal>

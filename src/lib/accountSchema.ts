@@ -10,6 +10,20 @@ export const profileSchema = z.object({
 });
 export type ProfileValues = z.infer<typeof profileSchema>;
 
+// Matches the server's updateProfileSchema: names are separate fields there, and
+// email is not editable (changing it has to re-run verification).
+const phoneField = z
+  .string()
+  .trim()
+  .refine((v) => v === '' || v.length >= 7, 'Enter a valid phone number');
+
+export const seekerProfileSchema = z.object({
+  firstName: z.string().trim().min(1, "Enter your first name"),
+  lastName: z.string().trim().min(1, "Enter your last name"),
+  phone: phoneField,
+});
+export type SeekerProfileValues = z.infer<typeof seekerProfileSchema>;
+
 export const realtorProfileSchema = z.object({
   name: z.string().min(2, "Enter your full name"),
   agency: z.string().min(2, "Enter your agency name"),
@@ -19,32 +33,35 @@ export const realtorProfileSchema = z.object({
 });
 export type RealtorProfileValues = z.infer<typeof realtorProfileSchema>;
 
-// Full realtor profile settings (image_2). Most fields optional; identity + contact required.
+// Realtor profile settings. Field names match the server's updateProfileSchema so
+// the form submits straight through. Email is not editable here.
 export const realtorSettingsSchema = z.object({
-  firstName: z.string().trim().min(1, "Enter your first name"),
-  lastName: z.string().trim().min(1, "Enter your last name"),
-  middleName: z.string().trim().optional(),
-  selfDescription: z.string().trim().max(600, "Keep it under 600 characters").optional(),
-  email: emailSchema,
-  address: z.string().trim().optional(),
-  city: z.string().trim().optional(),
-  state: z.string().trim().optional(),
-  country: z.string().trim().optional(),
-  telephone: z.string().trim().min(7, "Enter a valid phone number"),
-  whatsapp: z.string().trim().optional(),
-  language: z.string().trim().optional(),
-  gender: z.string().optional(),
-  experience: z.string().trim().optional(),
+  firstName: z.string().trim().min(1, 'Enter your first name'),
+  lastName: z.string().trim().min(1, 'Enter your last name'),
+  middleName: z.string().trim(),
+  bio: z.string().trim().max(600, 'Keep it under 600 characters'),
+  address: z.string().trim(),
+  city: z.string().trim(),
+  state: z.string().trim(),
+  country: z.string().trim(),
+  phone: phoneField,
+  whatsapp: phoneField,
+  language: z.string().trim(),
+  gender: z.string(),
+  jobTitle: z.string().trim(),
+  experience: z.string().trim(),
   specialization: z.array(z.string()),
-  agencyName: z.string().trim().optional(),
-  region: z.string().trim().optional(),
-  agencyAddress: z.string().trim().optional(),
-  availabilityStatus: z.string().optional(),
-  contactMeans: z.string().optional(),
-  instagram: z.string().trim().optional(),
-  linkedin: z.string().trim().optional(),
-  facebook: z.string().trim().optional(),
-  x: z.string().trim().optional(),
+  agencyName: z.string().trim(),
+  region: z.string().trim(),
+  agencyAddress: z.string().trim(),
+  availabilityStatus: z.string(),
+  contactMeans: z.string(),
+  socials: z.object({
+    instagram: z.string().trim(),
+    linkedin: z.string().trim(),
+    facebook: z.string().trim(),
+    x: z.string().trim(),
+  }),
 });
 export type RealtorSettingsValues = z.infer<typeof realtorSettingsSchema>;
 

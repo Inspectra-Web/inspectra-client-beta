@@ -11,6 +11,8 @@ import { buttonClasses } from "@/components/ui/Button";
 import { AccountProfile } from "@/components/realtor/AccountProfile";
 import { AccountSettings } from "@/components/realtor/AccountSettings";
 import { securitySchema, type SecurityValues } from "@/lib/accountSchema";
+import { apiMessage } from "@/lib/api";
+import { useUpdatePassword } from "@/lib/auth";
 import { passwordStrength } from "@/lib/authSchemas";
 import { cn } from "@/lib/cn";
 
@@ -76,13 +78,19 @@ function SecuritySection() {
     formState: { errors, isSubmitting },
   } = useForm<SecurityValues>({ resolver: zodResolver(securitySchema) });
 
+  const updatePassword = useUpdatePassword();
+
   const pw = watch("password") ?? "";
   const score = passwordStrength(pw);
 
-  async function onSubmit() {
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success("Password updated");
-    reset();
+  async function onSubmit(input: SecurityValues) {
+    try {
+      await updatePassword.mutateAsync(input);
+      toast.success("Password updated");
+      reset();
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
   }
 
   return (

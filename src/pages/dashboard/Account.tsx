@@ -54,9 +54,6 @@ export function Account() {
       <Reveal y={16}>
         <PreferencesSection />
       </Reveal>
-      {/* <Reveal y={16}>
-        <NotificationsSection />
-      </Reveal> */}
       <Reveal y={16}>
         <SecuritySection />
       </Reveal>

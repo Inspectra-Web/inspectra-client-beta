@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { buttonClasses } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { apiMessage } from "@/lib/api";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
@@ -21,6 +22,7 @@ export function AvatarPicker() {
   const removeAvatar = useRemoveAvatar();
   const busy = uploadAvatar.isPending || removeAvatar.isPending;
   const [error, setError] = useState<string | null>(null);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   async function onPick(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -83,7 +85,7 @@ export function AvatarPicker() {
         {user.avatar && (
           <button
             type="button"
-            onClick={onRemove}
+            onClick={() => setConfirmingRemove(true)}
             disabled={busy}
             className={cn(buttonClasses("ghost", "sm"), "disabled:opacity-60")}
           >
@@ -100,6 +102,17 @@ export function AvatarPicker() {
           </p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmingRemove}
+        onOpenChange={setConfirmingRemove}
+        title="Remove your photo?"
+        description="Your profile will fall back to your initials. You can upload a new photo at any time."
+        confirmLabel="Remove photo"
+        destructive
+        pending={removeAvatar.isPending}
+        onConfirm={onRemove}
+      />
     </div>
   );
 }

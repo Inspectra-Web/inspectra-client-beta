@@ -51,6 +51,7 @@ import { AdminUserDetail } from "@/pages/admin/UserDetail";
 import { AdminPayments } from "@/pages/admin/Payments";
 import { AdminAccount } from "@/pages/admin/Account";
 import { AdminNotFound } from "@/pages/admin/AdminNotFound";
+import { AdminSignIn } from "@/pages/AdminSignIn";
 import { VerifyEmail } from "@/pages/VerifyEmail";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
@@ -125,8 +126,11 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Standalone, and outside the guard below: the console's sign-in door owns the
+  // full viewport like the other auth pages, so it skips RootLayout entirely.
+  { path: "/admin/login", element: <AdminSignIn /> },
   {
-    element: <RequireAuth roles={["admin"]} />,
+    element: <RequireAuth roles={["admin"]} loginPath="/admin/login" />,
     children: [
       // Admin console: its own shell (grouped sidebar + topbar), outside the marketing chrome.
       {

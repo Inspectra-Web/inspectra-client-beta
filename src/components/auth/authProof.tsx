@@ -1,12 +1,6 @@
-import { ShieldCheck, Lock } from "lucide-react";
+import { ShieldCheck, Lock, ScanLine, FileCheck2, UserRoundCheck } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
-/**
- * Right-panel proof vignettes for the dark auth panel. Each is a small, self-contained
- * trust cue: verification shown as a badge on a real photo (never a certificate), kept
- * consistent with the product's "show the trust" direction. Gold foil stays reserved for
- * the credential moment (CredentialProof).
- */
 
 const HOME_IMAGE =
   "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80";
@@ -62,7 +56,35 @@ export function CredentialProof() {
   );
 }
 
-/** Security reassurance for the password-recovery flows. */
+export function ConsoleProof() {
+  const duties = [
+    { Icon: FileCheck2, label: "Title and document review" },
+    { Icon: UserRoundCheck, label: "Realtor certification" },
+    { Icon: ScanLine, label: "Disputes and listing audits" },
+  ];
+
+  return (
+    <div className="max-w-sm rounded-[1.4rem] border border-white/10 bg-[#0c1e2b] p-5 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.7)]">
+      <span className="credential-meta text-[0.6rem] text-white/40">
+        Trust operations
+      </span>
+      <p className="mt-2 text-sm leading-snug text-white/70">
+        Every Verified badge on INSPECTRA is issued here, by a person, on the evidence.
+      </p>
+      <ul className="mt-5 space-y-3 border-t border-white/10 pt-4">
+        {duties.map(({ Icon, label }) => (
+          <li key={label} className="flex items-center gap-3 text-sm text-white/60">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#38c0ff]/15 text-[#38c0ff]">
+              <Icon className="size-4" aria-hidden />
+            </span>
+            {label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function SecurityProof() {
   return (
     <div className="flex max-w-sm items-center gap-4 rounded-[1.4rem] border border-white/10 bg-[#0c1e2b] p-5 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.7)]">

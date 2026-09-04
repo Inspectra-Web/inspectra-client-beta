@@ -7,16 +7,18 @@ import { useLogout } from "@/lib/auth";
 export function LogoutButton({
   onNavigate,
   className,
+  to = "/login",
 }: {
   onNavigate?: () => void;
   className?: string;
+  to?: string;
 }) {
   const logout = useLogout();
   const navigate = useNavigate();
 
   function handleLogout() {
     onNavigate?.();
-    navigate("/login", { replace: true });
+    navigate(to, { replace: true });
     logout.mutate();
   }
 

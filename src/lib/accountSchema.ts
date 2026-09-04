@@ -17,12 +17,13 @@ const phoneField = z
   .trim()
   .refine((v) => v === '' || v.length >= 7, 'Enter a valid phone number');
 
-export const seekerProfileSchema = z.object({
+
+export const identityProfileSchema = z.object({
   firstName: z.string().trim().min(1, "Enter your first name"),
   lastName: z.string().trim().min(1, "Enter your last name"),
   phone: phoneField,
 });
-export type SeekerProfileValues = z.infer<typeof seekerProfileSchema>;
+export type IdentityProfileValues = z.infer<typeof identityProfileSchema>;
 
 export const realtorProfileSchema = z.object({
   name: z.string().min(2, "Enter your full name"),

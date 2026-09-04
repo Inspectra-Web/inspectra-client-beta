@@ -13,7 +13,13 @@ function SessionPending() {
   );
 }
 
-export function RequireAuth({ roles }: { roles?: AuthRole[] }) {
+export function RequireAuth({
+  roles,
+  loginPath = "/login",
+}: {
+  roles?: AuthRole[];
+  loginPath?: string;
+}) {
   const { data: user, isPending } = useMe();
   const location = useLocation();
 
@@ -22,7 +28,7 @@ export function RequireAuth({ roles }: { roles?: AuthRole[] }) {
   if (!user)
     return (
       <Navigate
-        to="/login"
+        to={loginPath}
         replace
         state={{ from: `${location.pathname}${location.search}` }}
       />

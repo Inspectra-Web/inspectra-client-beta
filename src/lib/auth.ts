@@ -70,6 +70,19 @@ export function useLogin() {
   });
 }
 
+/** The console has its own door: /auth/login refuses admins outright. */
+export function useAdminLogin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (values: { email: string; password: string }) => {
+      const res = await api.post<UserResponse>("/admin/login", values);
+      return res.data.data.user;
+    },
+    onSuccess: (user) => queryClient.setQueryData(ME_KEY, user),
+  });
+}
+
 export function useLogout() {
   const queryClient = useQueryClient();
 

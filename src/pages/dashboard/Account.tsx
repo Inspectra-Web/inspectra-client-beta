@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { Loader2, Camera, Check, ShieldCheck } from "lucide-react";
+import { Loader2, Check, ShieldCheck } from "lucide-react";
 import type { ComponentType } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
+import { AvatarPicker } from "@/components/dashboard/AvatarPicker";
 import { AuthField, PasswordField } from "@/components/auth/AuthField";
 import {
   Select,
@@ -16,26 +17,16 @@ import {
 } from "@/components/ui/Select";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
-import { UserAvatar } from "@/components/ui/UserAvatar";
 import {
-  seekerProfileSchema,
+  identityProfileSchema,
   securitySchema,
-  type SeekerProfileValues,
+  type IdentityProfileValues,
   type SecurityValues,
 } from "@/lib/accountSchema";
 import { passwordStrength } from "@/lib/authSchemas";
 import { apiMessage } from "@/lib/api";
 import { useAuthUser, useUpdatePassword } from "@/lib/auth";
-import {
-  AVATAR_MAX_MB,
-  avatarError,
-  PROPERTY_INTERESTS,
-  useProfile,
-  useRemoveAvatar,
-  useUpdateProfile,
-  useUploadAvatar,
-} from "@/lib/profile";
-import { displayName } from "@/lib/format";
+import { PROPERTY_INTERESTS, useProfile, useUpdateProfile } from "@/lib/profile";
 import { cn } from "@/lib/cn";
 
 const CITIES = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Kano"];
@@ -79,8 +70,8 @@ function ProfileSection() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SeekerProfileValues>({
-    resolver: zodResolver(seekerProfileSchema),
+  } = useForm<IdentityProfileValues>({
+    resolver: zodResolver(identityProfileSchema),
     // values, not defaultValues: the form fills in once the profile arrives.
     values: {
       firstName: profile?.firstName ?? "",
@@ -89,7 +80,7 @@ function ProfileSection() {
     },
   });
 
-  async function onSubmit(input: SeekerProfileValues) {
+  async function onSubmit(input: IdentityProfileValues) {
     try {
       await updateProfile.mutateAsync(input);
       toast.success("Profile updated");
@@ -142,95 +133,6 @@ function ProfileSection() {
         </div>
       </form>
     </Panel>
-  );
-}
-
-function AvatarPicker() {
-  const user = useAuthUser();
-  const uploadAvatar = useUploadAvatar();
-  const removeAvatar = useRemoveAvatar();
-  const busy = uploadAvatar.isPending || removeAvatar.isPending;
-  const [error, setError] = useState<string | null>(null);
-
-  async function onPick(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    // Checked here so an oversized file never leaves the browser.
-    const rejection = avatarError(file);
-    setError(rejection);
-    if (rejection) return;
-
-    try {
-      await uploadAvatar.mutateAsync(file);
-      toast.success("Photo updated");
-    } catch (error) {
-      toast.error(apiMessage(error));
-    }
-  }
-
-  async function onRemove() {
-    setError(null);
-
-    try {
-      await removeAvatar.mutateAsync();
-      toast.success("Photo removed");
-    } catch (error) {
-      toast.error(apiMessage(error));
-    }
-  }
-
-  return (
-    <div className="mb-6 flex items-center gap-4">
-      <UserAvatar
-        name={displayName(user.fullname)}
-        avatar={user.avatar}
-        className="size-16 text-base"
-      />
-      <div className="flex flex-wrap items-center gap-2">
-        <label
-          className={cn(
-            buttonClasses("outline", "sm"),
-            "cursor-pointer",
-            busy && "pointer-events-none opacity-60",
-          )}
-        >
-          {uploadAvatar.isPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          ) : (
-            <Camera className="size-4" aria-hidden />
-          )}
-          Change photo
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onPick}
-            disabled={busy}
-            className="sr-only"
-          />
-        </label>
-        {user.avatar && (
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={busy}
-            className={cn(buttonClasses("ghost", "sm"), "disabled:opacity-60")}
-          >
-            Remove
-          </button>
-        )}
-        {error ? (
-          <p role="alert" className="w-full text-xs text-rose-500">
-            {error}
-          </p>
-        ) : (
-          <p className="w-full text-xs text-muted">
-            JPG, PNG or WebP, up to {AVATAR_MAX_MB}MB.
-          </p>
-        )}
-      </div>
-    </div>
   );
 }
 

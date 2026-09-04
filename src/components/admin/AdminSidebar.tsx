@@ -130,7 +130,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="truncate text-xs text-faint">{user.email}</p>
           </div>
         </Link>
-        <LogoutButton onNavigate={onNavigate} />
+        <LogoutButton onNavigate={onNavigate} to="/admin/login" />
       </div>
     </div>
   );

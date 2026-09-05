@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { Loader2, ShieldCheck, UserRound, Settings2 } from "lucide-react";
+import { Loader2, ScanFace, ShieldCheck, UserRound, Settings2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { PasswordField } from "@/components/auth/AuthField";
@@ -10,6 +10,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
 import { AccountProfile } from "@/components/realtor/AccountProfile";
 import { AccountSettings } from "@/components/realtor/AccountSettings";
+import { IdentityVerification } from "@/components/realtor/IdentityVerification";
 import { securitySchema, type SecurityValues } from "@/lib/accountSchema";
 import { apiMessage } from "@/lib/api";
 import { useUpdatePassword } from "@/lib/auth";
@@ -21,6 +22,7 @@ const STRENGTH_LABELS = ["Too weak", "Weak", "Fair", "Good", "Strong"] as const;
 const TABS = [
   { id: "profile", label: "Profile", Icon: UserRound },
   { id: "settings", label: "Settings", Icon: Settings2 },
+  { id: "identity", label: "Identity", Icon: ScanFace },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -57,15 +59,23 @@ export function RealtorAccount() {
         </div>
       </Reveal>
 
-      {tab === "profile" ? (
+      {tab === "profile" && (
         <AccountProfile onEdit={() => setTab("settings")} />
-      ) : (
+      )}
+
+      {tab === "settings" && (
         <div className="space-y-6">
           <AccountSettings onSaved={() => setTab("profile")} />
           <Reveal y={16}>
             <SecuritySection />
           </Reveal>
         </div>
+      )}
+
+      {tab === "identity" && (
+        <Reveal y={16}>
+          <IdentityVerification />
+        </Reveal>
       )}
     </div>
   );

@@ -6,17 +6,13 @@ import {
 } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { buttonClasses } from "@/components/ui/Button";
 import { useAuthUser } from "@/lib/auth";
 import { useProfile } from "@/lib/profile";
+import { useIdentity } from "@/lib/identity";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
-
-// Document verification is Phase 9, so this panel is still a placeholder rather
-// than reading a status the API does not serve yet.
-const GOVERNMENT_ID = { label: "Government-issued ID", status: "pending" as const };
 
 const SOCIAL_LABELS: { key: "instagram" | "linkedin" | "facebook" | "x"; label: string }[] = [
   { key: "instagram", label: "Instagram" },
@@ -29,6 +25,7 @@ const SOCIAL_LABELS: { key: "instagram" | "linkedin" | "facebook" | "x"; label: 
 export function AccountProfile({ onEdit }: { onEdit: () => void }) {
   const user = useAuthUser();
   const { data: profile, isPending } = useProfile();
+  const { data: identity } = useIdentity();
 
   if (isPending || !profile)
     return (
@@ -68,6 +65,12 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
                 <div className="pb-1">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <h2 className="display text-2xl text-ink">{name}</h2>
+                    {/* On the name, never on the picture: the picture is not what was verified. */}
+                    {identity?.verified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-verified/12 px-2.5 py-0.5 text-xs font-semibold text-verified">
+                        <ShieldCheck className="size-3.5" aria-hidden /> Identity verified
+                      </span>
+                    )}
                     {profile.certified && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-foil/15 px-2.5 py-0.5 text-xs font-semibold text-foil">
                         <BadgeCheck className="size-3.5" aria-hidden /> Certified
@@ -167,21 +170,6 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
         </Reveal>
       </div>
 
-      {/* verification */}
-      <Reveal y={16}>
-        <Panel title="Verification">
-          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand-ink">
-              <ShieldCheck className="size-5" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-ink">{GOVERNMENT_ID.label}</p>
-              <p className="text-xs text-muted">Submitted, under review by our team.</p>
-            </div>
-            <StatusBadge status={GOVERNMENT_ID.status} />
-          </div>
-        </Panel>
-      </Reveal>
     </div>
   );
 }

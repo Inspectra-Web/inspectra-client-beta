@@ -1,3 +1,7 @@
+import dayjs from "dayjs";
+import advancedFormat from "dayjs/plugin/advancedFormat";
+import updateLocale from "dayjs/plugin/updateLocale";
+
 /** Compact Naira price, e.g. 480_000_000 -> "₦480M", 8_200_000 -> "₦8.2M". */
 export function formatPrice(value: number): string {
   if (value >= 1_000_000_000) return `₦${trim(value / 1_000_000_000)}B`;
@@ -35,10 +39,32 @@ export function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-/** Month and year for "joined" labels: an ISO date -> "Apr 2025". */
-export function monthYear(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+// Do (the ordinal day) is not in core; updateLocale is how the month names change.
+dayjs.extend(advancedFormat);
+dayjs.extend(updateLocale);
 
-  return date.toLocaleDateString("en-NG", { month: "short", year: "numeric" });
+// MMM abbreviates September to "Sep"; the house style is "Sept". This is the locale
+// every dayjs call in the app reads, so set it once here.
+dayjs.updateLocale("en", {
+  monthsShort: [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sept",
+    "Oct",
+    "Nov",
+    "Dec",
+  ],
+});
+
+/** An ISO date -> "10th Sept 2026". */
+export function formatDate(iso: string): string {
+  const date = dayjs(iso);
+
+  return date.isValid() ? date.format("Do MMM YYYY") : "";
 }

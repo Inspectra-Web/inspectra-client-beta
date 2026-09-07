@@ -18,12 +18,10 @@ import { passwordStrength } from "@/lib/authSchemas";
 import { apiMessage } from "@/lib/api";
 import { useAuthUser, useUpdatePassword } from "@/lib/auth";
 import { useProfile, useUpdateProfile } from "@/lib/profile";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const STRENGTH_LABELS = ["Too weak", "Weak", "Fair", "Good", "Strong"] as const;
-
-const monthYear = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-NG", { month: "long", year: "numeric" });
 
 export function AdminAccount() {
   return (
@@ -90,7 +88,7 @@ function ProfileSection() {
       <AvatarPicker />
 
       <p className="mb-5 text-sm text-muted">
-        Admin since {monthYear(user.createdAt)}
+        Admin since {formatDate(user.createdAt)}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

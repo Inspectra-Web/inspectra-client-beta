@@ -12,7 +12,7 @@ import { AdminSelect } from "@/components/admin/AdminSelect";
 import { apiMessage } from "@/lib/api";
 import type { AuthRole, AuthStatus } from "@/lib/auth";
 import { useAdminUsers, PAGE_SIZE, type DirectoryQuery } from "@/lib/adminUsers";
-import { displayName, monthYear } from "@/lib/format";
+import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const ROLE_TONE: Record<AuthRole, string> = {
@@ -177,7 +177,7 @@ export function AdminUsers() {
                   </td>
                   <td className={cn(tdCls, "text-sm text-muted max-md:hidden")}>{u.city || "—"}</td>
                   <td className={cn(tdCls, "text-sm font-medium capitalize", STATUS_TONE[u.status])}>{u.status}</td>
-                  <td className={cn(tdCls, "text-sm text-muted max-md:hidden")}>{monthYear(u.createdAt)}</td>
+                  <td className={cn(tdCls, "text-sm text-muted max-md:hidden")}>{formatDate(u.createdAt)}</td>
                 </tr>
               );
             })}

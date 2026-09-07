@@ -29,7 +29,7 @@ import { apiMessage } from "@/lib/api";
 import type { AuthRole, AuthStatus } from "@/lib/auth";
 import { useAdminUser, useUpdateUserStatus, type UserDetail } from "@/lib/adminUsers";
 import type { Profile } from "@/lib/profile";
-import { displayName, monthYear } from "@/lib/format";
+import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const ROLE_LABEL: Record<AuthRole, string> = { admin: "Admin", realtor: "Realtor", seeker: "Seeker" };
@@ -117,7 +117,7 @@ function UserDetailView({ detail }: { detail: UserDetail }) {
                   </div>
                   <p className={cn("mt-1 inline-flex items-center gap-1.5 text-sm font-medium", STATUS_TONE[user.status])}>
                     <span className="size-1.5 rounded-full bg-current" aria-hidden />
-                    {cap(user.status)} · joined {monthYear(user.createdAt)}
+                    {cap(user.status)} · joined {formatDate(user.createdAt)}
                   </p>
                 </div>
               </div>
@@ -157,7 +157,7 @@ function UserDetailView({ detail }: { detail: UserDetail }) {
             <Detail icon={Phone} label="Phone" value={user.phone ?? ""} />
             <Detail icon={UserRound} label="Role" value={ROLE_LABEL[user.role]} />
             <Detail icon={MapPin} label="City" value={profile?.city ?? ""} />
-            <Detail icon={CalendarCheck} label="Member since" value={monthYear(user.createdAt)} />
+            <Detail icon={CalendarCheck} label="Member since" value={formatDate(user.createdAt)} />
           </dl>
         </Panel>
       </Reveal>

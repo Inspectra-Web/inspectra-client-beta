@@ -34,3 +34,11 @@ export function initials(name: string): string {
 
   return (first + last).toUpperCase();
 }
+
+/** Month and year for "joined" labels: an ISO date -> "Apr 2025". */
+export function monthYear(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("en-NG", { month: "short", year: "numeric" });
+}

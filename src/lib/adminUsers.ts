@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
 import type { AuthRole, AuthStatus, AuthUser } from "./auth";
@@ -63,8 +63,6 @@ export function useAdminUsers(query: DirectoryQuery) {
       });
       return res.data.data;
     },
-    // Hold the previous page on screen while the next one loads, so typing in
-    // the search box does not flash the table empty on every keystroke.
     placeholderData: keepPreviousData,
   });
 }
@@ -75,6 +73,34 @@ export function useAdminUser(id: string) {
     queryFn: async () => {
       const res = await api.get<UserDetailResponse>(`/admin/users/${id}`);
       return res.data.data;
+    },
+  });
+}
+
+/** The two states the console toggles between. Mirrors userStatusSchema on the server. */
+export type SettableStatus = Extract<AuthStatus, "active" | "suspended">;
+
+interface StatusResponse {
+  status: string;
+  message?: string;
+  data: { user: AuthUser };
+}
+
+export function useUpdateUserStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; status: SettableStatus }) => {
+      const res = await api.patch<StatusResponse>(`/admin/users/${input.id}/status`, {
+        status: input.status,
+      });
+      return res.data;
+    },
+    onSuccess: ({ data }, { id }) => {
+      queryClient.setQueryData<UserDetail>([...ADMIN_USERS_KEY, id], (prev) =>
+        prev ? { ...prev, user: data.user } : prev,
+      );
+      void queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY });
     },
   });
 }

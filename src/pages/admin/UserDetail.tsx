@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { Link, useParams } from "react-router";
 import { toast } from "react-toastify";
 import {
@@ -11,6 +11,7 @@ import {
   CircleCheck,
   Heart,
   Layers,
+  Loader2,
   Mail,
   MapPin,
   MapPinned,
@@ -23,9 +24,10 @@ import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { apiMessage } from "@/lib/api";
-import type { AuthRole, AuthStatus, AuthUser } from "@/lib/auth";
-import { useAdminUser } from "@/lib/adminUsers";
+import type { AuthRole, AuthStatus } from "@/lib/auth";
+import { useAdminUser, useUpdateUserStatus, type UserDetail } from "@/lib/adminUsers";
 import type { Profile } from "@/lib/profile";
 import { displayName, monthYear } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -58,9 +60,29 @@ export function AdminUserDetail() {
       />
     );
 
-  const { user, profile } = data;
+  return <UserDetailView key={data.user.id} detail={data} />;
+}
+
+function UserDetailView({ detail }: { detail: UserDetail }) {
+  const { user, profile } = detail;
+  const [confirming, setConfirming] = useState(false);
+  const updateStatus = useUpdateUserStatus();
+
   const name = displayName(user.fullname);
   const suspended = user.status === "suspended";
+  const locked = user.role === "admin";
+
+  async function onToggleStatus() {
+    try {
+      const res = await updateStatus.mutateAsync({
+        id: user.id,
+        status: suspended ? "active" : "suspended",
+      });
+      toast.success(res.message ?? "Account updated.");
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -84,7 +106,7 @@ export function AdminUserDetail() {
                 <UserAvatar
                   name={name}
                   avatar={user.avatar}
-                  className="-mt-12 size-24 rounded-2xl text-xl ring-4 ring-surface"
+                  className="relative -mt-12 size-24 rounded-2xl text-xl ring-4 ring-surface"
                 />
                 <div className="pb-1">
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -100,14 +122,23 @@ export function AdminUserDetail() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                className={cn("max-sm:w-full", suspended ? "text-verified hover:bg-verified/10" : "text-rose-500 hover:bg-rose-500/10")}
-                onClick={() => toast.info("Changing an account's status is not wired up yet.")}
-              >
-                {suspended ? <CircleCheck className="size-4" aria-hidden /> : <Ban className="size-4" aria-hidden />}
-                {suspended ? "Reactivate" : "Suspend"}
-              </Button>
+              {!locked && (
+                <Button
+                  variant="outline"
+                  disabled={updateStatus.isPending}
+                  className={cn("max-sm:w-full", suspended ? "text-verified hover:bg-verified/10" : "text-rose-500 hover:bg-rose-500/10")}
+                  onClick={() => setConfirming(true)}
+                >
+                  {updateStatus.isPending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : suspended ? (
+                    <CircleCheck className="size-4" aria-hidden />
+                  ) : (
+                    <Ban className="size-4" aria-hidden />
+                  )}
+                  {suspended ? "Reactivate" : "Suspend"}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -127,7 +158,6 @@ export function AdminUserDetail() {
             <Detail icon={UserRound} label="Role" value={ROLE_LABEL[user.role]} />
             <Detail icon={MapPin} label="City" value={profile?.city ?? ""} />
             <Detail icon={CalendarCheck} label="Member since" value={monthYear(user.createdAt)} />
-            <Detail icon={UsersRound} label="User ID" value={user.id} />
           </dl>
         </Panel>
       </Reveal>
@@ -135,7 +165,21 @@ export function AdminUserDetail() {
       {/* role-specific */}
       {user.role === "realtor" && <RealtorSection profile={profile} />}
       {user.role === "seeker" && <SeekerSection profile={profile} />}
-      {user.role === "admin" && <AdminSection user={user} />}
+
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={suspended ? `Reactivate ${name}?` : `Suspend ${name}?`}
+        description={
+          suspended
+            ? "They will be able to sign in again straight away."
+            : "They are signed out immediately and cannot sign in until you reactivate the account."
+        }
+        confirmLabel={suspended ? "Reactivate" : "Suspend"}
+        destructive={!suspended}
+        pending={updateStatus.isPending}
+        onConfirm={onToggleStatus}
+      />
     </div>
   );
 }
@@ -181,28 +225,6 @@ function SeekerSection({ profile }: { profile: Profile | null }) {
         ) : (
           <EmptyProfile />
         )}
-      </Panel>
-    </Reveal>
-  );
-}
-
-function AdminSection({ user }: { user: AuthUser }) {
-  return (
-    <Reveal y={16}>
-      <Panel title="Administrator">
-        <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand-ink">
-            <ShieldCheck className="size-5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-ink">Platform administrator</p>
-            <p className="text-xs text-muted">
-              Full access to the Trust Operations console. Admin accounts are seeded, never
-              self-registered.
-            </p>
-          </div>
-        </div>
-        <p className="mt-4 text-xs text-muted">Signs in at /admin/login as {user.email}.</p>
       </Panel>
     </Reveal>
   );

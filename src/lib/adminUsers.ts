@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { api } from "./api";
 import type { AuthRole, AuthStatus, AuthUser } from "./auth";
+import type { Identity } from "./identity";
 import type { Profile } from "./profile";
 
 /** A directory row: the account, plus the city that lives on its profile. */
@@ -37,6 +38,8 @@ export interface UserDetail {
   user: AuthUser;
   /** Null for an account that has never had a profile written. */
   profile: Profile | null;
+  /** Realtor-only: the server does not look it up for other roles. */
+  identity: Identity | null;
 }
 
 interface DirectoryResponse {

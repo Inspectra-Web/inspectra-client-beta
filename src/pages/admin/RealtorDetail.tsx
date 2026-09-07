@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { Link, useParams } from "react-router";
 import { toast } from "react-toastify";
 import {
@@ -7,11 +7,13 @@ import {
   BadgeCheck,
   Briefcase,
   Building2,
+  CalendarCheck,
+  CircleCheck,
   CircleDot,
   ExternalLink,
-  Eye,
   Languages,
   Layers,
+  Loader2,
   Mail,
   MapPin,
   MapPinned,
@@ -23,51 +25,56 @@ import {
 } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button, buttonClasses } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/format";
-import {
-  realtorById,
-  adminRealtorProfile,
-  certRecordFor,
-  govIdStatusFor,
-  listingsByRealtor,
-  realtorPlan,
-} from "@/data/admin";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { apiMessage } from "@/lib/api";
+import { useAdminUser, useUpdateUserStatus, type UserDetail } from "@/lib/adminUsers";
+import { documentLabel } from "@/lib/identity";
+import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
-
-const PLAN_LABEL: Record<string, string> = {
-  starter: "Starter",
-  professional: "Professional",
-  max: "Max",
-};
 
 export function AdminRealtorDetail() {
   const { id } = useParams();
-  const realtor = id ? realtorById(id) : undefined;
+  const { data, isPending, isError, error } = useAdminUser(id ?? "");
 
-  if (!realtor) {
+  if (isPending) return <DetailSkeleton />;
+
+  if (isError)
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <span className="grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint">
-          <UsersRound className="size-7" />
-        </span>
-        <h1 className="display mt-5 text-3xl text-ink">Realtor not found</h1>
-        <Link to="/admin/realtors" className={buttonClasses("brand", "md", "mt-7")}>
-          <ArrowLeft className="size-4" aria-hidden />
-          Back to realtors
-        </Link>
-      </div>
+      <NotFound message={apiMessage(error, "That realtor could not be loaded.")} />
     );
-  }
 
-  const r = realtor;
-  const p = adminRealtorProfile(r);
-  const cert = certRecordFor(r);
-  const govId = govIdStatusFor(r);
-  const listings = listingsByRealtor(r.id);
-  const plan = PLAN_LABEL[realtorPlan[r.id] ?? "starter"];
-  const avatar = `${r.avatar}?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80`;
+  if (data.user.role !== "realtor")
+    return (
+      <NotFound message="That account exists, but it is not a realtor." />
+    );
+
+  return <RealtorDetailView key={data.user.id} detail={data} />;
+}
+
+function RealtorDetailView({ detail }: { detail: UserDetail }) {
+  const { user, profile, identity } = detail;
+  const [confirming, setConfirming] = useState(false);
+  const updateStatus = useUpdateUserStatus();
+
+  const name = displayName(user.fullname);
+  const suspended = user.status === "suspended";
+  const certified = profile?.certified ?? false;
+
+  const socials = Object.entries(profile?.socials ?? {}).filter(([, href]) => href);
+
+  async function onToggleStatus() {
+    try {
+      const res = await updateStatus.mutateAsync({
+        id: user.id,
+        status: suspended ? "active" : "suspended",
+      });
+      toast.success(res.message ?? "Account updated.");
+    } catch (err) {
+      toast.error(apiMessage(err));
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -89,8 +96,12 @@ export function AdminRealtorDetail() {
             <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div className="flex items-end gap-4 max-sm:items-center">
                 <span className="relative -mt-12 shrink-0">
-                  <img src={avatar} alt={r.name} className="size-24 rounded-2xl object-cover ring-4 ring-surface" />
-                  {r.certified && (
+                  <UserAvatar
+                    name={name}
+                    avatar={user.avatar}
+                    className="size-24 rounded-2xl text-xl ring-4 ring-surface"
+                  />
+                  {certified && (
                     <span
                       className="absolute -bottom-1.5 -right-1.5 grid size-7 place-items-center rounded-full bg-foil ring-2 ring-surface"
                       title="Certified realtor"
@@ -101,8 +112,10 @@ export function AdminRealtorDetail() {
                 </span>
                 <div className="pb-1">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h2 className="display text-2xl text-ink">{r.name}</h2>
-                    {r.certified ? (
+                    {/* The badge goes on the name, never on the picture: the avatar
+                        is editable, the verified state is not. */}
+                    <h2 className="display text-2xl text-ink">{name}</h2>
+                    {certified ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-foil/15 px-2.5 py-0.5 text-xs font-semibold text-foil">
                         <BadgeCheck className="size-3.5" aria-hidden /> Certified
                       </span>
@@ -111,94 +124,88 @@ export function AdminRealtorDetail() {
                         Not certified
                       </span>
                     )}
-                    <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-muted">
-                      {plan} plan
-                    </span>
+                    {suspended && (
+                      <span className="inline-flex items-center rounded-full bg-rose-500/12 px-2.5 py-0.5 text-xs font-semibold text-rose-500">
+                        Suspended
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 text-sm text-muted">
-                    {p.role} · {r.agency}
+                    {[profile?.jobTitle, profile?.agencyName].filter(Boolean).join(" · ") ||
+                      "No agency on file"}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 max-sm:w-full">
-                <Link to={`/realtors/${r.id}`} className={cn(buttonClasses("outline", "md"), "max-sm:flex-1")}>
-                  <Eye className="size-4" aria-hidden /> Public profile
-                </Link>
-                <button
-                  onClick={() => toast.info(`${r.name} suspended.`)}
-                  className={cn(buttonClasses("outline", "md"), "text-rose-500 hover:bg-rose-500/10 max-sm:flex-1")}
-                >
-                  <Ban className="size-4" aria-hidden /> Suspend
-                </button>
-              </div>
+              <Button
+                variant="outline"
+                disabled={updateStatus.isPending}
+                className={cn(
+                  "max-sm:w-full",
+                  suspended ? "text-verified hover:bg-verified/10" : "text-rose-500 hover:bg-rose-500/10",
+                )}
+                onClick={() => setConfirming(true)}
+              >
+                {updateStatus.isPending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : suspended ? (
+                  <CircleCheck className="size-4" aria-hidden />
+                ) : (
+                  <Ban className="size-4" aria-hidden />
+                )}
+                {suspended ? "Reactivate" : "Suspend"}
+              </Button>
             </div>
 
             {/* quick facts */}
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-5 text-sm">
-              <Fact icon={MapPin} text={`${p.address}`} />
-              <Fact icon={Phone} text={p.phone} />
-              <Fact icon={Mail} text={p.email} />
-              <div className="ml-auto flex items-center gap-2 max-sm:ml-0">
-                {p.socials.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand/40 hover:text-brand-ink"
-                  >
-                    {s.label}
-                    <ExternalLink className="size-3" aria-hidden />
-                  </a>
-                ))}
-              </div>
+              <Fact icon={Mail} text={user.email} />
+              {user.phone && <Fact icon={Phone} text={user.phone} />}
+              {profile?.address && <Fact icon={MapPin} text={profile.address} />}
+              {socials.length > 0 && (
+                <div className="ml-auto flex items-center gap-2 max-sm:ml-0">
+                  {socials.map(([label, href]) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium capitalize text-muted transition-colors hover:border-brand/40 hover:text-brand-ink"
+                    >
+                      {label}
+                      <ExternalLink className="size-3" aria-hidden />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </Reveal>
 
-      {/* track record */}
-      <Reveal y={16}>
-        <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
-          <StatTile Icon={BadgeCheck} value={r.verifiedListings} label="Verified listings" />
-          <StatTile Icon={Briefcase} value={r.completedDeals} label="Deals closed" />
-          <StatTile Icon={Building2} value={listings.length} label="Active listings" />
-        </div>
-      </Reveal>
-
-      {/* self description */}
-      <Reveal y={16}>
-        <Panel title="Self description">
-          <p className="leading-relaxed text-muted">{p.selfDescription}</p>
-        </Panel>
-      </Reveal>
+      {profile?.bio && (
+        <Reveal y={16}>
+          <Panel title="Self description">
+            {/* The bio carries its own line breaks, which HTML would otherwise collapse. */}
+            <p className="whitespace-pre-line leading-relaxed text-muted">{profile.bio}</p>
+          </Panel>
+        </Reveal>
+      )}
 
       {/* professional details */}
       <Reveal y={16}>
         <Panel title="Professional details">
-          <dl>
-            <Detail icon={Briefcase} label="Experience" value={p.experience} />
-            <div className="flex items-start justify-between gap-4 border-b border-line/70 py-2.5">
-              <dt className="flex items-center gap-2.5 text-sm text-muted">
-                <Layers className="size-4 shrink-0 text-faint" aria-hidden />
-                Specialization
-              </dt>
-              <dd className="flex flex-wrap justify-end gap-1.5">
-                {p.specialization.length ? (
-                  p.specialization.map((s) => (
-                    <span key={s} className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand-ink">
-                      {s}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm font-medium text-ink">—</span>
-                )}
-              </dd>
-            </div>
-            <Detail icon={Building2} label="Agency" value={r.agency} />
-            <Detail icon={MapPinned} label="Agency address" value={p.agencyAddress} />
-            <Detail icon={MapPin} label="Region" value={p.region} />
-            <Detail icon={CircleDot} label="Subscription" value={`${plan} plan`} />
-          </dl>
+          {profile ? (
+            <dl>
+              <Detail icon={Briefcase} label="Experience" value={profile.experience} />
+              <Chips icon={Layers} label="Specialization" values={profile.specialization} />
+              <Detail icon={Building2} label="Agency" value={profile.agencyName} />
+              <Detail icon={MapPinned} label="Agency address" value={profile.agencyAddress} />
+              <Detail icon={MapPin} label="Region" value={profile.region} />
+            </dl>
+          ) : (
+            <EmptyProfile />
+          )}
         </Panel>
       </Reveal>
 
@@ -206,14 +213,14 @@ export function AdminRealtorDetail() {
       <Reveal y={16}>
         <Panel title="Additional details">
           <dl>
-            <Detail icon={Languages} label="Languages spoken" value={p.languages} />
-            <Detail icon={CircleDot} label="Availability" value={p.availabilityStatus} />
-            <Detail icon={MessageSquare} label="Contact means" value={p.contactMeans} />
-            <Detail icon={User} label="Gender" value={p.gender} />
-            <Detail icon={MapPin} label="City" value={r.city} />
-            <Detail icon={MapPin} label="State" value={p.state} />
-            <Detail icon={MapPin} label="Country" value={p.country} />
-            <Detail icon={CircleDot} label="Member since" value={p.memberSince} />
+            <Detail icon={Languages} label="Language" value={profile?.language ?? ""} />
+            <Detail icon={CircleDot} label="Availability" value={profile?.availabilityStatus ?? ""} />
+            <Detail icon={MessageSquare} label="Contact means" value={profile?.contactMeans ?? ""} />
+            <Detail icon={User} label="Gender" value={profile?.gender ?? ""} />
+            <Detail icon={MapPin} label="City" value={profile?.city ?? ""} />
+            <Detail icon={MapPin} label="State" value={profile?.state ?? ""} />
+            <Detail icon={MapPin} label="Country" value={profile?.country ?? ""} />
+            <Detail icon={CalendarCheck} label="Member since" value={formatDate(user.createdAt)} />
           </dl>
         </Panel>
       </Reveal>
@@ -226,69 +233,84 @@ export function AdminRealtorDetail() {
             <p className="credential-meta text-xs text-[#3a2c07]">Certification</p>
           </div>
           <div className="p-6 max-sm:p-5">
-            {cert.status === "certified" ? (
-              <dl className="grid grid-cols-3 gap-x-8 gap-y-3 max-sm:grid-cols-1">
-                <Detail icon={BadgeCheck} label="Status" value="Certified" />
-                <Detail icon={ShieldCheck} label="Credential" value={cert.credentialId ?? "—"} />
-                <Detail icon={CircleDot} label="Exam score" value={`${cert.examScore}%`} />
-              </dl>
+            {certified ? (
+              <p className="text-sm text-muted">
+                Certified realtor. Their listings can go live once the documents clear.
+              </p>
             ) : (
-              <div className="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
-                <p className="text-sm text-muted">
-                  This realtor has not passed the certification exam yet, so their listings cannot go live.
-                </p>
-                <Button variant="brand" onClick={() => toast.success("Certification approved.")} className="shrink-0 max-sm:w-full">
-                  <BadgeCheck className="size-4" aria-hidden />
-                  Approve certification
-                </Button>
-              </div>
+              <p className="text-sm text-muted">
+                This realtor is not certified yet, so their listings cannot go live.
+              </p>
             )}
           </div>
         </div>
       </Reveal>
 
-      {/* verification (government ID) */}
+      {/* identity */}
       <Reveal y={16}>
-        <Panel title="Verification">
+        <Panel title="Identity">
           <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand-ink">
+            <span
+              className={cn(
+                "grid size-10 shrink-0 place-items-center rounded-lg",
+                identity?.verified ? "bg-verified/12 text-verified" : "bg-surface-2 text-faint",
+              )}
+            >
               <ShieldCheck className="size-5" aria-hidden />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-ink">Government-issued ID</p>
+              <p className="text-sm font-medium text-ink">
+                {identity?.verified ? "Identity verified" : "Identity not verified"}
+              </p>
               <p className="text-xs text-muted">
-                {govId === "verified" ? "Confirmed by our team." : "Submitted, under review by our team."}
+                {identity?.verified
+                  ? `${documentLabel(identity.document!)} ending ${identity.last4}, face matched against the record.`
+                  : "This realtor has not completed a NIN or BVN check."}
               </p>
             </div>
-            <StatusBadge status={govId} />
           </div>
+
+          {identity?.verified && (
+            <dl className="mt-4">
+              <Detail icon={User} label="Name on the record" value={identity.legalName} />
+              <Detail
+                icon={CalendarCheck}
+                label="Verified on"
+                value={identity.verifiedOn ? formatDate(identity.verifiedOn) : ""}
+              />
+            </dl>
+          )}
         </Panel>
       </Reveal>
 
-      {/* listings */}
-      <Reveal y={16}>
-        <Panel title={`Listings (${listings.length})`} bodyClassName="space-y-2.5">
-          {listings.map((prop) => (
-            <Link
-              key={prop.id}
-              to={`/admin/listings/${prop.id}`}
-              className="group flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-3 transition-colors hover:border-brand/40"
-            >
-              <img src={prop.image} alt="" className="size-11 shrink-0 rounded-lg object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-ink">{prop.title}</p>
-                <p className="truncate text-xs text-muted">{formatPrice(prop.price)}</p>
-              </div>
-              <StatusBadge status={prop.status} className="shrink-0" />
-            </Link>
-          ))}
-        </Panel>
-      </Reveal>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={suspended ? `Reactivate ${name}?` : `Suspend ${name}?`}
+        description={
+          suspended
+            ? "They will be able to sign in again straight away."
+            : "They are signed out immediately and cannot sign in until you reactivate the account."
+        }
+        confirmLabel={suspended ? "Reactivate" : "Suspend"}
+        destructive={!suspended}
+        pending={updateStatus.isPending}
+        onConfirm={onToggleStatus}
+      />
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
+
+function EmptyProfile() {
+  return (
+    <p className="text-sm text-muted">
+      This account has no profile yet. One is created the first time they open their account
+      page.
+    </p>
+  );
+}
 
 function Fact({ icon: Icon, text }: { icon: ComponentType<{ className?: string }>; text: string }) {
   return (
@@ -314,27 +336,77 @@ function Detail({
         <Icon className="size-4 shrink-0 text-faint" aria-hidden />
         {label}
       </dt>
-      <dd className="text-right text-sm font-medium text-ink">{value || "—"}</dd>
+      <dd className="break-all text-right text-sm font-medium text-ink">{value || "—"}</dd>
     </div>
   );
 }
 
-function StatTile({
-  Icon,
-  value,
+function Chips({
+  icon: Icon,
   label,
+  values,
 }: {
-  Icon: ComponentType<{ className?: string }>;
-  value: number;
+  icon: ComponentType<{ className?: string }>;
   label: string;
+  values: string[];
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5">
-      <span className="grid size-10 place-items-center rounded-xl bg-brand/10 text-brand-ink">
-        <Icon className="size-5" aria-hidden />
+    <div className="flex items-start justify-between gap-4 border-b border-line/70 py-2.5 last:border-b-0">
+      <dt className="flex items-center gap-2.5 text-sm text-muted">
+        <Icon className="size-4 shrink-0 text-faint" aria-hidden />
+        {label}
+      </dt>
+      <dd className="flex flex-wrap justify-end gap-1.5">
+        {values.length ? (
+          values.map((value) => (
+            <span
+              key={value}
+              className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand-ink"
+            >
+              {value}
+            </span>
+          ))
+        ) : (
+          <span className="text-sm font-medium text-ink">{"—"}</span>
+        )}
+      </dd>
+    </div>
+  );
+}
+
+function NotFound({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <span className="grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint">
+        <UsersRound className="size-7" />
       </span>
-      <p className="mt-4 text-3xl font-semibold tabular-nums text-ink">{value}</p>
-      <p className="mt-1 text-sm text-muted">{label}</p>
+      <h1 className="display mt-5 text-3xl text-ink">Realtor not found</h1>
+      <p className="mt-2 max-w-sm text-muted">{message}</p>
+      <Link to="/admin/realtors" className={buttonClasses("brand", "md", "mt-7")}>
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to realtors
+      </Link>
+    </div>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-5 w-36 animate-pulse rounded bg-surface-2" />
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <div className="h-28 animate-pulse bg-surface-2" />
+        <div className="flex items-end gap-4 px-7 pb-7 max-sm:px-5">
+          <div className="-mt-12 size-24 shrink-0 animate-pulse rounded-2xl bg-surface-2 ring-4 ring-surface" />
+          <div className="space-y-2 pb-1">
+            <div className="h-6 w-48 animate-pulse rounded bg-surface-2" />
+            <div className="h-4 w-40 animate-pulse rounded bg-surface-2" />
+          </div>
+        </div>
+      </div>
+      <Panel title="Professional details">
+        <div className="h-48 animate-pulse rounded-xl bg-surface-2" />
+      </Panel>
     </div>
   );
 }

@@ -1,24 +1,34 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, BadgeCheck, MapPin, Map, ShieldCheck, MessageCircle, Check, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Building2,
+  CalendarCheck,
+  Clock,
+  ExternalLink,
+  Map,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+} from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
-import { PropertyCard } from "@/components/PropertyCard";
-import { Reveal } from "@/components/ui/Reveal";
-import { realtors, properties } from "@/data/mock";
-import { realtorMeta } from "@/lib/realtorMeta";
+import { apiMessage } from "@/lib/api";
+import { usePublicRealtor, realtorTagline } from "@/lib/realtors";
+import { displayName, formatDate, initials } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export function RealtorDetail() {
   const { id } = useParams();
-  const realtor = realtors.find((r) => r.id === id);
-  if (!realtor) return <NotFound />;
+  const { data: realtor, isPending, isError, error } = usePublicRealtor(id ?? "");
 
-  const meta = realtorMeta(realtor);
-  const first = realtor.name.split(" ")[0];
-  const specialties = meta.specialties.filter(Boolean);
-  const listings = properties.filter((p) => p.realtorId === realtor.id);
-  const photo = `${realtor.avatar}?auto=format&fit=crop&crop=faces&w=800&h=1000&q=85`;
+  if (isPending) return <ProfileSkeleton />;
+  if (isError) return <NotFound message={apiMessage(error, "The profile may have moved.")} />;
+
+  const name = displayName(realtor.fullname);
+  const first = name.split(" ")[0] ?? name;
+  const socials = Object.entries(realtor.socials ?? {}).filter(([, href]) => href);
 
   return (
     <div className="pb-20">
@@ -34,11 +44,27 @@ export function RealtorDetail() {
           <aside>
             <div className="sticky top-24 max-lg:static max-lg:mx-auto max-lg:max-w-sm">
               <div className="relative aspect-4/5 overflow-hidden rounded-3xl">
-                <img src={photo} alt={realtor.name} className="size-full object-cover object-[center_18%]" />
+                {realtor.avatar ? (
+                  <img
+                    src={realtor.avatar}
+                    alt={name}
+                    className="size-full object-cover object-[center_18%]"
+                  />
+                ) : (
+                  <div className="grid size-full place-items-center bg-surface-2">
+                    <span className="display text-7xl text-faint" aria-hidden>
+                      {initials(name)}
+                    </span>
+                  </div>
+                )}
                 <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#0a1620]/70 to-transparent" />
-                {realtor.certified && (
+                {realtor.certified ? (
                   <span className="bg-brand-gradient absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-[#04121f] shadow-sm">
                     <BadgeCheck className="size-3.5" aria-hidden /> Certified
+                  </span>
+                ) : (
+                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-verified px-2.5 py-1 text-xs font-semibold text-[#04121f] shadow-sm">
+                    <BadgeCheck className="size-3.5" aria-hidden /> Verified
                   </span>
                 )}
               </div>
@@ -46,24 +72,52 @@ export function RealtorDetail() {
               <ContactCard first={first} />
 
               <dl className="mt-5 space-y-3 rounded-2xl border border-line p-5 text-sm">
-                <Fact icon={MapPin} label="Based in" value={realtor.city} />
-                <Fact icon={Map} label="Covers" value={meta.areas} />
-                <Fact icon={ShieldCheck} label="Certified since" value={String(meta.since)} />
-                <Fact icon={Clock} label="Response" value={meta.responseLabel} />
+                {realtor.city && <Fact icon={MapPin} label="Based in" value={realtor.city} />}
+                {realtor.region && <Fact icon={Map} label="Covers" value={realtor.region} />}
+                {realtor.state && <Fact icon={MapPin} label="State" value={realtor.state} />}
+                {realtor.availabilityStatus && (
+                  <Fact icon={Clock} label="Availability" value={realtor.availabilityStatus} />
+                )}
+                {realtor.contactMeans && (
+                  <Fact icon={MessageSquare} label="Prefers" value={realtor.contactMeans} />
+                )}
+                <Fact icon={CalendarCheck} label="On INSPECTRA" value={formatDate(realtor.createdAt)} />
               </dl>
+
+              {socials.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {socials.map(([label, href]) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium capitalize text-muted transition-colors hover:border-brand/40 hover:text-brand-ink"
+                    >
+                      {label}
+                      <ExternalLink className="size-3" aria-hidden />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </aside>
 
-          {/* about + listings */}
+          {/* about */}
           <div className="min-w-0">
             <header className="border-b border-line pb-7">
-              <h1 className="display text-4xl text-ink max-sm:text-3xl">{realtor.name}</h1>
-              <p className="mt-2 text-muted">
-                {realtor.agency} · {realtor.city}
-              </p>
-              {specialties.length > 0 && (
+              <h1 className="display text-4xl text-ink max-sm:text-3xl">{name}</h1>
+              <p className="mt-2 text-muted">{realtorTagline(realtor)}</p>
+              {realtor.agencyName && (
+                <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
+                  <Building2 className="size-4 shrink-0 text-faint" aria-hidden />
+                  {realtor.agencyName}
+                  {realtor.agencyAddress && ` · ${realtor.agencyAddress}`}
+                </p>
+              )}
+              {realtor.specialization.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  {specialties.map((s) => (
+                  {realtor.specialization.filter(Boolean).map((s) => (
                     <span key={s} className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">
                       {s}
                     </span>
@@ -72,41 +126,13 @@ export function RealtorDetail() {
               )}
             </header>
 
-            <div className="grid grid-cols-3 gap-4 border-b border-line py-6 max-sm:gap-2">
-              <TrackStat value={realtor.completedDeals} label="Deals closed" />
-              <TrackStat value={realtor.verifiedListings} label="Verified listings" />
-              <TrackStat value={meta.since} label="Certified since" />
-            </div>
+            {realtor.bio && (
+              <Block eyebrow="About" title={`Working with ${first}`}>
+                {/* The bio carries its own line breaks, which HTML would otherwise collapse. */}
+                <p className="whitespace-pre-line leading-relaxed text-muted">{realtor.bio}</p>
+              </Block>
+            )}
 
-            <Block eyebrow="About" title={`Working with ${first}`}>
-              <p className="leading-relaxed text-muted">
-                {realtor.name} is a certified INSPECTRA realtor with {realtor.agency}, working across{" "}
-                {meta.areas} in {realtor.city}. Certified since {meta.since},{" "}
-                {first} focuses on {specialties.join(" and ").toLowerCase() || "residential sales"}.
-              </p>
-              <p className="mt-4 leading-relaxed text-muted">
-                Every home {first} brings to INSPECTRA is document-checked before it goes live — so what you
-                see is what you can trust.
-              </p>
-            </Block>
-
-            <Block eyebrow="On the market" title={`Listings by ${first}`}>
-              {listings.length > 0 ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-10 max-sm:grid-cols-1">
-                  {listings.map((p, i) => (
-                    <Reveal key={p.id} delay={(i % 2) * 0.08}>
-                      <PropertyCard property={p} />
-                    </Reveal>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-line bg-surface px-6 py-12 text-center">
-                  <p className="text-muted">
-                    No live listings right now — {first}'s next verified home will show up here.
-                  </p>
-                </div>
-              )}
-            </Block>
           </div>
         </div>
       </Container>
@@ -115,15 +141,17 @@ export function RealtorDetail() {
 }
 
 function ContactCard({ first }: { first: string }) {
-  const [sent, setSent] = useState(false);
-  return sent ? (
-    <div className="mt-5 flex items-center justify-center gap-1.5 rounded-full border border-verified/30 bg-verified/8 px-4 py-3 text-sm font-medium text-ink">
-      <Check className="size-4 shrink-0 text-verified" aria-hidden /> Request sent — {first} will reach out
-    </div>
+  const [asked, setAsked] = useState(false);
+
+  return asked ? (
+    <p className="mt-5 rounded-2xl border border-line bg-surface-2/40 px-4 py-3 text-center text-sm text-muted">
+      Messaging {first} through INSPECTRA is not live yet. It arrives with inspections and
+      inquiries.
+    </p>
   ) : (
     <button
       type="button"
-      onClick={() => setSent(true)}
+      onClick={() => setAsked(true)}
       className={cn(buttonClasses("brand", "lg"), "mt-5 w-full")}
     >
       <MessageCircle className="size-4" aria-hidden /> Message {first}
@@ -159,24 +187,36 @@ function Fact({
   );
 }
 
-function TrackStat({ value, label }: { value: string | number; label: string }) {
-  return (
-    <div>
-      <p className="display text-3xl tabular-nums text-ink max-sm:text-2xl">{value}</p>
-      <p className="mt-1 text-xs uppercase tracking-wide text-faint">{label}</p>
-    </div>
-  );
-}
-
-function NotFound() {
+function NotFound({ message }: { message: string }) {
   return (
     <Container className="py-24 text-center">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-ink">Realtor</p>
       <h1 className="display mt-3 text-3xl text-ink">We can't find that realtor</h1>
-      <p className="mt-2 text-muted">The profile may have moved. Browse everyone who's certified.</p>
+      <p className="mt-2 text-muted">{message}</p>
       <Link to="/realtors" className={cn(buttonClasses("primary", "lg"), "mt-6")}>
         All realtors
       </Link>
+    </Container>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <Container className="py-10">
+      <div className="h-5 w-28 animate-pulse rounded bg-surface-2" />
+      <div className="mt-6 grid grid-cols-[340px_1fr] gap-12 max-lg:grid-cols-1 max-lg:gap-8">
+        <div className="max-lg:mx-auto max-lg:w-full max-lg:max-w-sm">
+          <div className="aspect-4/5 animate-pulse rounded-3xl bg-surface-2" />
+          <div className="mt-5 h-13 animate-pulse rounded-full bg-surface-2" />
+          <div className="mt-5 h-40 animate-pulse rounded-2xl bg-surface-2" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-10 w-2/3 animate-pulse rounded bg-surface-2" />
+          <div className="h-5 w-1/2 animate-pulse rounded bg-surface-2" />
+          <div className="h-48 animate-pulse rounded-2xl bg-surface-2" />
+          <div className="h-32 animate-pulse rounded-2xl bg-surface-2" />
+        </div>
+      </div>
     </Container>
   );
 }

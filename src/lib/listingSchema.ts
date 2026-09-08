@@ -1,11 +1,10 @@
 import { z } from "zod";
 import type { DefaultValues } from "react-hook-form";
-import { properties } from "@/data/mock";
-import type { Property } from "@/types";
+import type { RealtorListing } from "@/lib/properties";
 
-// Client-side validation for the realtor add/edit listing form (mock, Phase 6: no backend).
-// Field names and enums mirror the real Inspectra backend Property model (inspectra-server) so the
-// beta lines up with production. Verification (reviewStatus) is system-owned and not edited here.
+// Client-side validation for the realtor add/edit listing form. Field names and enums
+// mirror the API's own schema (server/src/validators/property.validator.ts), and the
+// form submits straight through. Verification is system-owned and not edited here.
 
 const titleCase = (v: string) => v.charAt(0).toUpperCase() + v.slice(1).replace(/-/g, " ");
 const asOptions = <T extends readonly string[]>(values: T) =>
@@ -23,7 +22,7 @@ export const PROPERTY_TYPE_OPTIONS = asOptions(PROPERTY_TYPE_VALUES);
 /** Property category (mirrors the backend `category` enum). */
 export const CATEGORY_VALUES = [
   "residential", "commercial", "industrial", "land", "agricultural", "hospitality", "mixed-use",
-  "institutional", "recreational",
+  "institutional", "recreational", "other",
 ] as const;
 export const CATEGORY_OPTIONS = asOptions(CATEGORY_VALUES);
 
@@ -40,9 +39,6 @@ export const LISTING_STATUS_OPTIONS: { value: (typeof LISTING_STATUS_VALUES)[num
   { value: "rented", label: "Rented" },
   { value: "leased", label: "Leased" },
 ];
-
-/** Cities on the platform, derived from the marketplace data so the two never drift. */
-export const CITIES = Array.from(new Set(properties.map((p) => p.city)));
 
 /** Legal document types (mirrors the backend `legalDocuments.name` enum). */
 export const DOC_TYPES = [
@@ -126,14 +122,14 @@ const optionalCount = z.preprocess(
 const optionalArea = z.preprocess(toNumber, z.number().positive("Enter a valid size").optional());
 
 const listingObject = z.object({
-  // media
+  // media. `images` holds preview URLs: an https one is already on the server, a
+  // blob: one is a file the composer still has to upload.
   images: z.array(z.string()).min(1, "Add at least one photo"),
   videos: z
     .string()
     .trim()
     .optional()
     .refine((val) => !val || /^https?:\/\/.+/.test(val), "Enter a valid URL"),
-  videoFile: z.string().optional(),
 
   // core
   title: z.string().trim().min(4, "Give the listing a descriptive title"),
@@ -193,7 +189,6 @@ export function makeListingSchema(_mode: "new" | "edit") {
 export const emptyListingValues: DefaultValues<ListingValues> = {
   images: [],
   videos: "",
-  videoFile: "",
   title: "",
   type: "apartment",
   category: "residential",
@@ -220,28 +215,79 @@ export const emptyListingValues: DefaultValues<ListingValues> = {
   refundPolicy: "",
 };
 
-/** Normalize a beta Property type (Title-case) to a backend enum value. */
-const toTypeValue = (t: string): (typeof PROPERTY_TYPE_VALUES)[number] => {
-  const lower = t.toLowerCase();
-  return (PROPERTY_TYPE_VALUES as readonly string[]).includes(lower)
-    ? (lower as (typeof PROPERTY_TYPE_VALUES)[number])
-    : "other";
-};
+/** Values the API can send but this form does not offer; they fall back to "other". */
+const asOption = <T extends readonly string[]>(values: T, value: string) =>
+  (values as readonly string[]).includes(value) ? (value as T[number]) : "other";
 
-/** Seed the form from an existing property when editing (only mapped fields carry over). */
-export function propertyToFormValues(p: Property): DefaultValues<ListingValues> {
+/** Seed the form from a stored listing when editing. */
+export function listingToFormValues(l: RealtorListing): DefaultValues<ListingValues> {
+  const f = l.features;
+  const some = (n: number) => (n ? n : undefined);
+
   return {
-    ...emptyListingValues,
-    images: [p.image],
-    title: p.title,
-    type: toTypeValue(p.type),
-    listingStatus: p.listingFor,
-    price: p.price,
-    fullAddress: p.location,
-    city: p.city,
-    bedrooms: p.beds,
-    bathrooms: p.baths,
-    floorArea: p.areaSqm,
-    documents: p.documents.map((name) => ({ name, file: "" })),
+    images: l.images,
+    videos: l.videoUrl,
+    title: l.title,
+    type: asOption(PROPERTY_TYPE_VALUES, l.type),
+    category: asOption(CATEGORY_VALUES, l.category),
+    listingStatus: l.listingStatus,
+    description: l.description,
+    price: l.price,
+    fullAddress: l.address.fullAddress,
+    city: l.address.city,
+    state: l.address.state,
+    country: l.address.country,
+    bedrooms: some(f.bedrooms),
+    bathrooms: some(f.bathrooms),
+    toilets: some(f.toilets),
+    garage: some(f.garage),
+    kitchen: some(f.kitchen),
+    floors: some(f.floors),
+    floorArea: some(f.floorArea),
+    landSize: some(f.landSize),
+    yearBuilt: some(f.yearBuilt),
+    amenities: l.amenities,
+    // `file` is the handle: a stored document keeps its URL, so the keep-list on
+    // save can tell it from one the composer has just picked.
+    documents: l.documents.map((d) => ({ name: d.name, file: d.fileUrl })),
+    additionalFees: l.fees.additional,
+    paymentTerms: l.fees.paymentTerms,
+    refundPolicy: l.fees.refundPolicy,
+  };
+}
+
+/** Form values to the JSON body the API takes. Files are uploaded separately. */
+export function formValuesToBody(v: ListingValues) {
+  return {
+    title: v.title,
+    description: v.description,
+    price: v.price,
+    type: v.type,
+    category: v.category,
+    listingStatus: v.listingStatus,
+    address: {
+      fullAddress: v.fullAddress,
+      city: v.city,
+      state: v.state,
+      country: v.country,
+    },
+    features: {
+      bedrooms: v.bedrooms ?? 0,
+      bathrooms: v.bathrooms ?? 0,
+      toilets: v.toilets ?? 0,
+      garage: v.garage ?? 0,
+      kitchen: v.kitchen ?? 0,
+      floors: v.floors ?? 0,
+      floorArea: v.floorArea ?? 0,
+      landSize: v.landSize ?? 0,
+      yearBuilt: v.yearBuilt ?? 0,
+    },
+    amenities: v.amenities,
+    videoUrl: v.videos ?? "",
+    fees: {
+      paymentTerms: v.paymentTerms ?? "",
+      refundPolicy: v.refundPolicy ?? "",
+      additional: v.additionalFees,
+    },
   };
 }

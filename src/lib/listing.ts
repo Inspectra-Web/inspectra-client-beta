@@ -6,6 +6,9 @@ export const LISTING_INTENT_LABEL: Record<ListingFor, string> = {
   rent: "For Rent",
   lease: "For Lease",
   shortlet: "Shortlet",
+  sold: "Sold",
+  rented: "Rented",
+  leased: "Leased",
 };
 
 /** Price suffix, e.g. ₦22M/yr, ₦165K/night. Sale prices carry none. */
@@ -22,8 +25,9 @@ export function priceCadence(f: ListingFor): string {
   return "for sale";
 }
 
-/** True for any recurring let (everything except an outright sale). */
-export const isRecurringLet = (f: ListingFor) => f !== "sale";
+/** True for any recurring let. Named, not negated, so a retired listing is not one. */
+export const isRecurringLet = (f: ListingFor) =>
+  f === "rent" || f === "lease" || f === "shortlet";
 
 /* ------------------------------------------------------------------ *
  * Per-document verification checks, derived from a listing's submitted

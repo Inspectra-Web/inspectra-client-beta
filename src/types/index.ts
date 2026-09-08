@@ -1,8 +1,19 @@
 /** Verification status carried by a listing — independent of the agent. */
 export type VerificationStatus = "verified" | "pending" | "disputed";
 
-/** What a listing is offered as. Sale is one-off; the rest are recurring lets. */
-export type ListingFor = "sale" | "rent" | "lease" | "shortlet";
+/**
+ * What a listing is offered as, plus the terminal states it retires into. Sale is
+ * one-off; rent, lease and shortlet are recurring lets. Mirrors the API's
+ * `listingStatus`, so a sold home still renders instead of coming through blank.
+ */
+export type ListingFor =
+  | "sale"
+  | "rent"
+  | "lease"
+  | "shortlet"
+  | "sold"
+  | "rented"
+  | "leased";
 
 export interface Property {
   id: string;

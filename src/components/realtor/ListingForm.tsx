@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
-  Loader2, Upload, Video, FileText, Check, X, ArrowLeft, ArrowRight,
+  Loader2, Upload, FileText, Check, X, ArrowLeft, ArrowRight,
   ShieldCheck, Plus, Images, Building2, Sparkles, Wallet, FolderCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -19,7 +19,8 @@ import { buttonClasses } from "@/components/ui/Button";
 import {
   makeListingSchema,
   emptyListingValues,
-  propertyToFormValues,
+  listingToFormValues,
+  formValuesToBody,
   PROPERTY_TYPE_OPTIONS,
   CATEGORY_OPTIONS,
   LISTING_STATUS_OPTIONS,
@@ -27,10 +28,21 @@ import {
   DOC_TYPES,
   type ListingValues,
 } from "@/lib/listingSchema";
-import type { Property } from "@/types";
+import { apiMessage } from "@/lib/api";
+import {
+  documentError,
+  photoError,
+  useAddDocument,
+  useAddPhotos,
+  useCreateListing,
+  useUpdateListing,
+  PHOTOS_MAX,
+  DOCUMENTS_MAX,
+  type RealtorListing,
+} from "@/lib/properties";
 import { cn } from "@/lib/cn";
 
-const MAX_IMAGES = 15;
+const MAX_IMAGES = PHOTOS_MAX;
 
 // Same faint architectural backdrop the auth split-screen / CertHero use.
 const SIDE_BG =
@@ -55,17 +67,30 @@ const STEPS: StepDef[] = [
   { id: "review", label: "Documents & review", hint: "Attach titles and submit.", Icon: FolderCheck, fields: [] },
 ];
 
-/** Guided add/edit listing composer. Mock (Phase 6): validates, simulates a save, then navigates. */
-export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?: Property }) {
+/**
+ * Guided add/edit listing composer. The fields save as one JSON body; photos and
+ * documents follow as uploads against the listing that body created.
+ */
+export function ListingForm({
+  mode,
+  initial,
+}: {
+  mode: "new" | "edit";
+  initial?: RealtorListing;
+}) {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
+  const createListing = useCreateListing();
+  const updateListing = useUpdateListing();
+  const addPhotos = useAddPhotos();
+  const addDocument = useAddDocument();
 
   const {
     register, handleSubmit, watch, setValue, trigger,
     formState: { errors, isSubmitting },
   } = useForm<ListingValues>({
     resolver: zodResolver(makeListingSchema(mode)) as Resolver<ListingValues>,
-    defaultValues: initial ? propertyToFormValues(initial) : emptyListingValues,
+    defaultValues: initial ? listingToFormValues(initial) : emptyListingValues,
   });
 
   const v = watch();
@@ -83,55 +108,66 @@ export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?:
     onOpenChange: (o: boolean) => setOpenSelect((prev) => (o ? id : prev === id ? null : prev)),
   });
 
-  // Track object URLs we create for picked files so we can revoke them (avoid leaks).
-  const created = useRef<Set<string>>(new Set());
+  // The form values hold preview URLs; the files themselves live here, keyed by the
+  // URL that stands in for them. An https key is already on the server and has no file.
+  const picked = useRef<Map<string, File>>(new Map());
   useEffect(() => {
-    const urls = created.current;
-    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+    const files = picked.current;
+    return () => files.forEach((_file, url) => URL.revokeObjectURL(url));
   }, []);
-  const makeUrl = (file: File) => {
+  const hold = (file: File) => {
     const url = URL.createObjectURL(file);
-    created.current.add(url);
+    picked.current.set(url, file);
     return url;
   };
-  const revoke = (url: string) => {
-    if (created.current.has(url)) {
-      URL.revokeObjectURL(url);
-      created.current.delete(url);
-    }
+  const release = (url: string) => {
+    if (picked.current.delete(url)) URL.revokeObjectURL(url);
   };
 
   function addImages(files: FileList | null) {
     if (!files?.length) return;
     const next = [...v.images];
     for (const file of Array.from(files)) {
-      if (next.length >= MAX_IMAGES) break;
-      next.push(makeUrl(file));
+      if (next.length >= MAX_IMAGES) {
+        toast.info(`A listing carries at most ${MAX_IMAGES} photos.`);
+        break;
+      }
+      const problem = photoError(file);
+      if (problem) {
+        toast.error(problem);
+        continue;
+      }
+      next.push(hold(file));
     }
     setValue("images", next, { shouldValidate: true, shouldDirty: true });
   }
   function removeImage(url: string) {
-    revoke(url);
+    release(url);
     setValue("images", v.images.filter((i) => i !== url), { shouldValidate: true, shouldDirty: true });
-  }
-  function setVideo(files: FileList | null) {
-    const file = files?.[0];
-    if (!file) return;
-    if (v.videoFile) revoke(v.videoFile);
-    setValue("videoFile", makeUrl(file), { shouldDirty: true });
-  }
-  function clearVideo() {
-    if (v.videoFile) revoke(v.videoFile);
-    setValue("videoFile", "", { shouldDirty: true });
   }
   function attachDoc(files: FileList | null) {
     const file = files?.[0];
     if (!file || !docType) return;
-    setValue("documents", [...v.documents, { name: docType, file: file.name }], { shouldDirty: true });
+    if (v.documents.length >= DOCUMENTS_MAX) {
+      toast.info(`A listing carries at most ${DOCUMENTS_MAX} documents.`);
+      return;
+    }
+    const problem = documentError(file);
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
+    setValue("documents", [...v.documents, { name: docType, file: hold(file) }], { shouldDirty: true });
     setDocType("");
   }
-  const removeDocAt = (i: number) =>
+  /** The handle is a URL, which is not something to show a realtor. Name the file. */
+  const fileLabel = (handle: string) => picked.current.get(handle)?.name ?? "On file";
+
+  function removeDocAt(i: number) {
+    const doc = v.documents[i];
+    if (doc) release(doc.file);
     setValue("documents", v.documents.filter((_, idx) => idx !== i), { shouldDirty: true });
+  }
 
   function addFee() {
     const name = feeDraft.name.trim();
@@ -159,17 +195,62 @@ export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?:
     const idx = STEPS.findIndex((s) => s.fields.some((f) => f in errs));
     if (idx >= 0) setStep(idx);
   }
-  async function onSubmit() {
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success(mode === "new" ? "Listing submitted for verification" : "Listing updated");
-    navigate(mode === "new" ? "/realtor/listings" : `/realtor/listings/${initial?.id}`);
+  /**
+   * The fields save first, because the uploads need a listing to attach to. A file
+   * that fails after that says so and leaves the listing standing: the realtor can
+   * add it again from the edit screen rather than losing everything they typed.
+   */
+  async function onSubmit(values: ListingValues) {
+    const body = formValuesToBody(values);
+    const newPhotos = values.images.map((url) => picked.current.get(url)).filter(Boolean) as File[];
+    const newDocs = values.documents
+      .map((doc) => ({ name: doc.name, file: picked.current.get(doc.file) }))
+      .filter((doc): doc is { name: string; file: File } => Boolean(doc.file));
+
+    try {
+      const saved = initial
+        ? await updateListing.mutateAsync({
+            id: initial.id,
+            body: {
+              ...body,
+              // Keep-lists: the stored URLs still present. The rest are deleted.
+              images: values.images.filter((url) => !picked.current.has(url)),
+              documents: values.documents
+                .map((doc) => doc.file)
+                .filter((file) => !picked.current.has(file)),
+            },
+          })
+        : await createListing.mutateAsync(body);
+
+      const id = saved.property.id;
+
+      try {
+        if (newPhotos.length) await addPhotos.mutateAsync({ id, files: newPhotos });
+        for (const doc of newDocs)
+          await addDocument.mutateAsync({ id, name: doc.name, file: doc.file });
+      } catch (uploadError) {
+        toast.error(apiMessage(uploadError, "The listing saved, but a file did not upload."));
+        navigate(`/realtor/listings/${id}`);
+        return;
+      }
+
+      toast.success(
+        saved.message ??
+          (mode === "new" ? "Listing submitted for verification" : "Listing updated"),
+      );
+      navigate(mode === "new" ? "/realtor/listings" : `/realtor/listings/${id}`);
+    } catch (error) {
+      toast.error(apiMessage(error, "Could not save this listing."));
+    }
   }
 
   const cancelTo = mode === "new" ? "/realtor/listings" : `/realtor/listings/${initial?.id}`;
+  // Shared by the footer button and by Enter on the last step.
+  const submit = handleSubmit(onSubmit, onInvalid);
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit, onInvalid)}
+      onSubmit={submit}
       onKeyDown={(e) => {
         // Enter shouldn't submit mid-wizard (except from the final step); textareas are exempt.
         if (e.key === "Enter" && step !== last && (e.target as HTMLElement).tagName !== "TEXTAREA") {
@@ -240,8 +321,10 @@ export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?:
         </div>
       </aside>
 
-      {/* Step content */}
-      <div className="flex min-h-[38rem] flex-col p-8 max-sm:p-6">
+      {/* Step content. min-w-0 so a step's widest line cannot force the whole card
+          wider than its column: without it the 1fr track floors at the content's
+          min-content width and the panel overflows instead of truncating. */}
+      <div className="flex min-h-[38rem] min-w-0 flex-col p-8 max-sm:p-6">
         {/* header */}
         <div>
           <div className="flex items-center justify-between gap-3">
@@ -290,19 +373,8 @@ export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?:
                   </div>
                   <div>
                     <SectionLabel>Video tour <span className="text-faint">(optional)</span></SectionLabel>
-                    <div className="space-y-4">
-                      <Field label="Video URL" placeholder="Paste a YouTube or Vimeo link" error={errors.videos?.message} {...register("videos")} />
-                      <OrDivider />
-                      {v.videoFile ? (
-                        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2/50 p-3.5">
-                          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand-ink"><Video className="size-5" aria-hidden /></span>
-                          <p className="flex-1 truncate text-sm font-medium text-ink">Video attached</p>
-                          <button type="button" onClick={clearVideo} aria-label="Remove video" className="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"><X className="size-4" aria-hidden /></button>
-                        </div>
-                      ) : (
-                        <Dropzone icon={Video} title="Upload a walkthrough" hint="1080p or 720p video, up to 100MB." buttonLabel="Select video" accept="video/*" onFiles={setVideo} />
-                      )}
-                    </div>
+                    <Field label="Video URL" placeholder="Paste a YouTube or Vimeo link" error={errors.videos?.message} {...register("videos")} />
+                    <p className="mt-2 text-xs text-muted">Host the walkthrough on YouTube or Vimeo and paste the link.</p>
                   </div>
                 </div>
               )}
@@ -430,13 +502,14 @@ export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?:
                     {v.documents.length > 0 ? (
                       <ul className="mt-4 space-y-2">
                         {v.documents.map((doc, i) => (
-                          <li key={`${doc.name}-${i}`} className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-3">
+                          // overflow-hidden so no filename can push the row past the panel.
+                          <li key={`${doc.name}-${i}`} className="flex items-center gap-3 overflow-hidden rounded-xl border border-line bg-surface-2/40 p-3">
                             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand-ink"><FileText className="size-4" aria-hidden /></span>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-medium text-ink">{doc.name}</p>
-                              <p className="truncate text-xs text-muted">{doc.file || "On file"}</p>
+                              <p className="truncate text-xs text-muted">{fileLabel(doc.file)}</p>
                             </div>
-                            <StatusBadge status="pending" />
+                            <StatusBadge status="pending" className="shrink-0" />
                             <button type="button" onClick={() => removeDocAt(i)} aria-label={`Remove ${doc.name}`} className="grid size-7 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"><X className="size-4" aria-hidden /></button>
                           </li>
                         ))}
@@ -477,19 +550,28 @@ export function ListingForm({ mode, initial }: { mode: "new" | "edit"; initial?:
             </button>
           )}
 
-          {step < last ? (
-            <button type="button" onClick={goNext} className={cn(buttonClasses("brand", "md"), "min-w-32")}>
-              Continue <ArrowRight className="size-4" aria-hidden />
-            </button>
-          ) : (
-            <button type="submit" disabled={isSubmitting} className={cn(buttonClasses("brand", "md"), "min-w-48 disabled:opacity-60")}>
-              {isSubmitting ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <><Check className="size-4" aria-hidden /> {mode === "new" ? "Submit listing" : "Save changes"}</>
-              )}
-            </button>
-          )}
+          {/* One node, always type="button". A ternary between a button and a submit
+              reuses the same DOM element, so advancing to the last step would flip
+              this to type="submit" before the browser ran the click's default action,
+              and Continue on the fees step would save the listing. */}
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={step < last ? goNext : submit}
+            className={cn(
+              buttonClasses("brand", "md"),
+              step < last ? "min-w-32" : "min-w-48",
+              "disabled:opacity-60",
+            )}
+          >
+            {step < last ? (
+              <>Continue <ArrowRight className="size-4" aria-hidden /></>
+            ) : isSubmitting ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <><Check className="size-4" aria-hidden /> {mode === "new" ? "Submit listing" : "Save changes"}</>
+            )}
+          </button>
         </div>
       </div>
     </form>
@@ -594,8 +676,10 @@ function FieldSelect({
   children: React.ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void;
   placeholder?: string;
 }) {
+  // min-w-0: the trigger sets whitespace-nowrap, so without it the untruncated
+  // option text becomes the grid column's minimum width and the panel overflows.
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <label className="text-sm font-medium capitalize text-ink">{label}</label>
       <Select value={value} onValueChange={onValueChange} open={open} onOpenChange={onOpenChange}>
         <SelectTrigger aria-label={label} className={cn(selectFieldClass, error && "border-rose-400 bg-rose-500/5 focus-visible:ring-rose-400/25")}>
@@ -649,13 +733,3 @@ function CheckItem({ label, checked, onChange }: { label: string; checked: boole
   );
 }
 
-/** "OR" divider between the video URL and the video upload. */
-function OrDivider() {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="h-px flex-1 bg-line" />
-      <span className="text-xs font-medium uppercase tracking-wide text-faint">or</span>
-      <span className="h-px flex-1 bg-line" />
-    </div>
-  );
-}

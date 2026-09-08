@@ -25,6 +25,19 @@ const STYLES: Record<ListingFor, { chip: string; onPhoto: string }> = {
     chip: "bg-orange-500/14 text-orange-700 ring-1 ring-orange-500/25 dark:text-orange-300",
     onPhoto: "bg-orange-500 text-white",
   },
+  // Retired: off the market, so it reads as a state rather than an offer.
+  sold: {
+    chip: "bg-surface-2 text-muted ring-1 ring-line",
+    onPhoto: "bg-slate-700 text-white",
+  },
+  rented: {
+    chip: "bg-surface-2 text-muted ring-1 ring-line",
+    onPhoto: "bg-slate-700 text-white",
+  },
+  leased: {
+    chip: "bg-surface-2 text-muted ring-1 ring-line",
+    onPhoto: "bg-slate-700 text-white",
+  },
 };
 
 export function ListingIntentBadge({

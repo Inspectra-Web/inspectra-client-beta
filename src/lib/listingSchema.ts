@@ -164,6 +164,7 @@ const listingObject = z.object({
 
   amenities: z.array(z.string()),
   // each document is a typed entry (name from DOC_TYPES) plus its uploaded file
+  // `file` is an opaque handle: a stored document's id, or the blob: URL of a new pick.
   documents: z.array(z.object({ name: z.string().min(1), file: z.string() })),
 
   // pricing & fees (mirrors backend `transparentFeesAndTerms`)
@@ -249,7 +250,7 @@ export function listingToFormValues(l: RealtorListing): DefaultValues<ListingVal
     amenities: l.amenities,
     // `file` is the handle: a stored document keeps its URL, so the keep-list on
     // save can tell it from one the composer has just picked.
-    documents: l.documents.map((d) => ({ name: d.name, file: d.fileUrl })),
+    documents: l.documents.map((d) => ({ name: d.name, file: d.id })),
     additionalFees: l.fees.additional,
     paymentTerms: l.fees.paymentTerms,
     refundPolicy: l.fees.refundPolicy,

@@ -48,13 +48,7 @@ import {
 } from "@/lib/properties";
 import { formatDate, formatPriceFull } from "@/lib/format";
 import { LISTING_INTENT_LABEL, priceCadence, priceSuffix } from "@/lib/listing";
-import type { DocCheck } from "@/lib/listing";
-
-/** The API's per-document status in the checklist's vocabulary. */
-const asCheck = (name: string, status: string): DocCheck => ({
-  label: name,
-  state: status === "pending" ? "in-review" : (status as DocCheck["state"]),
-});
+import { toDocCheck } from "@/lib/listing";
 
 interface Spec {
   label: string;
@@ -114,7 +108,7 @@ export function RealtorListingDetail() {
     );
 
   const specs = buildSpecs(listing);
-  const checks = listing.documents.map((d) => asCheck(d.name, d.status));
+  const checks = listing.documents.map(toDocCheck(listing.id));
   const verifiedDocs = checks.filter((c) => c.state === "verified").length;
   const suffix = priceSuffix(listing.listingStatus);
   const required = listing.fees.additional.filter((f) => !f.optional);
@@ -301,7 +295,7 @@ export function RealtorListingDetail() {
               }
             >
               {checks.length ? (
-                <DocCheckList checks={checks} />
+                <DocCheckList checks={checks} actions />
               ) : (
                 <EmptyState
                   icon={FileText}

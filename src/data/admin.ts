@@ -4,7 +4,7 @@
 // (properties + realtors in mock.ts) so nothing drifts, and adds only what admin
 // uniquely needs. UI over mock data (Phase 8): no backend, no persistence.
 
-import type { Property, Realtor, VerificationStatus } from "@/types";
+import type { Realtor, VerificationStatus } from "@/types";
 import { properties, realtors, propertyById, realtorById } from "@/data/mock";
 import { seeker, inquiries, inspections } from "@/data/seeker";
 import { leads, realtorInspections } from "@/data/realtor";
@@ -31,47 +31,6 @@ export const admin: AdminProfile = {
     "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80",
   memberSince: "October 2024",
 };
-
-/* ------------------------------------------------------------------ *
- * Verification queue: every listing waiting on a human decision.
- * Submission metadata is keyed by property id; the queue itself is
- * derived from the marketplace listings that are not yet verified.
- * ------------------------------------------------------------------ */
-
-export interface Submission {
-  submittedAt: string; // relative label, e.g. "2 days ago"
-  submittedBy: string; // realtor id
-  note?: string; // why it is sitting in the queue
-}
-
-const SUBMISSIONS: Record<string, Submission> = {
-  p7: { submittedAt: "3 hours ago", submittedBy: "r1", note: "Tenancy agreement in review." },
-  p11: { submittedAt: "1 day ago", submittedBy: "r3", note: "Awaiting C of O confirmation." },
-  p15: { submittedAt: "2 days ago", submittedBy: "r1", note: "Excision gazette needs a manual check." },
-  p19: { submittedAt: "4 days ago", submittedBy: "r4", note: "Realtor not yet certified." },
-  p9: { submittedAt: "6 days ago", submittedBy: "r4", note: "Buyer flagged the survey plan." },
-  p16: { submittedAt: "8 days ago", submittedBy: "r3", note: "Title dispute raised on the C of O." },
-};
-
-export const submissionFor = (id: string): Submission | undefined => SUBMISSIONS[id];
-
-// Disputed first, then oldest-pending first, so the most urgent work rises to the top.
-const QUEUE_ORDER: Record<VerificationStatus, number> = { disputed: 0, pending: 1, verified: 2 };
-
-export interface QueueItem {
-  property: Property;
-  realtor?: Realtor;
-  submission?: Submission;
-}
-
-export const reviewQueue: QueueItem[] = properties
-  .filter((p) => p.status !== "verified")
-  .map((property) => ({
-    property,
-    realtor: realtorById(property.realtorId),
-    submission: SUBMISSIONS[property.id],
-  }))
-  .sort((a, b) => QUEUE_ORDER[a.property.status] - QUEUE_ORDER[b.property.status]);
 
 /* ------------------------------------------------------------------ *
  * People directory: seekers, realtors and admins in one list.
@@ -359,9 +318,6 @@ export const kpis = {
   activeSubscriptions: paidSubscriptions,
   certificationsPaid: certifiedCount,
 };
-
-/** Count of listings still needing a human (the sidebar queue badge). */
-export const queueCount = reviewQueue.length;
 
 /* ------------------------------------------------------------------ *
  * Audit feed for the command center.

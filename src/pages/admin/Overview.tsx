@@ -19,15 +19,11 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
-import {
-  adminActivity,
-  kpis,
-  reviewQueue,
-  type AdminActivityKind,
-} from "@/data/admin";
+import { adminActivity, kpis, type AdminActivityKind } from "@/data/admin";
+import { QUEUE_QUERY, useAdminListings } from "@/lib/adminListings";
 import type { VerificationStatus } from "@/types";
 import { useAuthUser } from "@/lib/auth";
-import { displayName } from "@/lib/format";
+import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 function greeting() {
@@ -54,7 +50,8 @@ const ACTIVITY_TONE: Record<AdminActivityKind, string> = {
 };
 
 export function AdminOverview() {
-  const peek = reviewQueue.slice(0, 4);
+  // Shares its cache entry with the sidebar pill and the queue page: one query, three readers.
+  const peek = (useAdminListings(QUEUE_QUERY).data?.listings ?? []).slice(0, 4);
   const firstName = displayName(useAuthUser().fullname).split(" ")[0];
 
   return (
@@ -190,34 +187,47 @@ export function AdminOverview() {
             }
             bodyClassName="space-y-3"
           >
-            {peek.map((q) => (
-              <div
-                key={q.property.id}
-                className="flex items-center gap-4 rounded-xl border border-line bg-surface p-3 transition-colors hover:bg-surface-2/40 max-sm:flex-wrap"
-              >
-                <img
-                  src={q.property.image}
-                  alt={q.property.title}
-                  className="size-14 shrink-0 rounded-lg object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate font-semibold text-ink">{q.property.title}</h3>
-                    <StatusBadge status={q.property.status} className="shrink-0" />
-                  </div>
-                  <p className="mt-0.5 truncate text-sm text-muted">
-                    {q.realtor?.name ?? "Unknown realtor"} · submitted {q.submission?.submittedAt ?? "recently"}
-                  </p>
-                </div>
-                <Link
-                  to={`/admin/verification/${q.property.id}`}
-                  className={buttonClasses("outline", "sm", "shrink-0 max-sm:w-full")}
+            {peek.length === 0 ? (
+              <p className="py-2 text-sm text-muted">
+                Queue is clear. Nothing is waiting on a decision right now.
+              </p>
+            ) : (
+              peek.map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-center gap-4 rounded-xl border border-line bg-surface p-3 transition-colors hover:bg-surface-2/40 max-sm:flex-wrap"
                 >
-                  Review
-                  <ArrowUpRight className="size-4" aria-hidden />
-                </Link>
-              </div>
-            ))}
+                  {l.image ? (
+                    <img
+                      src={l.image}
+                      alt={l.title}
+                      className="size-14 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-surface-2 text-faint">
+                      <Building2 className="size-5" aria-hidden />
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate font-semibold text-ink">{l.title}</h3>
+                      <StatusBadge status={l.status} className="shrink-0" />
+                    </div>
+                    <p className="mt-0.5 truncate text-sm text-muted">
+                      {displayName(l.realtorName) || "Unknown realtor"} · listed{" "}
+                      {formatDate(l.createdAt)}
+                    </p>
+                  </div>
+                  <Link
+                    to={`/admin/verification/${l.id}`}
+                    className={buttonClasses("outline", "sm", "shrink-0 max-sm:w-full")}
+                  >
+                    Review
+                    <ArrowUpRight className="size-4" aria-hidden />
+                  </Link>
+                </div>
+              ))
+            )}
           </Panel>
         </Reveal>
 

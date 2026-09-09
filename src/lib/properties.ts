@@ -26,9 +26,12 @@ export interface ListingFeatures {
 export type DocumentStatus = "pending" | "verified" | "flagged";
 
 export interface ListingDocument {
+  id: string;
   name: string;
+  /** The realtor's line about the document. */
   notes: string;
-  fileUrl: string;
+  /** The reviewer's line about why it was flagged. Empty otherwise. */
+  reason: string;
   status: DocumentStatus;
   issuedDate?: string;
   size: number;
@@ -236,6 +239,16 @@ export const PHOTO_MAX_MB = 5;
 export const DOCUMENT_MAX_MB = 10;
 export const PHOTOS_MAX = 20;
 export const DOCUMENTS_MAX = 5;
+export const DOCUMENT_ACCEPT = "application/pdf";
+
+/**
+ * Where a document is read, relative to the api instance. The API never sends the
+ * Cloudinary URL: it streams the file through this route, which authorises the reader
+ * first. The viewer fetches the bytes and paints them itself, so the browser's own PDF
+ * plugin (and its Save and Print menu) is never involved.
+ */
+export const documentPath = (listingId: string, docId: string): string =>
+  `/properties/${listingId}/documents/${docId}/file`;
 
 /** Rejects a file before it goes over the wire. Null means it is fine. */
 export function photoError(file: File): string | null {
@@ -247,8 +260,7 @@ export function photoError(file: File): string | null {
 }
 
 export function documentError(file: File): string | null {
-  if (!file.type.startsWith("image/") && file.type !== "application/pdf")
-    return "Upload a PDF or an image of the document.";
+  if (file.type !== "application/pdf") return "Upload the document as a PDF.";
   if (file.size > DOCUMENT_MAX_MB * 1024 * 1024)
     return `The document must be ${DOCUMENT_MAX_MB}MB or smaller.`;
 

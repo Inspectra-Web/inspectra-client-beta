@@ -1,6 +1,6 @@
 import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { queueCount } from "@/data/admin";
+import { QUEUE_QUERY, useAdminListings } from "@/lib/adminListings";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuthUser } from "@/lib/auth";
@@ -52,6 +52,10 @@ const NAV_GROUPS: NavGroup[] = [
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthUser();
   const name = displayName(user.fullname);
+
+  // The queue page issues this exact query, so the pill and the page share one cache entry.
+  const { data } = useAdminListings(QUEUE_QUERY);
+  const queueCount = data?.total ?? 0;
 
   return (
     <div className="flex h-full flex-col p-5">

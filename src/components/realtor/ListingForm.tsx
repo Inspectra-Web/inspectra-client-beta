@@ -31,6 +31,7 @@ import {
 import { apiMessage } from "@/lib/api";
 import {
   documentError,
+  DOCUMENT_ACCEPT,
   photoError,
   useAddDocument,
   useAddPhotos,
@@ -475,7 +476,7 @@ export function ListingForm({
                 <div className="space-y-7">
                   <div>
                     <SectionLabel>Legal documents</SectionLabel>
-                    <p className="mb-3 text-sm text-muted">Choose a document type, then attach the file. Our team verifies each one before the listing goes live.</p>
+                    <p className="mb-3 text-sm text-muted">Choose a document type, then attach the file as a PDF. Our team verifies each one before the listing goes live.</p>
                     <div className="grid grid-cols-[1fr_auto] items-end gap-3 max-sm:grid-cols-1">
                       <FieldSelect
                         label="Document type"
@@ -495,7 +496,7 @@ export function ListingForm({
                         >
                           <Upload className="size-4" aria-hidden /> Attach file
                         </button>
-                        <input ref={docFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { attachDoc(e.target.files); e.target.value = ""; }} className="sr-only" />
+                        <input ref={docFileRef} type="file" accept={DOCUMENT_ACCEPT} onChange={(e) => { attachDoc(e.target.files); e.target.value = ""; }} className="sr-only" />
                       </div>
                     </div>
 

@@ -26,6 +26,7 @@ export function AdminListings() {
     q: "",
     status: "all",
     city: "all",
+    sort: "newest",
     page: 1,
   });
   const [openId, setOpenId] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export function AdminListings() {
       <Reveal>
         <PageHeader
           title="Listings"
-          subtitle="Every property on the platform. Open one to moderate its status or media."
+          subtitle="Every property on the platform, whatever its verification status. Open one for the full record."
         />
       </Reveal>
 
@@ -136,7 +137,7 @@ export function AdminListings() {
                   variant="outline"
                   onClick={() => {
                     setTyped("");
-                    setQuery({ q: "", status: "all", city: "all", page: 1 });
+                    setQuery({ q: "", status: "all", city: "all", sort: "newest", page: 1 });
                   }}
                 >
                   Clear filters

@@ -60,7 +60,10 @@ export function Gallery({
       aria-label={`Show photo ${i + 1}`}
       aria-current={i === active}
       className={cn(
-        "relative h-20 w-32 shrink-0 overflow-hidden rounded-xl transition-opacity max-sm:h-16 max-sm:w-24 max-sm:rounded-lg",
+        // Square, not the old 8:5. A thumbnail has to stay a uniform size or the strip
+        // reads as ragged, so it does crop; a square at least crops a portrait and a
+        // landscape equally, where the wide box reduced a portrait to a useless slice.
+        "relative size-20 shrink-0 overflow-hidden rounded-xl bg-surface-2 transition-opacity max-sm:size-16 max-sm:rounded-lg",
         i === active
           ? "ring-2 ring-brand ring-offset-2 ring-offset-bg"
           : "opacity-60 hover:opacity-100",
@@ -83,11 +86,13 @@ export function Gallery({
         )}
       >
         <AnimatePresence initial={false}>
-          <motion.img
+          {/* The photo is never cropped: realtors shoot plenty of portraits, and
+              object-cover in a landscape frame threw away the top and bottom of the
+              building. The frame stays a fixed size so clicking through a mixed set does
+              not make the page jump; whatever the contained photo leaves over is filled
+              by a blurred copy of itself rather than dead space. */}
+          <motion.div
             key={main}
-            src={main}
-            alt={title}
-            fetchPriority="high"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -95,8 +100,22 @@ export function Gallery({
               duration: reduced ? 0 : 0.45,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="absolute inset-0 size-full object-cover"
-          />
+            className="absolute inset-0"
+          >
+            <img
+              src={main}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 size-full scale-110 object-cover blur-2xl"
+            />
+            <div className="absolute inset-0 bg-[#04121f]/35" />
+            <img
+              src={main}
+              alt={title}
+              fetchPriority="high"
+              className="relative size-full object-contain"
+            />
+          </motion.div>
         </AnimatePresence>
         <StatusBadge
           status={status}
@@ -184,37 +203,17 @@ function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-70 flex flex-col overflow-hidden bg-black/92 backdrop-blur-sm"
+      className="fixed inset-0 z-70 overflow-hidden bg-black/92 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={`${title} — photo ${i + 1} of ${images.length}`}
       onClick={onClose}
     >
-      <div className="flex items-center justify-between px-5 py-4 text-white/80">
-        <span className="text-sm tabular-nums">
-          {i + 1} / {images.length}
-        </span>
-        <button
-          type="button"
-          onClick={(e) => {
-            stop(e);
-            onClose();
-          }}
-          autoFocus
-          aria-label="Close gallery"
-          className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <X className="size-5" aria-hidden />
-        </button>
-      </div>
-
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-16 pb-8 max-sm:px-4 max-sm:pb-3">
-        <NavButton
-          label="Previous photo"
-          Icon={ChevronLeft}
-          onClick={onPrev}
-          className="absolute left-4 max-sm:hidden"
-        />
+      {/* The photo gets the whole viewport. Every piece of chrome below floats over it
+          rather than sitting in the flow: a counter row and side gutters wide enough to
+          clear the arrows were costing roughly 130px of width and 90px of height, which
+          is exactly the room this view exists to give the photo. */}
+      <div className="absolute inset-0 flex items-center justify-center p-3 max-sm:p-2">
         <AnimatePresence initial={false} custom={dir} mode="popLayout">
           <motion.img
             key={i}
@@ -233,19 +232,45 @@ function Lightbox({
             className="max-h-full max-w-full rounded-lg object-contain"
           />
         </AnimatePresence>
-        <NavButton
-          label="Next photo"
-          Icon={ChevronRight}
-          onClick={onNext}
-          className="absolute right-4 max-sm:hidden"
-        />
       </div>
 
-      {/* Below sm the arrows sit in a row under the photo instead of flanking
-          it, so on a narrow screen they never cover the image or crowd its edges. */}
+      {/* Transparent to clicks so the backdrop still closes; the button takes them back. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-linear-to-b from-black/70 to-transparent px-5 pb-10 pt-4 text-white/80">
+        <span className="text-sm tabular-nums">
+          {i + 1} / {images.length}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            stop(e);
+            onClose();
+          }}
+          autoFocus
+          aria-label="Close gallery"
+          className="pointer-events-auto inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <X className="size-5" aria-hidden />
+        </button>
+      </div>
+
+      <NavButton
+        label="Previous photo"
+        Icon={ChevronLeft}
+        onClick={onPrev}
+        className="absolute left-4 top-1/2 -translate-y-1/2 max-sm:hidden"
+      />
+      <NavButton
+        label="Next photo"
+        Icon={ChevronRight}
+        onClick={onNext}
+        className="absolute right-4 top-1/2 -translate-y-1/2 max-sm:hidden"
+      />
+
+      {/* Below sm the arrows sit in a row at the foot instead of flanking the photo,
+          where on a narrow screen they would cover most of it. */}
       <div
         onClick={stop}
-        className="hidden items-center justify-center gap-5 pb-7 max-sm:flex"
+        className="absolute inset-x-0 bottom-0 hidden items-center justify-center gap-5 bg-linear-to-t from-black/70 to-transparent pb-7 pt-12 max-sm:flex"
       >
         <NavButton label="Previous photo" Icon={ChevronLeft} onClick={onPrev} />
         <NavButton label="Next photo" Icon={ChevronRight} onClick={onNext} />
@@ -271,7 +296,9 @@ function NavButton({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "inline-flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20",
+        // Sits over the photograph now, so it needs a backdrop of its own to stay visible
+        // against a bright one.
+        "inline-flex size-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-colors hover:bg-black/70",
         className,
       )}
     >

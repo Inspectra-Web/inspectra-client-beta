@@ -20,7 +20,7 @@ export function Gallery({
   images,
   title,
   status,
-  heightClass = "h-[82vh] min-h-100 max-h-175 max-sm:h-[46vh] max-sm:min-h-0",
+  heightClass = "h-[75vh] min-h-100 max-h-175 max-sm:h-[46vh] max-sm:min-h-0",
 }: {
   images: string[];
   title: string;

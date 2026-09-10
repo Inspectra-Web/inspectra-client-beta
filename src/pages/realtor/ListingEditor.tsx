@@ -3,7 +3,9 @@ import { ArrowLeft, Building2 } from "lucide-react";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
 import { ListingForm } from "@/components/realtor/ListingForm";
+import { ListingGate } from "@/components/realtor/ListingGate";
 import { apiMessage } from "@/lib/api";
+import { useListingEligibility } from "@/lib/profile";
 import { useMyListing } from "@/lib/properties";
 
 function BackLink({ to, label }: { to: string; label: string }) {
@@ -36,11 +38,23 @@ function NotFound({ message }: { message: string }) {
 
 /** Create a new listing (guided composer carries its own heading). */
 export function RealtorListingNew() {
+  const { data: eligibility, isPending } = useListingEligibility();
+
   return (
     <div className="space-y-5">
       <BackLink to="/realtor/listings" label="Back to listings" />
       <Reveal>
-        <ListingForm mode="new" />
+        {/* The gate replaces the composer rather than sitting above it: the server
+            refuses the save either way, and a form that cannot be submitted is worse
+            than no form. Nothing renders until the answer is in, so a slow query does
+            not flash the composer at someone who may not use it. */}
+        {isPending ? (
+          <div className="h-96 animate-pulse rounded-2xl bg-surface-2" />
+        ) : eligibility && !eligibility.ready ? (
+          <ListingGate missing={eligibility.missing} />
+        ) : (
+          <ListingForm mode="new" />
+        )}
       </Reveal>
     </div>
   );

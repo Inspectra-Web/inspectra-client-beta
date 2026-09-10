@@ -42,10 +42,27 @@ export type ProfileUpdate = Partial<
   Omit<Profile, "id" | "certified" | "createdAt" | "updatedAt"> & { phone: string }
 >;
 
+/**
+ * Whether this realtor may list a property yet, and what is still missing if not.
+ * The server owns the rule (see listingEligibility in profile.service.ts) and sends
+ * the answer, so the console never re-derives it from the fields it renders.
+ * Absent for a seeker or an admin, neither of whom can list at all.
+ */
+export interface ListingEligibility {
+  ready: boolean;
+  missing: string[];
+}
+
+interface AccountData {
+  user: AuthUser;
+  profile: Profile;
+  listing?: ListingEligibility;
+}
+
 interface ProfileResponse {
   status: string;
   message?: string;
-  data: { user: AuthUser; profile: Profile };
+  data: AccountData;
 }
 
 interface UserResponse {
@@ -80,15 +97,22 @@ export const PROPERTY_INTERESTS = [
   { slug: "land", label: "Land" },
 ];
 
+const accountQuery = {
+  queryKey: PROFILE_KEY,
+  queryFn: async (): Promise<AccountData> => {
+    const res = await api.get<ProfileResponse>("/profile/me");
+    return res.data.data;
+  },
+  staleTime: 5 * 60 * 1000,
+};
+
 export function useProfile() {
-  return useQuery({
-    queryKey: PROFILE_KEY,
-    queryFn: async () => {
-      const res = await api.get<ProfileResponse>("/profile/me");
-      return res.data.data.profile;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  return useQuery({ ...accountQuery, select: (data: AccountData) => data.profile });
+}
+
+/** One query, two readers: the account form and the listing gate share a cache entry. */
+export function useListingEligibility() {
+  return useQuery({ ...accountQuery, select: (data: AccountData) => data.listing });
 }
 
 export function useUpdateProfile() {
@@ -100,9 +124,11 @@ export function useUpdateProfile() {
       return res.data.data;
     },
     // A name or phone change lands on the user, which the sidebar and topbar read.
-    onSuccess: ({ user, profile }) => {
-      queryClient.setQueryData(ME_KEY, user);
-      queryClient.setQueryData(PROFILE_KEY, profile);
+    // The whole envelope is cached, not just the profile: a saved phone or city can
+    // flip the listing gate, and the reply already carries the new verdict.
+    onSuccess: (data) => {
+      queryClient.setQueryData(ME_KEY, data.user);
+      queryClient.setQueryData(PROFILE_KEY, data);
     },
   });
 }

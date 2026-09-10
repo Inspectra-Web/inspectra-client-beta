@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -27,7 +27,14 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export function RealtorAccount() {
-  const [tab, setTab] = useState<TabId>("profile");
+  // In the URL rather than component state, so the listing gate can send a realtor
+  // straight to the tab that fixes what it is complaining about.
+  const [params, setParams] = useSearchParams();
+  const asked = params.get("tab");
+
+  const tab: TabId = TABS.some((t) => t.id === asked) ? (asked as TabId) : "profile";
+  const setTab = (next: TabId) =>
+    setParams(next === "profile" ? {} : { tab: next }, { replace: true });
 
   return (
     <div className="space-y-8">

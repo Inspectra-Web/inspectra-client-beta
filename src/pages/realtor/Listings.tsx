@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
+import { ListingGate } from "@/components/realtor/ListingGate";
 import { apiMessage } from "@/lib/api";
 import {
   useMyListings,
@@ -25,6 +26,7 @@ import {
   type ListingQuery,
   type ListingSort,
 } from "@/lib/properties";
+import { useListingEligibility } from "@/lib/profile";
 import { formatPrice } from "@/lib/format";
 import { priceSuffix } from "@/lib/listing";
 import type { VerificationStatus } from "@/types";
@@ -80,6 +82,10 @@ export function RealtorListings() {
   const total = data?.total ?? 0;
   const filtered = query.q !== "" || query.status !== "all";
 
+  const { data: eligibility } = useListingEligibility();
+  // Undefined while the query is in flight: the button is not disabled on a guess.
+  const barred = eligibility ? !eligibility.ready : false;
+
   return (
     <div className="space-y-8">
       <Reveal>
@@ -87,13 +93,26 @@ export function RealtorListings() {
           title="Listings"
           subtitle="Manage your portfolio and track how each listing is performing."
           actions={
-            <Button variant="brand" onClick={() => navigate("/realtor/listings/new")}>
+            <Button
+              variant="brand"
+              disabled={barred}
+              title={barred ? "Finish your setup before you list" : undefined}
+              onClick={() => navigate("/realtor/listings/new")}
+            >
               <Plus className="size-4" aria-hidden />
               New listing
             </Button>
           }
         />
       </Reveal>
+
+      {/* Above the table, not in place of it: a realtor who already has listings still
+          needs to see them while they finish setting up. */}
+      {barred && (
+        <Reveal y={12}>
+          <ListingGate missing={eligibility!.missing} />
+        </Reveal>
+      )}
 
       {/* toolbar */}
       <Reveal y={16}>
@@ -200,7 +219,11 @@ export function RealtorListings() {
                   Clear filters
                 </Button>
               ) : (
-                <Button variant="brand" onClick={() => navigate("/realtor/listings/new")}>
+                <Button
+                  variant="brand"
+                  disabled={barred}
+                  onClick={() => navigate("/realtor/listings/new")}
+                >
                   <Plus className="size-4" aria-hidden />
                   New listing
                 </Button>

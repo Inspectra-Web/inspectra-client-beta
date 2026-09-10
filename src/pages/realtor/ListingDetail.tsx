@@ -32,6 +32,7 @@ import { Panel } from "@/components/dashboard/Panel";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { DocCheckList } from "@/components/realtor/DocCheckList";
 import { Gallery } from "@/components/listing/Gallery";
+import { VideoTour } from "@/components/listing/VideoTour";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ListingIntentBadge } from "@/components/ui/ListingIntentBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -48,7 +49,7 @@ import {
 } from "@/lib/properties";
 import { formatDate, formatPriceFull } from "@/lib/format";
 import { LISTING_INTENT_LABEL, priceSuffix } from "@/lib/listing";
-import { toDocCheck } from "@/lib/listing";
+import { readTour, toDocCheck } from "@/lib/listing";
 
 interface Spec {
   label: string;
@@ -111,6 +112,7 @@ export function RealtorListingDetail() {
   const checks = listing.documents.map(toDocCheck(listing.id));
   const verifiedDocs = checks.filter((c) => c.state === "verified").length;
   const suffix = priceSuffix(listing.listingStatus);
+  const tour = readTour(listing.videoUrl, listing.video);
   const required = listing.fees.additional.filter((f) => !f.optional);
   const total = required.reduce((sum, f) => sum + f.amount, listing.price);
 
@@ -219,6 +221,21 @@ export function RealtorListingDetail() {
               </dl>
             </Panel>
           </Reveal>
+
+          {/* The realtor sees their own tour exactly as a buyer will, which is the only
+              way to catch a link that pasted wrong. */}
+          {tour && (
+            <Reveal y={16}>
+              <Panel title="Video tour">
+                <VideoTour
+                  videoUrl={listing.videoUrl}
+                  video={listing.video}
+                  poster={listing.images[0]}
+                  title={listing.title}
+                />
+              </Panel>
+            </Reveal>
+          )}
 
           {listing.amenities.length > 0 && (
             <Reveal y={16}>

@@ -25,9 +25,10 @@ import { Reveal } from "@/components/ui/Reveal";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Gallery } from "@/components/listing/Gallery";
 import { VerificationDossier } from "@/components/listing/VerificationDossier";
+import { VideoTour } from "@/components/listing/VideoTour";
 import { apiMessage } from "@/lib/api";
 import { displayName, formatDate, formatPriceFull, initials } from "@/lib/format";
-import { priceSuffix, toPublicDocCheck } from "@/lib/listing";
+import { priceSuffix, readTour, toPublicDocCheck } from "@/lib/listing";
 import { typeLabel, type ListingFee } from "@/lib/properties";
 import {
   usePublicListing,
@@ -52,6 +53,7 @@ export function ListingDetail() {
   const checks = listing.documents.map(toPublicDocCheck);
   const verified = checks.filter((c) => c.state === "verified").length;
   const specs = buildSpecs(listing);
+  const tour = readTour(listing.videoUrl, listing.video);
   const { bedrooms, bathrooms, floorArea, landSize } = listing.features;
   const area = floorArea || landSize;
 
@@ -160,6 +162,22 @@ export function ListingDetail() {
                 )}
               </Block>
             </Reveal>
+
+            {/* With the photos, not after the paperwork: it is part of seeing the place.
+                The section is gated on the tour, not just the player, or a listing with
+                no video would carry an empty heading and a rule across the page. */}
+            {tour && (
+              <Reveal>
+                <Block eyebrow="Walk through" title="Video tour">
+                  <VideoTour
+                    videoUrl={listing.videoUrl}
+                    video={listing.video}
+                    poster={listing.images[0]}
+                    title={listing.title}
+                  />
+                </Block>
+              </Reveal>
+            )}
 
             <Reveal>
               <VerificationDossier

@@ -75,3 +75,37 @@ export const toPublicDocCheck = (doc: {
   label: doc.name,
   state: doc.status === "pending" ? "in-review" : doc.status,
 });
+
+/**
+ * A listing's video tour, as something the page can actually render. Three shapes,
+ * because the composer accepts any http(s) URL (the validator checks no further), so
+ * this has to cope with more than the YouTube and Vimeo links its placeholder asks
+ * for, and say so plainly when it cannot embed one.
+ */
+export type Tour =
+  | { kind: "embed"; src: string }
+  | { kind: "file"; src: string }
+  | { kind: "link"; src: string };
+
+const YOUTUBE_ID =
+  /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/;
+const VIMEO_ID = /vimeo\.com\/(?:video\/)?(\d+)/;
+const VIDEO_FILE = /\.(mp4|webm|ogg|ogv|mov|m4v)(\?|#|$)/i;
+
+export function readTour(videoUrl: string, video: string): Tour | null {
+  // Our own file first: it is hosted here, so it needs no third party to play.
+  if (video) return { kind: "file", src: video };
+
+  const url = videoUrl.trim();
+  if (!url) return null;
+
+  const youtube = YOUTUBE_ID.exec(url);
+  if (youtube) return { kind: "embed", src: `https://www.youtube.com/embed/${youtube[1]}` };
+
+  const vimeo = VIMEO_ID.exec(url);
+  if (vimeo) return { kind: "embed", src: `https://player.vimeo.com/video/${vimeo[1]}` };
+
+  if (VIDEO_FILE.test(url)) return { kind: "file", src: url };
+
+  return { kind: "link", src: url };
+}

@@ -99,6 +99,8 @@ export interface MarketplaceQuery {
   city: string;
   type: string;
   listingStatus: ListingFor | "all";
+  /** Whose listings. Omitted on the browse; set on a realtor's public profile. */
+  realtor?: string;
   /** A minimum, not an exact count: the filter reads "3+ beds". 0 is "any". */
   beds: number;
   minPrice?: number;

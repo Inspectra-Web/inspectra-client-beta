@@ -137,7 +137,7 @@ export function RealtorListingDetail() {
       <Reveal>
         <PageHeader
           title={listing.title}
-          subtitle={`${listingLocation(listing)} · ${listing.ref}`}
+          subtitle={listingLocation(listing)}
           actions={
             <>
               <ListingIntentBadge listingFor={listing.listingStatus} />
@@ -166,7 +166,7 @@ export function RealtorListingDetail() {
         <p className="text-2xl font-semibold text-ink">
           {formatPriceFull(listing.price)}
           {suffix && <span className="text-base font-normal text-muted"> {suffix}</span>}
-          <span className="ml-2 text-sm font-normal text-faint">Ref {listing.ref}</span>
+          <span className="ml-2 text-sm font-normal text-faint">{listing.ref}</span>
         </p>
       </Reveal>
 

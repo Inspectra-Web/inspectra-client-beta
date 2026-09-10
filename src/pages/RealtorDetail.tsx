@@ -5,6 +5,8 @@ import {
   BadgeCheck,
   Building2,
   CalendarCheck,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   ExternalLink,
   Map,
@@ -13,9 +15,13 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { buttonClasses } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Reveal } from "@/components/ui/Reveal";
+import { PropertyCard } from "@/components/PropertyCard";
 import { apiMessage } from "@/lib/api";
 import { usePublicRealtor, realtorTagline } from "@/lib/realtors";
+import { usePublicListings, toCardListing, EMPTY_QUERY } from "@/lib/marketplace";
 import { displayName, formatDate, initials } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -132,11 +138,96 @@ export function RealtorDetail() {
                 <p className="whitespace-pre-line leading-relaxed text-muted">{realtor.bio}</p>
               </Block>
             )}
-
           </div>
         </div>
       </Container>
+
+      {/* Full width, below the two-column grid: a card grid needs the whole stage. */}
+      <RealtorListings id={realtor.id} first={first} />
     </div>
+  );
+}
+
+const LISTINGS_PER_PAGE = 6;
+
+/**
+ * What this realtor has on the market. The same browse endpoint the marketplace
+ * reads, narrowed to one owner, so the cards and the verification badges here are
+ * the ones a buyer sees on /listings.
+ */
+function RealtorListings({ id, first }: { id: string; first: string }) {
+  const [page, setPage] = useState(1);
+  const { data, isPending, isError, isPlaceholderData } = usePublicListings(
+    { ...EMPTY_QUERY, realtor: id, page },
+    LISTINGS_PER_PAGE,
+  );
+
+  const listings = data?.listings ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 1;
+
+  // A realtor with nothing on the market gets no empty band, and neither does a
+  // failed request: this section is not the reason the reader came to the page.
+  if (isError || (!isPending && total === 0)) return null;
+
+  return (
+    <section className="mt-16 border-t border-line pt-14 max-sm:mt-12 max-sm:pt-10">
+      <Container>
+        <SectionHeading
+          eyebrow="On the market"
+          title={isPending ? `Listings from ${first}` : `${total} listing${total === 1 ? "" : "s"} from ${first}`}
+        />
+
+        <div
+          className={cn(
+            "mt-10 grid grid-cols-3 gap-x-6 gap-y-10 transition-opacity max-lg:grid-cols-2 max-sm:grid-cols-1",
+            isPlaceholderData && "opacity-60",
+          )}
+        >
+          {isPending
+            ? Array.from({ length: 3 }, (_, i) => (
+                <div key={i}>
+                  <div className="aspect-[10/9] animate-pulse rounded-2xl bg-surface-2" />
+                  <div className="space-y-2 pt-3">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-surface-2" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-surface-2" />
+                  </div>
+                </div>
+              ))
+            : listings.map((l, i) => (
+                <Reveal key={l.id} delay={(i % 3) * 0.08}>
+                  <PropertyCard listing={toCardListing(l)} />
+                </Reveal>
+              ))}
+        </div>
+
+        {pages > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft className="size-4" aria-hidden />
+              Previous
+            </Button>
+            <span className="text-sm tabular-nums text-muted">
+              Page {page} of {pages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+              <ChevronRight className="size-4" aria-hidden />
+            </Button>
+          </div>
+        )}
+      </Container>
+    </section>
   );
 }
 

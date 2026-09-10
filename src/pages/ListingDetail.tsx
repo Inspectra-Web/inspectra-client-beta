@@ -27,7 +27,7 @@ import { Gallery } from "@/components/listing/Gallery";
 import { VerificationDossier } from "@/components/listing/VerificationDossier";
 import { apiMessage } from "@/lib/api";
 import { displayName, formatDate, formatPriceFull, initials } from "@/lib/format";
-import { priceSuffix, priceCadence, toPublicDocCheck } from "@/lib/listing";
+import { priceSuffix, toPublicDocCheck } from "@/lib/listing";
 import { typeLabel, type ListingFee } from "@/lib/properties";
 import {
   usePublicListing,
@@ -446,7 +446,6 @@ function ActionCard({
   verified: number;
   total: number;
 }) {
-  const cadence = priceCadence(listing.listingStatus);
   const name = displayName(realtor.fullname);
   const pct = total ? Math.round((verified / total) * 100) : 0;
   const bar =

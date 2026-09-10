@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Landing /> },
       { path: "listings", element: <Listings /> },
-      { path: "listings/:id", element: <ListingDetail /> },
+      { path: "listings/:slug", element: <ListingDetail /> },
       { path: "realtors", element: <Realtors /> },
       { path: "realtors/:id", element: <RealtorDetail /> },
       { path: "enablement", element: <GetCertified /> },

@@ -39,7 +39,7 @@ import { apiMessage } from "@/lib/api";
 import { useAdminListing } from "@/lib/adminListings";
 import { listingLocation, typeLabel, type RealtorListing } from "@/lib/properties";
 import { displayName, formatDate, formatPriceFull } from "@/lib/format";
-import { LISTING_INTENT_LABEL, priceCadence, priceSuffix } from "@/lib/listing";
+import { LISTING_INTENT_LABEL, priceSuffix } from "@/lib/listing";
 import { toDocCheck } from "@/lib/listing";
 
 interface Spec {
@@ -113,7 +113,7 @@ export function AdminListingDetail() {
       <Reveal>
         <PageHeader
           title={listing.title}
-          subtitle={`${listingLocation(listing)} · ${listing.ref}`}
+          subtitle={`${listingLocation(listing)}`}
           actions={
             <>
               <ListingIntentBadge listingFor={listing.listingStatus} />
@@ -145,9 +145,7 @@ export function AdminListingDetail() {
         <p className="text-2xl font-semibold text-ink">
           {formatPriceFull(listing.price)}
           {suffix && <span className="text-base font-normal text-muted"> {suffix}</span>}
-          <span className="ml-2 text-sm font-normal text-faint">
-            ({priceCadence(listing.listingStatus)})
-          </span>
+          <span className="ml-2 text-sm font-normal text-faint">{listing.ref}</span>
         </p>
       </Reveal>
 

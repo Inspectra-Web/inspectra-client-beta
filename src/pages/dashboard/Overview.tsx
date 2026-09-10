@@ -26,7 +26,7 @@ import {
   nextInspection,
   activity,
 } from "@/data/seeker";
-import { properties, propertyById, realtorById } from "@/data/mock";
+import { mockCardListing, properties, propertyById, realtorById } from "@/data/mock";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 
@@ -133,7 +133,7 @@ export function Overview() {
         </div>
         <div className="mt-5 grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
           {recommended.map((p) => (
-            <PropertyCard key={p.id} property={p} />
+            <PropertyCard key={p.id} listing={mockCardListing(p)} />
           ))}
         </div>
       </Reveal>

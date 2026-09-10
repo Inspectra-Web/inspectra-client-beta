@@ -1,37 +1,41 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Heart, BadgeCheck, BedDouble, Bath, Ruler, Video } from "lucide-react";
-import type { Property } from "@/types";
-import { realtorById } from "@/data/mock";
+import { Heart, BadgeCheck, BedDouble, Bath, Ruler, Video, Building2 } from "lucide-react";
+import type { CardListing } from "@/types";
 import { formatPriceFull } from "@/lib/format";
 import { priceSuffix } from "@/lib/listing";
 import { ListingIntentBadge } from "@/components/ui/ListingIntentBadge";
 import { cn } from "@/lib/cn";
 
-export function PropertyCard({ property }: { property: Property }) {
-  const realtor = realtorById(property.realtorId);
+export function PropertyCard({ listing }: { listing: CardListing }) {
   const [saved, setSaved] = useState(false);
 
   return (
     <article className="group relative flex flex-col">
       <Link
-        to={`/listings/${property.id}`}
-        aria-label={`View ${property.title}`}
+        to={listing.href}
+        aria-label={`View ${listing.title}`}
         className="absolute inset-0 z-[1] rounded-2xl"
       />
 
       {/* media */}
       <div className="relative aspect-[10/9] overflow-hidden rounded-2xl transform-gpu">
-        <img
-          src={property.image}
-          alt={property.title}
-          loading="lazy"
-          className="size-full object-cover object-center"
-        />
+        {listing.image ? (
+          <img
+            src={listing.image}
+            alt={listing.title}
+            loading="lazy"
+            className="size-full object-cover object-center"
+          />
+        ) : (
+          <div className="grid size-full place-items-center bg-surface-2 text-faint">
+            <Building2 className="size-9" aria-hidden />
+          </div>
+        )}
 
         <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
-          <ListingIntentBadge listingFor={property.listingFor} onPhoto />
-          {property.status === "verified" && (
+          <ListingIntentBadge listingFor={listing.listingFor} onPhoto />
+          {listing.status === "verified" && (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
               <BadgeCheck className="size-3.5 text-emerald-600" strokeWidth={2.5} aria-hidden />
               Verified
@@ -56,43 +60,36 @@ export function PropertyCard({ property }: { property: Property }) {
           />
         </button>
 
-        {property.hasVideo && (
+        {listing.hasVideo && (
           <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-medium text-white backdrop-blur">
             <Video className="size-3.5" aria-hidden />
             Video
           </span>
         )}
-
-        {/* carousel dots (decorative) */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
-          {[0, 1, 2, 3].map((i) => (
-            <span
-              key={i}
-              className={cn(
-                "size-1.5 rounded-full shadow-sm",
-                i === 0 ? "bg-white" : "bg-white/55",
-              )}
-            />
-          ))}
-        </div>
       </div>
 
       {/* body */}
       <div className="flex flex-col pt-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="line-clamp-1 font-semibold text-ink">{property.title}</h3>
-          {realtor && (
+          <h3 className="line-clamp-1 font-semibold text-ink">{listing.title}</h3>
+          {listing.realtor && (
             <span
               className="relative shrink-0"
-              title={`Listed by ${realtor.name}${realtor.certified ? " · Certified" : ""}`}
+              title={`Listed by ${listing.realtor.name}${listing.realtor.certified ? " · Certified" : ""}`}
             >
-              <img
-                src={`${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80`}
-                alt={realtor.name}
-                loading="lazy"
-                className="size-8 rounded-full object-cover ring-1 ring-line"
-              />
-              {realtor.certified && (
+              {listing.realtor.avatar ? (
+                <img
+                  src={listing.realtor.avatar}
+                  alt={listing.realtor.name}
+                  loading="lazy"
+                  className="size-8 rounded-full object-cover ring-1 ring-line"
+                />
+              ) : (
+                <span className="grid size-8 place-items-center rounded-full bg-surface-2 text-xs font-semibold text-muted ring-1 ring-line">
+                  {listing.realtor.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+              {listing.realtor.certified && (
                 <BadgeCheck
                   className="absolute -bottom-0.5 -right-0.5 size-4 fill-verified text-white drop-shadow-sm"
                   aria-hidden
@@ -102,23 +99,19 @@ export function PropertyCard({ property }: { property: Property }) {
           )}
         </div>
 
-        <p className="mt-0.5 line-clamp-1 text-sm text-muted">
-          {property.location}, {property.city}
-        </p>
+        <p className="mt-0.5 line-clamp-1 text-sm text-muted">{listing.location}</p>
 
-        {/* feature icons */}
+        {/* feature icons — zero is "not applicable", so it stays off the card */}
         <div className="mt-2 flex items-center gap-4 text-sm text-muted">
-          {property.beds != null && <Feature Icon={BedDouble} label={`${property.beds}`} />}
-          {property.baths != null && <Feature Icon={Bath} label={`${property.baths}`} />}
-          {property.areaSqm != null && (
-            <Feature Icon={Ruler} label={`${property.areaSqm} m²`} />
-          )}
+          {listing.beds > 0 && <Feature Icon={BedDouble} label={`${listing.beds}`} />}
+          {listing.baths > 0 && <Feature Icon={Bath} label={`${listing.baths}`} />}
+          {listing.areaSqm > 0 && <Feature Icon={Ruler} label={`${listing.areaSqm} m²`} />}
         </div>
 
         <p className="mt-2 font-semibold text-ink">
-          {formatPriceFull(property.price)}
-          {priceSuffix(property.listingFor) && (
-            <span className="font-normal text-muted"> {priceSuffix(property.listingFor)}</span>
+          {formatPriceFull(listing.price)}
+          {priceSuffix(listing.listingFor) && (
+            <span className="font-normal text-muted"> {priceSuffix(listing.listingFor)}</span>
           )}
         </p>
       </div>

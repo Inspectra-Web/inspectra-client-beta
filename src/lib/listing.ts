@@ -1,4 +1,4 @@
-import { documentPath, type ListingDocument } from "./properties";
+import { documentPath, type DocumentStatus, type ListingDocument } from "./properties";
 import type { ListingFor } from "@/types";
 
 /** Prominent, capitalized label for a listing's intent, e.g. on a badge. */
@@ -56,4 +56,22 @@ export const toDocCheck = (listingId: string) => (doc: ListingDocument): DocChec
   state: doc.status === "pending" ? "in-review" : doc.status,
   path: documentPath(listingId, doc.id),
   reason: doc.reason,
+});
+
+/**
+ * The same vocabulary for a visitor. The public payload carries the fact of a check
+ * and nothing else: no document id, no reviewer's reason, and no file to open, since
+ * a title document is streamed to its owner and an admin only.
+ */
+export interface PublicDocCheck {
+  label: string;
+  state: DocState;
+}
+
+export const toPublicDocCheck = (doc: {
+  name: string;
+  status: DocumentStatus;
+}): PublicDocCheck => ({
+  label: doc.name,
+  state: doc.status === "pending" ? "in-review" : doc.status,
 });

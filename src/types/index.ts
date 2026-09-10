@@ -49,3 +49,28 @@ export interface Realtor {
   completedDeals: number;
   avatar: string;
 }
+
+/**
+ * What a PropertyCard renders, rather than any one source's model. The marketplace
+ * maps a real listing into it and the still-mock seeker dashboard maps its own, so
+ * one card serves both without the mock data having to mirror the API.
+ */
+export interface CardListing {
+  /** React key only. What the card links to is href. */
+  id: string;
+  /** Where the card points: a slug for a real listing, an id while a page is mock. */
+  href: string;
+  title: string;
+  /** May be "": a listing can go up before its photos do. */
+  image: string;
+  location: string;
+  price: number;
+  listingFor: ListingFor;
+  status: VerificationStatus;
+  /** Zero means "not applicable", never "unknown", so these render only when set. */
+  beds: number;
+  baths: number;
+  areaSqm: number;
+  hasVideo: boolean;
+  realtor?: { name: string; avatar: string; certified: boolean };
+}

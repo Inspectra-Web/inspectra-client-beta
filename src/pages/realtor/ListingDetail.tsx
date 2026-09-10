@@ -47,7 +47,7 @@ import {
   type RealtorListing,
 } from "@/lib/properties";
 import { formatDate, formatPriceFull } from "@/lib/format";
-import { LISTING_INTENT_LABEL, priceCadence, priceSuffix } from "@/lib/listing";
+import { LISTING_INTENT_LABEL, priceSuffix } from "@/lib/listing";
 import { toDocCheck } from "@/lib/listing";
 
 interface Spec {
@@ -166,9 +166,7 @@ export function RealtorListingDetail() {
         <p className="text-2xl font-semibold text-ink">
           {formatPriceFull(listing.price)}
           {suffix && <span className="text-base font-normal text-muted"> {suffix}</span>}
-          <span className="ml-2 text-sm font-normal text-faint">
-            ({priceCadence(listing.listingStatus)})
-          </span>
+          <span className="ml-2 text-sm font-normal text-faint">Ref {listing.ref}</span>
         </p>
       </Reveal>
 

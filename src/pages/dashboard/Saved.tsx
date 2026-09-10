@@ -8,7 +8,7 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
 import { savedPropertyIds } from "@/data/seeker";
-import { propertyById } from "@/data/mock";
+import { mockCardListing, propertyById } from "@/data/mock";
 
 export function Saved() {
   // Dashboard-only mock: seeded from mock data, held locally so Remove empties it live.
@@ -40,7 +40,7 @@ export function Saved() {
         >
           {items.map((p) => (
             <div key={p.id} className="relative">
-              <PropertyCard property={p} />
+              <PropertyCard listing={mockCardListing(p)} />
               <button
                 type="button"
                 onClick={() => remove(p.id)}

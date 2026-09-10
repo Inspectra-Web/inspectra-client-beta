@@ -12,15 +12,9 @@ import {
   Ruler,
   Check,
   ShieldCheck,
-  CalendarCheck,
-  Send,
   BadgeCheck,
-  ShoppingCart,
-  GraduationCap,
-  HeartPulse,
-  Utensils,
-  Milestone,
-  Plane,
+  Building2,
+  Phone,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
@@ -31,43 +25,35 @@ import { Reveal } from "@/components/ui/Reveal";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Gallery } from "@/components/listing/Gallery";
 import { VerificationDossier } from "@/components/listing/VerificationDossier";
-import { properties, realtorById } from "@/data/mock";
+import { apiMessage } from "@/lib/api";
+import { displayName, formatDate, formatPriceFull, initials } from "@/lib/format";
+import { priceSuffix, priceCadence, toPublicDocCheck } from "@/lib/listing";
+import { typeLabel, type ListingFee } from "@/lib/properties";
 import {
-  buildListingDetail,
-  type FeeLine,
-  type NearbyLine,
-} from "@/lib/listingDetail";
-import { formatPriceFull } from "@/lib/format";
-import { priceSuffix, priceCadence, isRecurringLet } from "@/lib/listing";
-import type { Property, Realtor } from "@/types";
+  usePublicListing,
+  usePublicListings,
+  toCardListing,
+  EMPTY_QUERY,
+  type PublicListingDetail,
+  type ListingRealtorProfile,
+} from "@/lib/marketplace";
 import { cn } from "@/lib/cn";
 
-const NEARBY_ICONS = [
-  ShoppingCart,
-  GraduationCap,
-  HeartPulse,
-  Utensils,
-  Milestone,
-  Plane,
-];
-
 export function ListingDetail() {
-  const { id } = useParams();
-  const property = properties.find((p) => p.id === id);
-  if (!property) return <NotFound />;
+  const { slug } = useParams();
+  const { data, isPending, isError, error } = usePublicListing(slug ?? "");
 
-  const realtor = realtorById(property.realtorId);
-  const detail = buildListingDetail(property, realtor);
-  const priceTag = priceSuffix(property.listingFor);
-  const recurring = isRecurringLet(property.listingFor);
+  if (isPending) return <DetailSkeleton />;
+  if (isError)
+    return <NotFound message={apiMessage(error, "It may have been taken down, or the link is off.")} />;
 
-  const sameCity = properties.filter(
-    (p) => p.id !== property.id && p.city === property.city,
-  );
-  const similar = [
-    ...sameCity,
-    ...properties.filter((p) => p.id !== property.id && !sameCity.includes(p)),
-  ].slice(0, 3);
+  const { listing, realtor } = data;
+  const priceTag = priceSuffix(listing.listingStatus);
+  const checks = listing.documents.map(toPublicDocCheck);
+  const verified = checks.filter((c) => c.state === "verified").length;
+  const specs = buildSpecs(listing);
+  const { bedrooms, bathrooms, floorArea, landSize } = listing.features;
+  const area = floorArea || landSize;
 
   return (
     <div className="pb-24">
@@ -84,11 +70,9 @@ export function ListingDetail() {
               <ArrowLeft className="size-4" aria-hidden /> Listings
             </Link>
             <span className="text-faint">/</span>
-            <span className="shrink-0">{property.city}</span>
+            <span className="shrink-0">{listing.address.city}</span>
             <span className="text-faint max-sm:hidden">/</span>
-            <span className="truncate text-ink max-sm:hidden">
-              {property.title}
-            </span>
+            <span className="truncate text-ink max-sm:hidden">{listing.title}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-2">
             <SaveButton />
@@ -97,13 +81,11 @@ export function ListingDetail() {
         </div>
       </Container>
 
-      <Container className="mt-5">
-        <Gallery
-          images={detail.gallery}
-          title={property.title}
-          status={property.status}
-        />
-      </Container>
+      {listing.images.length > 0 && (
+        <Container className="mt-5">
+          <Gallery images={listing.images} title={listing.title} status={listing.status} />
+        </Container>
+      )}
 
       <Container className="mt-8">
         <div className="grid grid-cols-[1fr_360px] gap-12 max-xl:gap-10 max-lg:grid-cols-1 max-lg:gap-8">
@@ -111,46 +93,37 @@ export function ListingDetail() {
           <div className="min-w-0">
             <header className="border-b border-line pb-7">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <ListingIntentBadge listingFor={property.listingFor} />
-                <StatusBadge status={property.status} />
-                <span className="text-sm text-muted">Ref {property.ref}</span>
+                <ListingIntentBadge listingFor={listing.listingStatus} />
+                <StatusBadge status={listing.status} />
+                <span className="text-sm text-muted">{listing.ref}</span>
               </div>
               <h1 className="display mt-4 text-[2.6rem] leading-[1.05] text-balance text-ink max-lg:text-4xl max-sm:text-3xl">
-                {property.title}
+                {listing.title}
               </h1>
               <p className="mt-3 inline-flex items-center gap-1.5 text-muted">
-                <MapPin className="size-4" aria-hidden /> {property.location},{" "}
-                {property.city}
+                <MapPin className="size-4" aria-hidden /> {listing.address.fullAddress},{" "}
+                {listing.address.city}
               </p>
               <p className="mt-5 hidden text-ink max-lg:block">
-                <span className="display text-3xl">
-                  {formatPriceFull(property.price)}
-                </span>
+                <span className="display text-3xl">{formatPriceFull(listing.price)}</span>
                 {priceTag && <span className="text-base text-muted"> {priceTag}</span>}
               </p>
             </header>
 
+            {/* Zero means "not applicable" on the API, so a fact only appears when set. */}
             <dl className="grid grid-cols-4 gap-6 border-b border-line py-6 max-sm:grid-cols-2 max-sm:gap-5">
-              <Fact icon={Home} label="Type" value={property.type} />
-              {property.beds != null && (
-                <Fact
-                  icon={BedDouble}
-                  label="Bedrooms"
-                  value={String(property.beds)}
-                />
+              <Fact icon={Home} label="Type" value={typeLabel(listing.type)} />
+              {bedrooms > 0 && (
+                <Fact icon={BedDouble} label="Bedrooms" value={String(bedrooms)} />
               )}
-              {property.baths != null && (
-                <Fact
-                  icon={Bath}
-                  label="Bathrooms"
-                  value={String(property.baths)}
-                />
+              {bathrooms > 0 && (
+                <Fact icon={Bath} label="Bathrooms" value={String(bathrooms)} />
               )}
-              {property.areaSqm != null && (
+              {area > 0 && (
                 <Fact
                   icon={Ruler}
-                  label={property.type === "Land" ? "Plot" : "Area"}
-                  value={`${property.areaSqm} m²`}
+                  label={floorArea > 0 ? "Area" : "Plot"}
+                  value={`${area} m²`}
                 />
               )}
             </dl>
@@ -158,139 +131,188 @@ export function ListingDetail() {
             {/* action card moves inline below the header on smaller screens */}
             <div className="hidden py-6 max-lg:block">
               <ActionCard
-                property={property}
-                detail={detail}
+                listing={listing}
                 realtor={realtor}
+                verified={verified}
+                total={checks.length}
               />
             </div>
 
             <Reveal>
               <Block eyebrow="Overview" title="About this home">
-                {detail.description.map((para, idx) => (
-                  <p
-                    key={idx}
-                    className="mt-4 leading-relaxed text-muted first:mt-0"
-                  >
+                {listing.description.split(/\n{2,}/).map((para, idx) => (
+                  <p key={idx} className="mt-4 leading-relaxed text-muted first:mt-0">
                     {para}
                   </p>
                 ))}
-                <dl className="mt-6 grid grid-cols-2 gap-x-10 gap-y-3 border-t border-line pt-6 max-sm:grid-cols-1 max-sm:gap-y-2">
-                  {detail.specs.map((s) => (
-                    <div
-                      key={s.label}
-                      className="flex items-center justify-between gap-4 border-b border-line/70 pb-2.5"
-                    >
-                      <dt className="text-sm text-muted">{s.label}</dt>
-                      <dd className="text-right text-sm font-medium text-ink">
-                        {s.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+                {specs.length > 0 && (
+                  <dl className="mt-6 grid grid-cols-2 gap-x-10 gap-y-3 border-t border-line pt-6 max-sm:grid-cols-1 max-sm:gap-y-2">
+                    {specs.map((s) => (
+                      <div
+                        key={s.label}
+                        className="flex items-center justify-between gap-4 border-b border-line/70 pb-2.5"
+                      >
+                        <dt className="text-sm text-muted">{s.label}</dt>
+                        <dd className="text-right text-sm font-medium text-ink">{s.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
               </Block>
             </Reveal>
 
             <Reveal>
               <VerificationDossier
-                status={property.status}
-                checks={detail.checks}
-                passed={detail.checksPassed}
-                total={detail.checksTotal}
+                status={listing.status}
+                checks={checks}
+                passed={verified}
+                total={checks.length}
               />
             </Reveal>
 
-            <Reveal>
-              <Block eyebrow="Inside" title="Features & amenities">
-                <div className="grid grid-cols-2 gap-x-10 gap-y-8 max-sm:grid-cols-1">
-                  <FeatureList label="Features" items={detail.features} />
-                  <FeatureList label="Amenities" items={detail.amenities} />
-                </div>
-              </Block>
-            </Reveal>
-
-            <Reveal>
-              <Block
-                eyebrow="The numbers"
-                title={
-                  property.listingFor === "shortlet"
-                    ? "What a stay costs"
-                    : recurring
-                      ? "What it costs to move in"
-                      : "What you'll pay"
-                }
-              >
-                <div className="overflow-hidden rounded-2xl border border-line">
-                  {detail.fees.map((line) => (
-                    <FeeRow key={line.label} line={line} />
-                  ))}
-                  <div className="flex items-center justify-between gap-4 bg-surface-2/60 px-5 py-4">
-                    <span className="font-semibold text-ink">
-                      {detail.feesTotalLabel}
-                    </span>
-                    <span className="display text-xl text-ink">
-                      {formatPriceFull(detail.feesTotal)}
-                    </span>
-                  </div>
-                </div>
-                <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted">
-                  <ShieldCheck
-                    className="mt-0.5 size-3.5 shrink-0 text-verified"
-                    aria-hidden
-                  />
-                  {detail.feesNote} Every figure is verified against the listing
-                  — nothing new appears at signing.
-                </p>
-              </Block>
-            </Reveal>
-
-            <Reveal>
-              <Block eyebrow="Location" title="Where you'll be">
-                <ListingMap property={property} nearby={detail.nearby} />
-              </Block>
-            </Reveal>
-
-            {realtor && (
+            {listing.amenities.length > 0 && (
               <Reveal>
-                <Block eyebrow="Listed by" title="Your realtor">
-                  <RealtorPanel realtor={realtor} />
+                <Block eyebrow="Inside" title="Amenities">
+                  <ul className="grid grid-cols-2 gap-x-10 gap-y-2.5 max-sm:grid-cols-1">
+                    {listing.amenities.map((a) => (
+                      <li key={a} className="flex items-center gap-2.5 text-muted">
+                        <Check className="size-4 shrink-0 text-verified" aria-hidden /> {a}
+                      </li>
+                    ))}
+                  </ul>
                 </Block>
               </Reveal>
             )}
+
+            <Reveal>
+              <Fees listing={listing} />
+            </Reveal>
+
+            <Reveal>
+              <Block eyebrow="Listed by" title="Your realtor">
+                <RealtorPanel realtor={realtor} />
+              </Block>
+            </Reveal>
           </div>
 
           {/* sticky action card (desktop) */}
           <aside className="max-lg:hidden">
             <div className="sticky top-24">
               <ActionCard
-                property={property}
-                detail={detail}
+                listing={listing}
                 realtor={realtor}
+                verified={verified}
+                total={checks.length}
               />
             </div>
           </aside>
         </div>
       </Container>
 
-      <section className="mt-16 border-t border-line pt-14 max-sm:pt-10">
-        <Container>
-          <SectionHeading
-            eyebrow="Keep looking"
-            title="Similar verified homes"
-          />
-          <div className="mt-10 grid grid-cols-3 gap-x-6 gap-y-10 max-lg:grid-cols-2 max-sm:grid-cols-1">
-            {similar.map((p, i) => (
-              <Reveal key={p.id} delay={(i % 3) * 0.08}>
-                <PropertyCard property={p} />
-              </Reveal>
-            ))}
-          </div>
-        </Container>
-      </section>
+      <SimilarListings city={listing.address.city} exclude={listing.id} />
     </div>
   );
 }
 
 /* ---------- sections ---------- */
+
+/** Only what the realtor actually filled in: a zero is "not applicable", not "0". */
+function buildSpecs(listing: PublicListingDetail) {
+  const { toilets, garage, kitchen, floors, floorArea, landSize, yearBuilt } =
+    listing.features;
+
+  const specs: { label: string; value: string }[] = [
+    { label: "Category", value: typeLabel(listing.category) },
+  ];
+
+  if (yearBuilt > 0) specs.push({ label: "Year built", value: String(yearBuilt) });
+  if (floors > 0) specs.push({ label: "Floors", value: String(floors) });
+  if (toilets > 0) specs.push({ label: "Toilets", value: String(toilets) });
+  if (kitchen > 0) specs.push({ label: "Kitchens", value: String(kitchen) });
+  if (garage > 0) specs.push({ label: "Parking", value: `${garage} cars` });
+  if (floorArea > 0) specs.push({ label: "Floor area", value: `${floorArea} m²` });
+  if (landSize > 0) specs.push({ label: "Land size", value: `${landSize} m²` });
+
+  specs.push({ label: "Listed", value: formatDate(listing.createdAt) });
+
+  return specs;
+}
+
+/**
+ * The real fee lines the realtor entered, on top of the asking price. Optional ones
+ * are shown but kept out of the total, and nothing is inferred from the price: an
+ * agency percentage this page invented was one of the numbers that had to go.
+ */
+function Fees({ listing }: { listing: PublicListingDetail }) {
+  const { additional, paymentTerms, refundPolicy } = listing.fees;
+  const required = additional.filter((f) => !f.optional);
+  const total = required.reduce((sum, f) => sum + f.amount, listing.price);
+
+  return (
+    <Block eyebrow="The numbers" title="What you'll pay">
+      <div className="overflow-hidden rounded-2xl border border-line">
+        <FeeRow label="Asking price" amount={listing.price} />
+        {additional.map((fee) => (
+          <FeeRow
+            key={fee.name}
+            label={fee.name}
+            note={fee.optional ? "optional" : undefined}
+            amount={fee.amount}
+          />
+        ))}
+        <div className="flex items-center justify-between gap-4 bg-surface-2/60 px-5 py-4">
+          <span className="font-semibold text-ink">Total payable</span>
+          <span className="display text-xl text-ink">{formatPriceFull(total)}</span>
+        </div>
+      </div>
+
+      {(paymentTerms || refundPolicy) && (
+        <dl className="mt-4 space-y-3">
+          {paymentTerms && <Terms label="Payment terms" value={paymentTerms} />}
+          {refundPolicy && <Terms label="Refund policy" value={refundPolicy} />}
+        </dl>
+      )}
+
+      <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted">
+        <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-verified" aria-hidden />
+        Every figure here is the one on the listing. Anything a realtor asks for that is
+        not on this page is not part of the deal.
+      </p>
+    </Block>
+  );
+}
+
+function Terms({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface-2/40 px-4 py-3">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-faint">{label}</dt>
+      <dd className="mt-1 text-sm leading-relaxed text-muted">{value}</dd>
+    </div>
+  );
+}
+
+function SimilarListings({ city, exclude }: { city: string; exclude: string }) {
+  // Real neighbours, asked for by city. One extra so removing this listing still leaves three.
+  const { data } = usePublicListings({ ...EMPTY_QUERY, city }, 4);
+  const similar = (data?.listings ?? []).filter((l) => l.id !== exclude).slice(0, 3);
+
+  if (similar.length === 0) return null;
+
+  return (
+    <section className="mt-16 border-t border-line pt-14 max-sm:pt-10">
+      <Container>
+        <SectionHeading eyebrow="Keep looking" title={`More homes in ${city}`} />
+        <div className="mt-10 grid grid-cols-3 gap-x-6 gap-y-10 max-lg:grid-cols-2 max-sm:grid-cols-1">
+          {similar.map((l, i) => (
+            <Reveal key={l.id} delay={(i % 3) * 0.08}>
+              <PropertyCard listing={toCardListing(l)} />
+            </Reveal>
+          ))}
+        </div>
+      </Container>
+    </section>
+  );
+}
 
 function Block({
   eyebrow,
@@ -324,146 +346,84 @@ function Fact({
   return (
     <div>
       <Icon className="size-5 text-brand" aria-hidden />
-      <dt className="mt-2 text-xs uppercase tracking-wide text-faint">
-        {label}
-      </dt>
+      <dt className="mt-2 text-xs uppercase tracking-wide text-faint">{label}</dt>
       <dd className="mt-0.5 text-lg font-semibold text-ink">{value}</dd>
     </div>
   );
 }
 
-function FeatureList({ label, items }: { label: string; items: string[] }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-faint">
-        {label}
-      </p>
-      <ul className="mt-3.5 space-y-2.5">
-        {items.map((f) => (
-          <li key={f} className="flex items-center gap-2.5 text-muted">
-            <Check className="size-4 shrink-0 text-verified" aria-hidden /> {f}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function FeeRow({ line }: { line: FeeLine }) {
+function FeeRow({
+  label,
+  note,
+  amount,
+}: Pick<ListingFee, "amount"> & { label: string; note?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-3.5">
       <span className="text-sm text-muted">
-        {line.label}
-        {line.note && (
-          <span className="ml-2 text-xs text-faint">{line.note}</span>
-        )}
+        {label}
+        {note && <span className="ml-2 text-xs text-faint">{note}</span>}
       </span>
       <span className="text-sm font-medium tabular-nums text-ink">
-        {formatPriceFull(line.amount)}
+        {formatPriceFull(amount)}
       </span>
     </div>
   );
 }
 
-function ListingMap({
-  property,
-  nearby,
+function RealtorAvatar({
+  realtor,
+  className,
 }: {
-  property: Property;
-  nearby: NearbyLine[];
+  realtor: ListingRealtorProfile;
+  className: string;
 }) {
-  return (
-    <div>
-      <div className="relative aspect-16/7 overflow-hidden rounded-2xl border border-line bg-surface-2 max-sm:aspect-3/2">
-        <svg
-          aria-hidden
-          viewBox="0 0 400 175"
-          preserveAspectRatio="none"
-          className="absolute inset-0 size-full text-line"
-        >
-          <g stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.7">
-            <path d="M0 55 H400" />
-            <path d="M0 120 H400" />
-            <path d="M110 0 V175" />
-            <path d="M270 0 V175" />
-            <path d="M-20 150 L180 -10" />
-            <path d="M230 185 L430 30" />
-          </g>
-        </svg>
-        <div className="absolute left-1/2 top-1/2 size-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/10 blur-2xl" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <span className="absolute -inset-3 rounded-full bg-brand/15" />
-          <span className="relative grid size-10 place-items-center rounded-full bg-brand text-[#04121f] shadow-lg">
-            <MapPin className="size-5" aria-hidden />
-          </span>
-        </div>
-        <div className="absolute bottom-4 left-4 rounded-xl bg-surface/90 px-3.5 py-2 backdrop-blur">
-          <p className="text-sm font-semibold text-ink">{property.location}</p>
-          <p className="text-xs text-muted">
-            {property.city} · {property.coords.lat.toFixed(3)},{" "}
-            {property.coords.lng.toFixed(3)}
-          </p>
-        </div>
-      </div>
-      <p className="mt-2.5 text-xs text-faint">
-        Approximate area shown. The exact address is shared once you book an
-        inspection.
-      </p>
+  const name = displayName(realtor.fullname);
 
-      <div className="mt-6 grid grid-cols-3 gap-x-6 gap-y-4 max-sm:grid-cols-2">
-        {nearby.map((n, i) => {
-          const Icon = NEARBY_ICONS[i % NEARBY_ICONS.length];
-          return (
-            <div key={n.label} className="flex items-center gap-2.5">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 text-muted">
-                <Icon className="size-4" aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm text-ink">{n.label}</p>
-                <p className="text-xs text-muted">{n.distance}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+  if (!realtor.avatar)
+    return (
+      <span
+        className={cn(
+          "grid shrink-0 place-items-center rounded-full bg-surface-2 font-semibold text-muted ring-1 ring-line",
+          className,
+        )}
+      >
+        {initials(name)}
+      </span>
+    );
+
+  return (
+    <img
+      src={realtor.avatar}
+      alt={name}
+      className={cn("shrink-0 rounded-full object-cover ring-1 ring-line", className)}
+    />
   );
 }
 
-function RealtorPanel({ realtor }: { realtor: Realtor }) {
+function RealtorPanel({ realtor }: { realtor: ListingRealtorProfile }) {
+  const name = displayName(realtor.fullname);
+  const line = [realtor.agencyName, realtor.city].filter(Boolean).join(" · ");
+
   return (
     <div className="flex items-center gap-5 rounded-2xl border border-line bg-surface p-5 max-sm:flex-col max-sm:items-start">
-      <img
-        src={`${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=160&h=160&q=80`}
-        alt={realtor.name}
-        className="size-16 rounded-full object-cover ring-1 ring-line"
-      />
+      <RealtorAvatar realtor={realtor} className="size-16 text-lg" />
       <div className="min-w-0 flex-1">
+        {/* The seal goes on the name, never the picture: an avatar is self-chosen. */}
         <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
-          {realtor.name}
-          {realtor.certified && (
+          {name}
+          {realtor.certified ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-verified/12 px-2 py-0.5 text-xs font-semibold text-verified">
               <BadgeCheck className="size-3.5" aria-hidden /> Certified
             </span>
+          ) : (
+            realtor.identityVerified && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-verified/12 px-2 py-0.5 text-xs font-semibold text-verified">
+                <BadgeCheck className="size-3.5" aria-hidden /> Verified
+              </span>
+            )
           )}
         </p>
-        <p className="mt-0.5 text-sm text-muted">
-          {realtor.agency} · {realtor.city}
-        </p>
-        <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
-          <span>
-            <span className="font-semibold text-ink">
-              {realtor.completedDeals}
-            </span>{" "}
-            deals closed
-          </span>
-          <span>
-            <span className="font-semibold text-ink">
-              {realtor.verifiedListings}
-            </span>{" "}
-            verified listings
-          </span>
-        </p>
+        {line && <p className="mt-0.5 text-sm text-muted">{line}</p>}
       </div>
       <Link
         to={`/realtors/${realtor.id}`}
@@ -476,24 +436,23 @@ function RealtorPanel({ realtor }: { realtor: Realtor }) {
 }
 
 function ActionCard({
-  property,
-  detail,
+  listing,
   realtor,
+  verified,
+  total,
 }: {
-  property: Property;
-  detail: ReturnType<typeof buildListingDetail>;
-  realtor?: Realtor;
+  listing: PublicListingDetail;
+  realtor: ListingRealtorProfile;
+  verified: number;
+  total: number;
 }) {
-  const [requested, setRequested] = useState(false);
-  const cadence = priceCadence(property.listingFor);
-  const first = realtor?.name.split(" ")[0];
-  const pct = detail.checksTotal
-    ? Math.round((detail.checksPassed / detail.checksTotal) * 100)
-    : 0;
+  const cadence = priceCadence(listing.listingStatus);
+  const name = displayName(realtor.fullname);
+  const pct = total ? Math.round((verified / total) * 100) : 0;
   const bar =
-    property.status === "verified"
+    listing.status === "verified"
       ? "bg-verified"
-      : property.status === "pending"
+      : listing.status === "pending"
         ? "bg-gold"
         : "bg-rose-500";
 
@@ -501,89 +460,68 @@ function ActionCard({
     <div className="rounded-3xl border border-line bg-surface p-6 max-sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="display text-3xl text-ink">
-            {formatPriceFull(property.price)}
-          </p>
-          <p className="mt-1 text-sm text-muted">{cadence}</p>
+          <p className="display text-3xl text-ink">{formatPriceFull(listing.price)}</p>
+          <p className="mt-1 text-sm text-muted">{listing.ref}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <ListingIntentBadge listingFor={property.listingFor} />
-          <StatusBadge status={property.status} />
+          <ListingIntentBadge listingFor={listing.listingStatus} />
+          <StatusBadge status={listing.status} />
         </div>
       </div>
 
       <div className="mt-5 rounded-2xl bg-surface-2/60 p-4">
         <div className="flex items-center justify-between text-sm">
           <span className="inline-flex items-center gap-1.5 font-medium text-ink">
-            <ShieldCheck className="size-4 text-verified" aria-hidden />{" "}
-            Verification
+            <ShieldCheck className="size-4 text-verified" aria-hidden /> Documents
           </span>
-          <span className="font-semibold text-ink tabular-nums">
-            {detail.checksPassed}/{detail.checksTotal} passed
+          <span className="font-semibold tabular-nums text-ink">
+            {verified}/{total} verified
           </span>
         </div>
         <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-line">
-          <div
-            className={cn("h-full rounded-full", bar)}
-            style={{ width: `${pct}%` }}
-          />
+          <div className={cn("h-full rounded-full", bar)} style={{ width: `${pct}%` }} />
         </div>
         <p className="mt-2 text-xs text-muted">
-          Property and realtor checked before this listing went live.
+          {total === 0
+            ? "No title documents have been filed for this listing yet."
+            : "Checked by INSPECTRA against the title on record."}
         </p>
       </div>
 
-      {requested ? (
-        <div className="mt-5 rounded-2xl border border-verified/30 bg-verified/8 p-4 text-sm">
-          <p className="inline-flex items-center gap-1.5 font-semibold text-ink">
-            <CalendarCheck className="size-4 text-verified" aria-hidden />{" "}
-            Request sent
-          </p>
-          <p className="mt-1 text-muted">
-            {first ?? "The realtor"} will call to lock in a time. We hold your
-            details — never your money.
-          </p>
-        </div>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={() => setRequested(true)}
-            className={cn(buttonClasses("brand", "lg"), "mt-5 w-full")}
-          >
-            <CalendarCheck className="size-4" aria-hidden /> Book an inspection
-          </button>
-          <button
-            type="button"
-            onClick={() => setRequested(true)}
-            className={cn(buttonClasses("outline", "lg"), "mt-2.5 w-full")}
-          >
-            <Send className="size-4" aria-hidden /> Message {first ?? "realtor"}
-          </button>
-        </>
-      )}
+      {/* Booking and messaging have no endpoint yet, so the card says so rather than
+          firing a success toast for something that never happened. */}
+      <div className="mt-5 rounded-2xl border border-line bg-surface-2/40 p-4 text-sm">
+        <p className="inline-flex items-center gap-1.5 font-semibold text-ink">
+          <Phone className="size-4 text-brand-ink" aria-hidden /> Inspections open soon
+        </p>
+        <p className="mt-1 text-muted">
+          Booking and messaging through INSPECTRA are not live yet. Until they are, view{" "}
+          {name.split(" ")[0] ?? "the realtor"}'s profile to see how they prefer to be
+          reached.
+        </p>
+      </div>
 
-      {realtor && (
-        <div className="mt-5 flex items-center gap-3 border-t border-line pt-4">
-          <img
-            src={`${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80`}
-            alt={realtor.name}
-            className="size-10 rounded-full object-cover ring-1 ring-line"
-          />
-          <div className="min-w-0">
-            <p className="flex items-center gap-1 text-sm font-medium text-ink">
-              {realtor.name}
-              {realtor.certified && (
-                <BadgeCheck
-                  className="size-3.5 fill-verified text-white"
-                  aria-hidden
-                />
-              )}
-            </p>
-            <p className="truncate text-xs text-muted">{realtor.agency}</p>
-          </div>
+      <Link
+        to={`/realtors/${realtor.id}`}
+        className={cn(buttonClasses("brand", "lg"), "mt-4 w-full")}
+      >
+        View realtor profile <ArrowRight className="size-4" aria-hidden />
+      </Link>
+
+      <div className="mt-5 flex items-center gap-3 border-t border-line pt-4">
+        <RealtorAvatar realtor={realtor} className="size-10 text-xs" />
+        <div className="min-w-0">
+          <p className="flex items-center gap-1 text-sm font-medium text-ink">
+            {name}
+            {(realtor.certified || realtor.identityVerified) && (
+              <BadgeCheck className="size-3.5 fill-verified text-white" aria-hidden />
+            )}
+          </p>
+          {realtor.agencyName && (
+            <p className="truncate text-xs text-muted">{realtor.agencyName}</p>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -600,10 +538,7 @@ function SaveButton() {
       className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3.5 text-sm text-ink transition-colors hover:bg-surface-2"
     >
       <Heart
-        className={cn(
-          "size-4",
-          saved ? "fill-rose-500 text-rose-500" : "text-muted",
-        )}
+        className={cn("size-4", saved ? "fill-rose-500 text-rose-500" : "text-muted")}
         aria-hidden
       />
       {saved ? "Saved" : "Save"}
@@ -634,23 +569,33 @@ function ShareButton() {
   );
 }
 
-function NotFound() {
+function DetailSkeleton() {
+  return (
+    <Container className="py-10">
+      <div className="h-4 w-40 animate-pulse rounded bg-surface-2" />
+      <div className="mt-5 h-[26rem] animate-pulse rounded-3xl bg-surface-2 max-sm:h-64" />
+      <div className="mt-8 grid grid-cols-[1fr_360px] gap-12 max-lg:grid-cols-1">
+        <div className="space-y-4">
+          <div className="h-5 w-32 animate-pulse rounded bg-surface-2" />
+          <div className="h-10 w-3/4 animate-pulse rounded bg-surface-2" />
+          <div className="h-4 w-1/2 animate-pulse rounded bg-surface-2" />
+          <div className="h-40 animate-pulse rounded-2xl bg-surface-2" />
+        </div>
+        <div className="h-80 animate-pulse rounded-3xl bg-surface-2 max-lg:hidden" />
+      </div>
+    </Container>
+  );
+}
+
+function NotFound({ message }: { message: string }) {
   return (
     <Container className="py-24 text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-ink">
-        Listing
-      </p>
-      <h1 className="display mt-3 text-3xl text-ink">
-        We can't find that home
-      </h1>
-      <p className="mt-2 text-muted">
-        It may have been taken down, or the link is off. Here's everything
-        that's live right now.
-      </p>
-      <Link
-        to="/listings"
-        className={cn(buttonClasses("primary", "lg"), "mt-6")}
-      >
+      <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint">
+        <Building2 className="size-6" aria-hidden />
+      </span>
+      <h1 className="display mt-5 text-3xl text-ink">We can't find that home</h1>
+      <p className="mt-2 text-muted">{message}</p>
+      <Link to="/listings" className={cn(buttonClasses("primary", "lg"), "mt-6")}>
         Back to listings
       </Link>
     </Container>

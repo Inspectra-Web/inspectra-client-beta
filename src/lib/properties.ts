@@ -51,6 +51,8 @@ export interface ListingFees {
 
 export interface RealtorListing {
   id: string;
+  /** The public marketplace URL for this listing. Stamped once, never re-derived. */
+  slug: string;
   /** Stamped by the API, e.g. INS-02D2F42A. Shown to the realtor and searchable. */
   ref: string;
   title: string;

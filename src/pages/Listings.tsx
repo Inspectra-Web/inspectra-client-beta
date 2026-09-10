@@ -1,8 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Search, X, SearchX, SlidersHorizontal, ChevronDown } from "lucide-react";
+import {
+  Search,
+  X,
+  SearchX,
+  SlidersHorizontal,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
   Select,
@@ -13,9 +21,16 @@ import {
 } from "@/components/ui/Select";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
-import { properties } from "@/data/mock";
-import type { VerificationStatus, ListingFor } from "@/types";
+import type { VerificationStatus } from "@/types";
 import { LISTING_INTENT_LABEL } from "@/lib/listing";
+import { apiMessage } from "@/lib/api";
+import { typeLabel } from "@/lib/properties";
+import {
+  usePublicListings,
+  toCardListing,
+  EMPTY_QUERY,
+  type MarketplaceQuery,
+} from "@/lib/marketplace";
 import { cn } from "@/lib/cn";
 
 const INTRO_IMAGE =
@@ -38,9 +53,6 @@ const STATUS_LABEL: Record<VerificationStatus, string> = {
   disputed: "Disputed",
 };
 
-const TYPES = ["Apartment", "Duplex", "Terrace", "Bungalow", "Penthouse", "Land"];
-const CITIES = Array.from(new Set(properties.map((p) => p.city)));
-
 const FOR_OPTIONS = [
   { value: "all", label: "Any offer type" },
   { value: "sale", label: "For sale" },
@@ -50,7 +62,7 @@ const FOR_OPTIONS = [
 ];
 
 const BEDS_OPTIONS = [
-  { value: "all", label: "Any beds" },
+  { value: "0", label: "Any beds" },
   { value: "1", label: "1+ beds" },
   { value: "2", label: "2+ beds" },
   { value: "3", label: "3+ beds" },
@@ -58,98 +70,113 @@ const BEDS_OPTIONS = [
   { value: "5", label: "5+ beds" },
 ];
 
-const PRICE_RANGES = [
-  { value: "all", label: "Any price", min: 0, max: Infinity },
-  { value: "u10", label: "Under ₦10M", min: 0, max: 10_000_000 },
+/* Buckets the reader thinks in, sent to the API as minPrice / maxPrice. An open
+   top end omits maxPrice rather than sending a number that would ever expire. */
+const PRICE_RANGES: { value: string; label: string; min?: number; max?: number }[] = [
+  { value: "all", label: "Any price" },
+  { value: "u10", label: "Under ₦10M", max: 10_000_000 },
   { value: "10-50", label: "₦10M – ₦50M", min: 10_000_000, max: 50_000_000 },
   { value: "50-150", label: "₦50M – ₦150M", min: 50_000_000, max: 150_000_000 },
   { value: "150-500", label: "₦150M – ₦500M", min: 150_000_000, max: 500_000_000 },
-  { value: "500", label: "₦500M+", min: 500_000_000, max: Infinity },
+  { value: "500", label: "₦500M+", min: 500_000_000 },
 ];
 
+/* "Recommended" is verified-first, not paid placement: there is no featured tier. */
 const SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
+  { value: "recommended", label: "Recommended" },
+  { value: "newest", label: "Newest" },
   { value: "price-desc", label: "Price: high to low" },
   { value: "price-asc", label: "Price: low to high" },
 ];
 
 export function Listings() {
   const reduced = useReducedMotion();
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [type, setType] = useState("all");
-  const [city, setCity] = useState("all");
-  const [listingFor, setListingFor] = useState("all");
-  const [beds, setBeds] = useState("all");
+  const [typed, setTyped] = useState("");
   const [price, setPrice] = useState("all");
-  const [sort, setSort] = useState("featured");
+  const [query, setQuery] = useState<MarketplaceQuery>(EMPTY_QUERY);
   const [open, setOpen] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  /* Everything except the verification segment — so the segment counts stay
-     honest as the other filters and the search narrow the set. */
-  const base = useMemo(() => {
-    const query = q.trim().toLowerCase();
-    const range = PRICE_RANGES.find((r) => r.value === price)!;
-    const minBeds = beds === "all" ? 0 : Number(beds);
-    return properties.filter((p) => {
-      if (query && !`${p.title} ${p.location} ${p.city} ${p.ref}`.toLowerCase().includes(query))
-        return false;
-      if (type !== "all" && p.type !== type) return false;
-      if (city !== "all" && p.city !== city) return false;
-      if (listingFor !== "all" && p.listingFor !== listingFor) return false;
-      if (minBeds && (p.beds == null || p.beds < minBeds)) return false;
-      if (p.price < range.min || p.price >= range.max) return false;
-      return true;
-    });
-  }, [q, type, city, listingFor, beds, price]);
+  // The server does the searching, so hold off a beat rather than firing a request
+  // per keystroke. Any new search starts again at page 1.
+  useEffect(() => {
+    const timer = setTimeout(
+      () =>
+        setQuery((prev) =>
+          prev.q === typed.trim() ? prev : { ...prev, q: typed.trim(), page: 1 },
+        ),
+      300,
+    );
+    return () => clearTimeout(timer);
+  }, [typed]);
 
-  const counts = useMemo(
-    () => ({
-      all: base.length,
-      verified: base.filter((p) => p.status === "verified").length,
-      pending: base.filter((p) => p.status === "pending").length,
-      disputed: base.filter((p) => p.status === "disputed").length,
-    }),
-    [base],
-  );
+  const { data, isPending, isError, error, isPlaceholderData } = usePublicListings(query);
 
-  const results = useMemo(() => {
-    const list = status === "all" ? base : base.filter((p) => p.status === status);
-    if (sort === "price-asc") return [...list].sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") return [...list].sort((a, b) => b.price - a.price);
-    return list;
-  }, [base, status, sort]);
+  const listings = data?.listings ?? [];
+  const counts = data?.counts ?? { all: 0, verified: 0, pending: 0, disputed: 0 };
+  const cities = data?.cities ?? [];
+  const types = data?.types ?? [];
+  const total = data?.total ?? 0;
+  const page = data?.page ?? query.page;
+  const pages = data?.pages ?? 1;
+
+  /** Every filter change lands the reader back on the first page. */
+  const set = (patch: Partial<MarketplaceQuery>) =>
+    setQuery((prev) => ({ ...prev, ...patch, page: 1 }));
+
+  const setPriceRange = (value: string) => {
+    const range = PRICE_RANGES.find((r) => r.value === value);
+    setPrice(value);
+    set({ minPrice: range?.min, maxPrice: range?.max });
+  };
 
   const chips: { key: string; label: string; clear: () => void }[] = [];
-  if (q.trim()) chips.push({ key: "q", label: `“${q.trim()}”`, clear: () => setQ("") });
-  if (status !== "all")
-    chips.push({ key: "status", label: STATUS_LABEL[status], clear: () => setStatus("all") });
-  if (type !== "all") chips.push({ key: "type", label: type, clear: () => setType("all") });
-  if (city !== "all") chips.push({ key: "city", label: city, clear: () => setCity("all") });
-  if (listingFor !== "all")
+  if (query.q)
+    chips.push({
+      key: "q",
+      label: `“${query.q}”`,
+      clear: () => {
+        setTyped("");
+        set({ q: "" });
+      },
+    });
+  if (query.status !== "all")
+    chips.push({
+      key: "status",
+      label: STATUS_LABEL[query.status],
+      clear: () => set({ status: "all" }),
+    });
+  if (query.type !== "all")
+    chips.push({
+      key: "type",
+      label: typeLabel(query.type),
+      clear: () => set({ type: "all" }),
+    });
+  if (query.city !== "all")
+    chips.push({ key: "city", label: query.city, clear: () => set({ city: "all" }) });
+  if (query.listingStatus !== "all")
     chips.push({
       key: "for",
-      label: LISTING_INTENT_LABEL[listingFor as ListingFor],
-      clear: () => setListingFor("all"),
+      label: LISTING_INTENT_LABEL[query.listingStatus],
+      clear: () => set({ listingStatus: "all" }),
     });
-  if (beds !== "all") chips.push({ key: "beds", label: `${beds}+ beds`, clear: () => setBeds("all") });
+  if (query.beds > 0)
+    chips.push({
+      key: "beds",
+      label: `${query.beds}+ beds`,
+      clear: () => set({ beds: 0 }),
+    });
   if (price !== "all")
     chips.push({
       key: "price",
       label: PRICE_RANGES.find((r) => r.value === price)!.label,
-      clear: () => setPrice("all"),
+      clear: () => setPriceRange("all"),
     });
 
   const reset = () => {
-    setQ("");
-    setStatus("all");
-    setType("all");
-    setCity("all");
-    setListingFor("all");
-    setBeds("all");
+    setTyped("");
     setPrice("all");
-    setSort("featured");
+    setQuery(EMPTY_QUERY);
   };
 
   // Only one filter dropdown open at a time — opening one closes the others; a
@@ -218,8 +245,8 @@ export function Listings() {
             <span className="h-5 w-px bg-line max-sm:hidden" aria-hidden />
 
             <p className="text-sm text-muted">
-              <span className="font-semibold text-ink">{results.length}</span>{" "}
-              {results.length === 1 ? "home" : "homes"}
+              <span className="font-semibold text-ink">{total}</span>{" "}
+              {total === 1 ? "home" : "homes"}
             </p>
 
             {chips.map((c) => (
@@ -266,8 +293,8 @@ export function Listings() {
                       />
                       <Input
                         type="search"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
+                        value={typed}
+                        onChange={(e) => setTyped(e.target.value)}
                         placeholder="Search by area, city or listing ref…"
                         aria-label="Search listings"
                         className="h-10 pl-11"
@@ -280,12 +307,12 @@ export function Listings() {
                       className="no-scrollbar inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface p-1 max-sm:w-full max-sm:overflow-x-auto"
                     >
                       {SEGMENTS.map((s) => {
-                        const active = status === s.key;
+                        const active = query.status === s.key;
                         return (
                           <button
                             key={s.key}
                             type="button"
-                            onClick={() => setStatus(s.key)}
+                            onClick={() => set({ status: s.key })}
                             aria-pressed={active}
                             className={cn(
                               "inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors",
@@ -312,38 +339,40 @@ export function Listings() {
                     <FilterSelect
                       {...selectProps("type")}
                       label="Property type"
-                      value={type}
-                      onChange={setType}
+                      value={query.type}
+                      onChange={(type) => set({ type })}
                       options={[
                         { value: "all", label: "All types" },
-                        ...TYPES.map((t) => ({ value: t, label: t })),
+                        ...types.map((t) => ({ value: t, label: typeLabel(t) })),
                       ]}
                       triggerClassName="min-w-36 flex-1"
                     />
                     <FilterSelect
                       {...selectProps("city")}
                       label="City"
-                      value={city}
-                      onChange={setCity}
+                      value={query.city}
+                      onChange={(city) => set({ city })}
                       options={[
                         { value: "all", label: "All cities" },
-                        ...CITIES.map((c) => ({ value: c, label: c })),
+                        ...cities.map((c) => ({ value: c, label: c })),
                       ]}
                       triggerClassName="min-w-36 flex-1"
                     />
                     <FilterSelect
                       {...selectProps("for")}
                       label="Sale or rent"
-                      value={listingFor}
-                      onChange={setListingFor}
+                      value={query.listingStatus}
+                      onChange={(v) =>
+                        set({ listingStatus: v as MarketplaceQuery["listingStatus"] })
+                      }
                       options={FOR_OPTIONS}
                       triggerClassName="min-w-36 flex-1"
                     />
                     <FilterSelect
                       {...selectProps("beds")}
                       label="Bedrooms"
-                      value={beds}
-                      onChange={setBeds}
+                      value={String(query.beds)}
+                      onChange={(v) => set({ beds: Number(v) })}
                       options={BEDS_OPTIONS}
                       triggerClassName="min-w-36 flex-1"
                     />
@@ -351,7 +380,7 @@ export function Listings() {
                       {...selectProps("price")}
                       label="Price range"
                       value={price}
-                      onChange={setPrice}
+                      onChange={setPriceRange}
                       options={PRICE_RANGES}
                       triggerClassName="min-w-36 flex-1"
                     />
@@ -361,8 +390,8 @@ export function Listings() {
                       <FilterSelect
                         {...selectProps("sort")}
                         label="Sort listings"
-                        value={sort}
-                        onChange={setSort}
+                        value={query.sort}
+                        onChange={(v) => set({ sort: v as MarketplaceQuery["sort"] })}
                         options={SORT_OPTIONS}
                         triggerClassName="w-40 max-sm:flex-1"
                       />
@@ -378,30 +407,121 @@ export function Listings() {
       {/* Results */}
       <section className="py-12 max-sm:py-10">
         <Container>
-          {results.length > 0 ? (
-            <div className="grid grid-cols-3 gap-x-6 gap-y-10 max-lg:grid-cols-2 max-sm:grid-cols-1">
-              {results.map((property, i) => (
-                <Reveal key={property.id} delay={(i % 3) * 0.08}>
-                  <PropertyCard property={property} />
-                </Reveal>
-              ))}
-            </div>
+          {isError ? (
+            <Notice
+              title="Could not load listings"
+              body={apiMessage(error, "Something went wrong fetching the marketplace.")}
+              action={
+                <button
+                  type="button"
+                  onClick={reset}
+                  className={cn(buttonClasses("primary", "md"), "mt-6")}
+                >
+                  Try again
+                </button>
+              }
+            />
+          ) : isPending ? (
+            <GridSkeleton />
+          ) : listings.length > 0 ? (
+            <>
+              <div
+                className={cn(
+                  "grid grid-cols-3 gap-x-6 gap-y-10 transition-opacity max-lg:grid-cols-2 max-sm:grid-cols-1",
+                  isPlaceholderData && "opacity-60",
+                )}
+              >
+                {listings.map((listing, i) => (
+                  <Reveal key={listing.id} delay={(i % 3) * 0.08}>
+                    <PropertyCard listing={toCardListing(listing)} />
+                  </Reveal>
+                ))}
+              </div>
+
+              {pages > 1 && (
+                <div className="mt-12 flex items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setQuery((prev) => ({ ...prev, page: prev.page - 1 }))}
+                  >
+                    <ChevronLeft className="size-4" aria-hidden />
+                    Previous
+                  </Button>
+                  <span className="text-sm tabular-nums text-muted">
+                    Page {page} of {pages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= pages}
+                    onClick={() => setQuery((prev) => ({ ...prev, page: prev.page + 1 }))}
+                  >
+                    Next
+                    <ChevronRight className="size-4" aria-hidden />
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="mx-auto max-w-md rounded-2xl border border-line bg-surface px-8 py-16 text-center">
-              <SearchX className="mx-auto size-8 text-faint" aria-hidden />
-              <h2 className="display mt-4 text-2xl text-ink">No homes match these filters</h2>
-              <p className="mt-2 text-muted text-pretty">
-                Try widening the price range or clearing the verification filter. New listings are
-                checked and added every week.
-              </p>
-              <Button onClick={reset} className="mt-6">
-                Clear all filters
-              </Button>
-            </div>
+            <Notice
+              title={
+                chips.length > 0 ? "No homes match these filters" : "No listings yet"
+              }
+              body={
+                chips.length > 0
+                  ? "Try widening the price range or clearing the verification filter. New listings are checked and added every week."
+                  : "The first verified homes are on their way. Check back shortly."
+              }
+              action={
+                chips.length > 0 ? (
+                  <Button onClick={reset} className="mt-6">
+                    Clear all filters
+                  </Button>
+                ) : undefined
+              }
+            />
           )}
         </Container>
       </section>
     </>
+  );
+}
+
+function Notice({
+  title,
+  body,
+  action,
+}: {
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="mx-auto max-w-md rounded-2xl border border-line bg-surface px-8 py-16 text-center">
+      <SearchX className="mx-auto size-8 text-faint" aria-hidden />
+      <h2 className="display mt-4 text-2xl text-ink">{title}</h2>
+      <p className="mt-2 text-muted text-pretty">{body}</p>
+      {action}
+    </div>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-3 gap-x-6 gap-y-10 max-lg:grid-cols-2 max-sm:grid-cols-1">
+      {Array.from({ length: 6 }, (_, i) => (
+        <div key={i}>
+          <div className="aspect-[10/9] animate-pulse rounded-2xl bg-surface-2" />
+          <div className="space-y-2 pt-3">
+            <div className="h-4 w-3/4 animate-pulse rounded bg-surface-2" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-surface-2" />
+            <div className="h-4 w-2/5 animate-pulse rounded bg-surface-2" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

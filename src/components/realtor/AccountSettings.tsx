@@ -125,14 +125,17 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
           <div>
             <label htmlFor="bio" className="mb-1.5 block text-sm font-medium text-ink">Self description</label>
             <textarea
-              id="bio" rows={4} maxLength={600}
+              id="bio" rows={4}
               placeholder="Tell buyers what you specialize in and how you work…"
               className="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-faint focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
               {...register("bio")}
             />
             <div className="mt-1 flex items-center justify-between">
               <span className="text-xs text-rose-500">{errors.bio?.message}</span>
-              <span className="text-xs text-faint">{desc.length}/600</span>
+              {/* A count, not a budget: there is no ceiling to count down to now. */}
+              <span className="text-xs text-faint">
+                {desc.length} {desc.length === 1 ? "character" : "characters"}
+              </span>
             </div>
           </div>
 

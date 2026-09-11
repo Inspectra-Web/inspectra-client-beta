@@ -30,7 +30,7 @@ export const realtorProfileSchema = z.object({
   agency: z.string().min(2, "Enter your agency name"),
   email: emailSchema,
   phone: z.string().min(7, "Enter a valid phone number"),
-  bio: z.string().max(280, "Keep your bio under 280 characters").optional(),
+  bio: z.string().optional(),
 });
 export type RealtorProfileValues = z.infer<typeof realtorProfileSchema>;
 
@@ -40,7 +40,8 @@ export const realtorSettingsSchema = z.object({
   firstName: z.string().trim().min(1, 'Enter your first name'),
   lastName: z.string().trim().min(1, 'Enter your last name'),
   middleName: z.string().trim(),
-  bio: z.string().trim().max(600, 'Keep it under 600 characters'),
+  // Uncapped, matching the server: the realtor writes their own trust copy.
+  bio: z.string().trim(),
   address: z.string().trim(),
   city: z.string().trim(),
   state: z.string().trim(),

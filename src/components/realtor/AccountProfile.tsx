@@ -95,16 +95,23 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
             </div>
 
             {/* quick facts */}
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-5 text-sm">
-              {location && <Fact icon={MapPin} text={location} />}
-              {user.phone && <Fact icon={Phone} text={user.phone} />}
-              <Fact icon={Mail} text={user.email} />
+            <div className="mt-6 border-t border-line pt-5">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+                {location && <Fact icon={MapPin} text={location} />}
+                {user.phone && <Fact icon={Phone} text={user.phone} />}
+                <Fact icon={Mail} text={user.email} />
+              </div>
+
+              {/* Their own row, left-aligned. These sat in the facts row on an ml-auto,
+                  which pushed them hard right of whichever line they wrapped onto. */}
               {socials.length > 0 && (
-                <div className="ml-auto flex items-center gap-2 max-sm:ml-0">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   {socials.map((s) => (
                     <a
                       key={s.key}
                       href={profile.socials[s.key]}
+                      target="_blank"
+                      rel="noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand/40 hover:text-brand-ink"
                     >
                       {s.label}

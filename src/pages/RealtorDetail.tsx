@@ -12,7 +12,7 @@ import {
   Map,
   MapPin,
   MessageCircle,
-  MessageSquare,
+  Phone,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -22,7 +22,7 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { apiMessage } from "@/lib/api";
 import { usePublicRealtor, realtorTagline } from "@/lib/realtors";
 import { usePublicListings, toCardListing, EMPTY_QUERY } from "@/lib/marketplace";
-import { displayName, formatDate, initials } from "@/lib/format";
+import { displayName, formatDate, initials, whatsappDigits } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export function RealtorDetail() {
@@ -75,7 +75,12 @@ export function RealtorDetail() {
                 )}
               </div>
 
-              <ContactCard first={first} />
+              <ContactCard
+                first={first}
+                phone={realtor.phone}
+                whatsapp={realtor.whatsapp}
+                contactMeans={realtor.contactMeans}
+              />
 
               <dl className="mt-5 space-y-3 rounded-2xl border border-line p-5 text-sm">
                 {realtor.city && <Fact icon={MapPin} label="Based in" value={realtor.city} />}
@@ -84,9 +89,8 @@ export function RealtorDetail() {
                 {realtor.availabilityStatus && (
                   <Fact icon={Clock} label="Availability" value={realtor.availabilityStatus} />
                 )}
-                {realtor.contactMeans && (
-                  <Fact icon={MessageSquare} label="Prefers" value={realtor.contactMeans} />
-                )}
+                {/* The preference is stated on the contact card instead, beside the
+                    buttons it is about. */}
                 <Fact icon={CalendarCheck} label="On INSPECTRA" value={formatDate(realtor.createdAt)} />
               </dl>
 
@@ -231,22 +235,60 @@ function RealtorListings({ id, first }: { id: string; first: string }) {
   );
 }
 
-function ContactCard({ first }: { first: string }) {
-  const [asked, setAsked] = useState(false);
+/**
+ * Reach them directly. Every channel is a button and no number is printed on the page:
+ * the digits live in the href, not in the copy a reader (or a scraper reading rendered
+ * text) can lift off it. Both channels are offered whatever `contactMeans` says, which
+ * is stated rather than enforced.
+ *
+ * WhatsApp takes the brand accent rather than its own green, which would be another
+ * company's colour sitting in the middle of this palette.
+ */
+function ContactCard({
+  first,
+  phone,
+  whatsapp,
+  contactMeans,
+}: {
+  first: string;
+  phone: string;
+  whatsapp: string;
+  contactMeans: string;
+}) {
+  if (!phone && !whatsapp)
+    return (
+      <p className="mt-5 rounded-2xl border border-line bg-surface-2/40 px-4 py-3 text-center text-sm text-muted">
+        {first} has not listed a phone number yet. Message them from any of their
+        listings and it reaches them by email.
+      </p>
+    );
 
-  return asked ? (
-    <p className="mt-5 rounded-2xl border border-line bg-surface-2/40 px-4 py-3 text-center text-sm text-muted">
-      Messaging {first} through INSPECTRA is not live yet. It arrives with inspections and
-      inquiries.
-    </p>
-  ) : (
-    <button
-      type="button"
-      onClick={() => setAsked(true)}
-      className={cn(buttonClasses("brand", "lg"), "mt-5 w-full")}
-    >
-      <MessageCircle className="size-4" aria-hidden /> Message {first}
-    </button>
+  return (
+    <div className="mt-5 space-y-2">
+      {whatsapp && (
+        <a
+          href={`https://wa.me/${whatsappDigits(whatsapp)}`}
+          target="_blank"
+          rel="noreferrer"
+          className={cn(buttonClasses("brand", "lg"), "w-full")}
+        >
+          <MessageCircle className="size-4" aria-hidden /> WhatsApp {first}
+        </a>
+      )}
+      {phone && (
+        <a
+          href={`tel:${phone.replace(/\s/g, "")}`}
+          className={cn(buttonClasses("outline", "lg"), "w-full")}
+        >
+          <Phone className="size-4" aria-hidden /> Call {first}
+        </a>
+      )}
+      {contactMeans && (
+        <p className="pt-1 text-center text-xs text-muted">
+          Prefers to be reached on {contactMeans.toLowerCase()}
+        </p>
+      )}
+    </div>
   );
 }
 

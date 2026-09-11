@@ -3,8 +3,9 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 
 /**
- * A realtor as the public site sees them. No email, phone or address: a listing
- * in the directory is not a reason to publish someone's contact details.
+ * A realtor as the public site sees them. No email and no personal address, and no
+ * phone on a directory row: the profile carries the numbers (see RealtorProfile), a
+ * paged list of every one of them would just be a harvest.
  */
 export interface PublicRealtor {
   id: string;
@@ -81,7 +82,12 @@ export function realtorTagline(realtor: PublicRealtor): string {
 export interface RealtorProfile extends PublicRealtor {
   agencyAddress: string;
   availabilityStatus: string;
+  /** Which channel they would rather hear on. A statement, not a gate: both numbers
+   *  below are shown whatever this says. */
   contactMeans: string;
+  /** Either may be "": a realtor who never filled it in. */
+  phone: string;
+  whatsapp: string;
   socials: { instagram: string; linkedin: string; facebook: string; x: string };
 }
 

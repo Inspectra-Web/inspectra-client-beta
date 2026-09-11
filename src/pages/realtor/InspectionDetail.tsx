@@ -132,7 +132,15 @@ export function RealtorInspectionDetail() {
         {/* aside */}
         <Reveal y={16} className="space-y-4">
           <BuyerSummary name={inspection.buyerName} subtitle="Booked a viewing" />
-          <PropertySummary property={property} />
+          <PropertySummary
+            image={property.image}
+            title={property.title}
+            location={`${property.location}, ${property.city}`}
+            price={property.price}
+            listingFor={property.listingFor}
+            status={property.status}
+            href={`/listings/${property.id}`}
+          />
         </Reveal>
       </div>
     </div>

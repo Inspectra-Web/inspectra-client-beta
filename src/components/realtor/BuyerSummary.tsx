@@ -1,8 +1,6 @@
-import { toast } from "react-toastify";
-import { Phone } from "lucide-react";
-import { buttonClasses } from "@/components/ui/Button";
-
-/** Compact buyer card for realtor detail-page asides. Avatar falls back to initials. */
+/** Compact buyer card for realtor detail-page asides. Avatar falls back to initials.
+ *  There is no contact button: a buyer's email and phone are not on the lead, and the
+ *  thread is the channel. It used to carry one that only fired a toast. */
 export function BuyerSummary({
   name,
   avatar,
@@ -38,14 +36,6 @@ export function BuyerSummary({
           <p className="truncate text-sm text-muted">{subtitle}</p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={() => toast.info("Buyer contact is coming soon.")}
-        className={buttonClasses("outline", "sm", "mt-4 w-full")}
-      >
-        <Phone className="size-4" aria-hidden />
-        Contact buyer
-      </button>
     </div>
   );
 }

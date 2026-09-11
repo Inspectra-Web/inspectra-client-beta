@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import relativeTime from "dayjs/plugin/relativeTime";
 import updateLocale from "dayjs/plugin/updateLocale";
 
 /** Compact Naira price, e.g. 480_000_000 -> "₦480M", 8_200_000 -> "₦8.2M". */
@@ -28,6 +29,22 @@ export function displayName(fullname: string): string {
     .join(" ");
 }
 
+const NIGERIA = "234";
+
+/**
+ * A number as wa.me needs it: digits only, in full international form. Numbers here are
+ * Nigerian, so a leading 0 is the local trunk prefix and becomes the country code.
+ * "0801 234 5678" and "+234 801 234 5678" both give "2348012345678".
+ */
+export function whatsappDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.startsWith(NIGERIA)) return digits;
+  if (digits.startsWith("0")) return NIGERIA + digits.slice(1);
+
+  return digits;
+}
+
 /** Avatar fallback when the user has no image: "ada obi" -> "AO". */
 export function initials(name: string): string {
   const words = name.split(/\s+/).filter(Boolean);
@@ -41,6 +58,7 @@ export function initials(name: string): string {
 
 // Do (the ordinal day) is not in core; updateLocale is how the month names change.
 dayjs.extend(advancedFormat);
+dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
 
 // MMM abbreviates September to "Sep"; the house style is "Sept". This is the locale
@@ -67,4 +85,12 @@ export function formatDate(iso: string): string {
   const date = dayjs(iso);
 
   return date.isValid() ? date.format("Do MMM YYYY") : "";
+}
+
+/** An ISO date -> "2 hours ago". A conversation reads in relative time: "10th Sept
+ *  2026" on a message sent this morning tells the reader nothing they wanted. */
+export function timeAgo(iso: string): string {
+  const date = dayjs(iso);
+
+  return date.isValid() ? date.fromNow() : "";
 }

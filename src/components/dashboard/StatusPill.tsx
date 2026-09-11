@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 type PillStatus =
   | "new"
   | "responded"
+  | "closed"
   | "upcoming"
   | "completed"
   | "cancelled";
@@ -12,6 +13,9 @@ type PillStatus =
 const MAP: Record<PillStatus, { label: string; className: string }> = {
   new: { label: "New", className: "bg-brand/10 text-brand-ink" },
   responded: { label: "Responded", className: "bg-verified/10 text-verified" },
+  // A thread the realtor has retired. Neutral, like a cancelled inspection: it is a
+  // finished state, not a bad one.
+  closed: { label: "Closed", className: "bg-surface-2 text-muted" },
   upcoming: { label: "Upcoming", className: "bg-brand/10 text-brand-ink" },
   completed: { label: "Completed", className: "bg-verified/10 text-verified" },
   cancelled: { label: "Cancelled", className: "bg-surface-2 text-muted" },

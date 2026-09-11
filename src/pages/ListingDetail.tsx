@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
+import { toast } from "react-toastify";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,7 +15,7 @@ import {
   ShieldCheck,
   BadgeCheck,
   Building2,
-  Phone,
+  MessageCircle,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
@@ -27,6 +28,8 @@ import { Gallery } from "@/components/listing/Gallery";
 import { VerificationDossier } from "@/components/listing/VerificationDossier";
 import { VideoTour } from "@/components/listing/VideoTour";
 import { apiMessage } from "@/lib/api";
+import { useMe } from "@/lib/auth";
+import { useCreateInquiry } from "@/lib/inquiries";
 import { displayName, formatDate, formatPriceFull, initials } from "@/lib/format";
 import { priceSuffix, readTour, toPublicDocCheck } from "@/lib/listing";
 import { typeLabel, type ListingFee } from "@/lib/properties";
@@ -505,22 +508,11 @@ function ActionCard({
         </p>
       </div>
 
-      {/* Booking and messaging have no endpoint yet, so the card says so rather than
-          firing a success toast for something that never happened. */}
-      <div className="mt-5 rounded-2xl border border-line bg-surface-2/40 p-4 text-sm">
-        <p className="inline-flex items-center gap-1.5 font-semibold text-ink">
-          <Phone className="size-4 text-brand-ink" aria-hidden /> Inspections open soon
-        </p>
-        <p className="mt-1 text-muted">
-          Booking and messaging through INSPECTRA are not live yet. Until they are, view{" "}
-          {name.split(" ")[0] ?? "the realtor"}'s profile to see how they prefer to be
-          reached.
-        </p>
-      </div>
+      <InquiryBox listing={listing} first={name.split(" ")[0] ?? "the realtor"} />
 
       <Link
         to={`/realtors/${realtor.id}`}
-        className={cn(buttonClasses("brand", "lg"), "mt-4 w-full")}
+        className={cn(buttonClasses("outline", "md"), "mt-3 w-full")}
       >
         View realtor profile <ArrowRight className="size-4" aria-hidden />
       </Link>
@@ -539,6 +531,113 @@ function ActionCard({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The one place a conversation starts. Public page, so the session may be missing:
+ * useMe is nullable, unlike useAuthUser, which throws outside a guarded route.
+ *
+ * A realtor or an admin sees no composer. An inquiry belongs to a buyer, and the API
+ * refuses one from any other role, so offering the box would be a lie.
+ */
+function InquiryBox({ listing, first }: { listing: PublicListingDetail; first: string }) {
+  const { pathname } = useLocation();
+  const { data: user, isPending } = useMe();
+  const create = useCreateInquiry();
+
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState("");
+
+  // Nothing is offered on a guess: the card waits for the session to resolve.
+  if (isPending)
+    return <div className="mt-5 h-28 animate-pulse rounded-2xl bg-surface-2/60" />;
+
+  if (sent)
+    return (
+      <div className="mt-5 rounded-2xl border border-verified/30 bg-verified/5 p-4 text-sm">
+        <p className="inline-flex items-center gap-1.5 font-semibold text-ink">
+          <Check className="size-4 text-verified" aria-hidden /> Message sent
+        </p>
+        <p className="mt-1 text-muted">
+          {first} has been emailed. Their reply lands in your inquiries.
+        </p>
+        <Link
+          to={`/dashboard/inquiries/${sent}`}
+          className={cn(buttonClasses("brand", "md"), "mt-3 w-full")}
+        >
+          Open the conversation <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </div>
+    );
+
+  if (!user)
+    return (
+      <div className="mt-5 rounded-2xl border border-line bg-surface-2/40 p-4 text-sm">
+        <p className="inline-flex items-center gap-1.5 font-semibold text-ink">
+          <MessageCircle className="size-4 text-brand-ink" aria-hidden /> Message {first}
+        </p>
+        <p className="mt-1 text-muted">
+          Sign in to ask about the documents, the fees or a viewing. Every message stays
+          on INSPECTRA.
+        </p>
+        <Link
+          to="/login"
+          state={{ from: pathname }}
+          className={cn(buttonClasses("brand", "md"), "mt-3 w-full")}
+        >
+          Sign in to message <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </div>
+    );
+
+  if (user.role !== "seeker")
+    return (
+      <div className="mt-5 rounded-2xl border border-line bg-surface-2/40 p-4 text-sm">
+        <p className="font-semibold text-ink">You are signed in as a {user.role}</p>
+        <p className="mt-1 text-muted">
+          Inquiries come from buyer accounts, so there is nothing to send from here.
+        </p>
+      </div>
+    );
+
+  const send = async () => {
+    const body = message.trim();
+
+    if (!body || create.isPending) return;
+
+    try {
+      const result = await create.mutateAsync({ property: listing.id, message: body });
+      toast.success(result.message ?? "Your inquiry is with the realtor.");
+      setSent(result.inquiry.id);
+    } catch (error) {
+      toast.error(apiMessage(error, "Could not send your message."));
+    }
+  };
+
+  return (
+    <div className="mt-5 rounded-2xl border border-line bg-surface-2/40 p-4">
+      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
+        <MessageCircle className="size-4 text-brand-ink" aria-hidden /> Message {first}
+      </p>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        rows={3}
+        placeholder="Ask about the documents, the fees or a viewing…"
+        aria-label={`Message ${first} about this listing`}
+        className="mt-3 w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-faint focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+      />
+      <button
+        type="button"
+        onClick={send}
+        disabled={!message.trim() || create.isPending}
+        className={cn(buttonClasses("brand", "lg"), "mt-3 w-full disabled:opacity-50")}
+      >
+        {create.isPending ? "Sending…" : "Send message"}
+        <ArrowRight className="size-4" aria-hidden />
+      </button>
     </div>
   );
 }

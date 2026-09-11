@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { savedPropertyIds, upcomingInspections } from "@/data/seeker";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useMyInquiries, EMPTY_QUERY } from "@/lib/inquiries";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -25,7 +26,7 @@ type NavItem = {
   count?: number;
 };
 
-const NAV: NavItem[] = [
+const nav = (awaitingReply: number): NavItem[] => [
   { label: "Overview", to: "/dashboard", Icon: LayoutDashboard, end: true },
   {
     label: "Saved homes",
@@ -33,7 +34,12 @@ const NAV: NavItem[] = [
     Icon: Heart,
     count: savedPropertyIds.length,
   },
-  { label: "Inquiries", to: "/dashboard/inquiries", Icon: MessageSquare },
+  {
+    label: "Inquiries",
+    to: "/dashboard/inquiries",
+    Icon: MessageSquare,
+    count: awaitingReply,
+  },
   {
     label: "Inspections",
     to: "/dashboard/inspections",
@@ -47,6 +53,12 @@ const NAV: NavItem[] = [
 export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthUser();
   const name = displayName(user.fullname);
+
+  // The resting query the Inquiries page itself opens on, so the pill and the page
+  // share one cache entry rather than firing a request each. "new" is the thread
+  // waiting on the realtor, which is what a seeker wants counted.
+  const { data } = useMyInquiries(EMPTY_QUERY);
+  const NAV = nav(data?.counts.new ?? 0);
 
   return (
     <div className="flex h-full flex-col p-5">

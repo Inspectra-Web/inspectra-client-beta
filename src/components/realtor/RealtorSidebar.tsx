@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { realtor } from "@/data/realtor";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useLeads, EMPTY_QUERY } from "@/lib/inquiries";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -20,17 +21,23 @@ import {
 } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
-type NavItem = { label: string; to: string; Icon: LucideIcon; end?: boolean };
+type NavItem = {
+  label: string;
+  to: string;
+  Icon: LucideIcon;
+  end?: boolean;
+  count?: number;
+};
 type NavGroup = { label: string; items: NavItem[] };
 
 // Grouped so trust is a first-class part of the realtor's workspace, not buried in a flat list.
-const NAV_GROUPS: NavGroup[] = [
+const navGroups = (newLeads: number): NavGroup[] => [
   {
     label: "Main",
     items: [
       { label: "Overview", to: "/realtor", Icon: LayoutDashboard, end: true },
       { label: "Listings", to: "/realtor/listings", Icon: Building2 },
-      { label: "Leads", to: "/realtor/leads", Icon: Inbox },
+      { label: "Leads", to: "/realtor/leads", Icon: Inbox, count: newLeads },
       { label: "Inspections", to: "/realtor/inspections", Icon: CalendarCheck },
     ],
   },
@@ -48,12 +55,17 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Account", to: "/realtor/account", Icon: UserCircle },
     ],
   },
-] as const;
+];
 
 /** Sidebar content, shared by the desktop rail and the mobile drawer. */
 export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthUser();
   const name = displayName(user.fullname);
+
+  // The resting query the Leads page opens on, so the pill and the page share one
+  // cache entry. "new" is a thread waiting on a reply: the work, not the total.
+  const { data } = useLeads(EMPTY_QUERY);
+  const NAV_GROUPS = navGroups(data?.counts.new ?? 0);
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -72,7 +84,7 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-faint">
               {group.label}
             </p>
-            {group.items.map(({ label, to, Icon, end }) => (
+            {group.items.map(({ label, to, Icon, end, count }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -89,6 +101,11 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
               >
                 <Icon className="size-4.5 shrink-0" />
                 <span className="flex-1">{label}</span>
+                {count != null && count > 0 && (
+                  <span className="grid min-w-5 place-items-center rounded-full bg-brand/15 px-1.5 text-xs font-semibold tabular-nums text-brand-ink">
+                    {count}
+                  </span>
+                )}
               </NavLink>
             ))}
           </div>

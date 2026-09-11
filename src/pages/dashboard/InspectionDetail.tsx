@@ -196,8 +196,27 @@ export function InspectionDetail() {
 
         {/* aside */}
         <Reveal y={16} className="space-y-4">
-          <PropertySummary property={property} />
-          {realtor && <RealtorSummary realtor={realtor} />}
+          <PropertySummary
+            image={property.image}
+            title={property.title}
+            location={`${property.location}, ${property.city}`}
+            price={property.price}
+            listingFor={property.listingFor}
+            status={property.status}
+            href={`/listings/${property.id}`}
+          />
+          {realtor && (
+            <RealtorSummary
+              name={realtor.name}
+              // The mock avatars are Unsplash URLs, so the sizing params belong here
+              // now rather than inside the card.
+              avatar={`${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80`}
+              agency={realtor.agency}
+              city={realtor.city}
+              certified={realtor.certified}
+              href={`/realtors/${realtor.id}`}
+            />
+          )}
           <p className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
             <ShieldCheck className="size-4 text-verified" aria-hidden />
             Inspection covered by INSPECTRA trust

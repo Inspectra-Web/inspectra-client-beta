@@ -1,50 +1,59 @@
-import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { toast } from "react-toastify";
-import { ArrowLeft, Send, CalendarPlus, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { StatusPill } from "@/components/dashboard/StatusPill";
 import { PropertySummary } from "@/components/dashboard/PropertySummary";
 import { RealtorSummary } from "@/components/dashboard/RealtorSummary";
+import { Thread, MessageComposer } from "@/components/dashboard/Thread";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
-import { inquiryById } from "@/data/seeker";
-import { UserAvatar } from "@/components/ui/UserAvatar";
+import { apiMessage } from "@/lib/api";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
-import { propertyById, realtorById } from "@/data/mock";
-import { cn } from "@/lib/cn";
+import { listingAddress } from "@/lib/marketplace";
+import { useMyInquiry, useSendInquiryMessage } from "@/lib/inquiries";
 
 export function InquiryDetail() {
   const user = useAuthUser();
   const { id } = useParams();
-  const inquiry = id ? inquiryById(id) : undefined;
-  const property = inquiry ? propertyById(inquiry.propertyId) : undefined;
-  const realtor = inquiry ? realtorById(inquiry.realtorId) : undefined;
 
-  const [draft, setDraft] = useState("");
+  const { data, isPending, isError, error } = useMyInquiry(id ?? "");
+  const send = useSendInquiryMessage();
 
-  if (!inquiry || !property) {
+  if (isPending) return <DetailSkeleton />;
+
+  if (isError)
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
         <span className="grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint">
           <MessageSquare className="size-7" />
         </span>
         <h1 className="display mt-5 text-3xl text-ink">Inquiry not found</h1>
-        <p className="mt-2 text-muted">This inquiry may have been removed.</p>
+        <p className="mt-2 max-w-sm text-muted">
+          {apiMessage(error, "This conversation may have been removed.")}
+        </p>
         <Link to="/dashboard/inquiries" className={buttonClasses("brand", "md", "mt-7")}>
           <ArrowLeft className="size-4" aria-hidden />
           Back to inquiries
         </Link>
       </div>
     );
-  }
 
-  const send = () => {
-    if (!draft.trim()) return;
-    toast.success("Message sent");
-    setDraft("");
+  const { inquiry, property, realtor } = data;
+  const name = displayName(realtor.fullname);
+  const first = name.split(" ")[0] ?? "the realtor";
+
+  // Rethrown so the composer keeps what was typed when a send fails.
+  const onSend = async (message: string) => {
+    try {
+      const result = await send.mutateAsync({ id: inquiry.id, message });
+      toast.success(result.message ?? "Message sent.");
+    } catch (err) {
+      toast.error(apiMessage(err, "Could not send your message."));
+      throw err;
+    }
   };
 
   return (
@@ -60,7 +69,7 @@ export function InquiryDetail() {
       <Reveal>
         <PageHeader
           title={property.title}
-          subtitle={`${property.location}, ${property.city}`}
+          subtitle={listingAddress(property)}
           actions={<StatusPill status={inquiry.status} />}
         />
       </Reveal>
@@ -69,109 +78,70 @@ export function InquiryDetail() {
         {/* conversation */}
         <Reveal y={16}>
           <Panel title="Conversation">
-            <div className="space-y-5">
-              <Bubble
-                side="out"
-                avatar={user.avatar}
-                name="You"
-                avatarName={displayName(user.fullname)}
-                at={inquiry.sentAt}
-                text={inquiry.message}
-              />
-              {inquiry.status === "responded" && inquiry.reply && realtor && (
-                <Bubble
-                  side="in"
-                  avatar={`${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80`}
-                  name={realtor.name}
-                  at="Replied"
-                  text={inquiry.reply}
-                />
-              )}
-              {inquiry.status === "new" && (
-                <p className="rounded-xl bg-surface-2/60 px-4 py-3 text-center text-sm text-muted">
-                  Waiting for {realtor?.name ?? "the realtor"} to reply. We'll notify you
-                  as soon as they do.
-                </p>
-              )}
-            </div>
+            <Thread
+              messages={inquiry.messages}
+              mine="seeker"
+              me={{ name: displayName(user.fullname), avatar: user.avatar }}
+              them={{ name, avatar: realtor.avatar }}
+            />
 
-            {/* composer */}
-            <div className="mt-5 border-t border-line pt-4">
-              <textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                rows={3}
-                placeholder="Write a reply..."
-                className="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-faint focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
-              />
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={send}
-                  disabled={!draft.trim()}
-                  className={cn(buttonClasses("brand", "md"), "disabled:opacity-50")}
-                >
-                  <Send className="size-4" aria-hidden />
-                  Send message
-                </button>
-              </div>
-            </div>
+            {inquiry.status === "new" && (
+              <p className="mt-5 rounded-xl bg-surface-2/60 px-4 py-3 text-center text-sm text-muted">
+                Waiting for {first} to reply. We'll email you as soon as they do.
+              </p>
+            )}
+
+            {inquiry.status === "closed" && (
+              <p className="mt-5 rounded-xl bg-surface-2/60 px-4 py-3 text-center text-sm text-muted">
+                {first} has closed this conversation. Writing again reopens it.
+              </p>
+            )}
+
+            <MessageComposer
+              placeholder={`Write to ${first}…`}
+              label="Send message"
+              pending={send.isPending}
+              onSend={onSend}
+            />
           </Panel>
         </Reveal>
 
         {/* aside */}
         <Reveal y={16} className="space-y-4">
-          <PropertySummary property={property} />
-          {realtor && <RealtorSummary realtor={realtor} />}
-          <Link
-            to="/dashboard/inspections"
-            className={buttonClasses("outline", "md", "w-full")}
-          >
-            <CalendarPlus className="size-4" aria-hidden />
-            Book an inspection
-          </Link>
+          <PropertySummary
+            image={property.image}
+            title={property.title}
+            location={listingAddress(property)}
+            price={property.price}
+            listingFor={property.listingStatus}
+            status={property.status}
+            href={`/listings/${property.slug}`}
+          />
+          <RealtorSummary
+            name={name}
+            avatar={realtor.avatar}
+            agency={realtor.agencyName}
+            city={realtor.city}
+            certified={realtor.certified}
+            href={`/realtors/${realtor.id}`}
+          />
         </Reveal>
       </div>
     </div>
   );
 }
 
-function Bubble({
-  side,
-  avatar,
-  name,
-  avatarName,
-  at,
-  text,
-}: {
-  side: "in" | "out";
-  avatar: string;
-  name: string;
-  /** Falls back to `name`. The "You" bubble labels itself "You" but wants real initials. */
-  avatarName?: string;
-  at: string;
-  text: string;
-}) {
-  const out = side === "out";
+function DetailSkeleton() {
   return (
-    <div className={cn("flex gap-3", out && "flex-row-reverse")}>
-      <UserAvatar name={avatarName ?? name} avatar={avatar} className="size-9" />
-      <div className={cn("max-w-[80%]", out && "text-right")}>
-        <div className="mb-1 flex items-center gap-2 text-xs text-faint">
-          <span className="font-medium text-muted">{name}</span>
-          <span>·</span>
-          <span>{at}</span>
-        </div>
-        <p
-          className={cn(
-            "inline-block rounded-2xl px-4 py-3 text-sm leading-relaxed",
-            out
-              ? "bg-brand/10 text-ink"
-              : "border border-line bg-surface-2/60 text-ink",
-          )}
-        >
-          {text}
-        </p>
+    <div className="space-y-6">
+      <div className="h-4 w-32 animate-pulse rounded bg-surface-2" />
+      <div className="space-y-2.5">
+        <div className="h-8 w-80 animate-pulse rounded bg-surface-2" />
+        <div className="h-4 w-52 animate-pulse rounded bg-surface-2" />
+      </div>
+      <div className="grid grid-cols-[1fr_20rem] items-start gap-6 max-lg:grid-cols-1">
+        <div className="h-80 animate-pulse rounded-2xl bg-surface-2" />
+        <div className="h-72 animate-pulse rounded-2xl bg-surface-2" />
       </div>
     </div>
   );

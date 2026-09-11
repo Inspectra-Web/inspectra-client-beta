@@ -1,9 +1,10 @@
 import logoLight from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { savedPropertyIds, upcomingInspections } from "@/data/seeker";
+import { upcomingInspections } from "@/data/seeker";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useMyInquiries, EMPTY_QUERY } from "@/lib/inquiries";
+import { useSavedIds } from "@/lib/saved";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -26,13 +27,13 @@ type NavItem = {
   count?: number;
 };
 
-const nav = (awaitingReply: number): NavItem[] => [
+const nav = (awaitingReply: number, saved: number): NavItem[] => [
   { label: "Overview", to: "/dashboard", Icon: LayoutDashboard, end: true },
   {
     label: "Saved homes",
     to: "/dashboard/saved",
     Icon: Heart,
-    count: savedPropertyIds.length,
+    count: saved,
   },
   {
     label: "Inquiries",
@@ -58,7 +59,8 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   // share one cache entry rather than firing a request each. "new" is the thread
   // waiting on the realtor, which is what a seeker wants counted.
   const { data } = useMyInquiries(EMPTY_QUERY);
-  const NAV = nav(data?.counts.new ?? 0);
+  const { ids: saved } = useSavedIds();
+  const NAV = nav(data?.counts.new ?? 0, saved.length);
 
   return (
     <div className="flex h-full flex-col p-5">

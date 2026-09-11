@@ -1,55 +1,72 @@
-import { useState } from "react";
 import { Link } from "react-router";
-import { toast } from "react-toastify";
-import { Heart, X, Search } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
-import { savedPropertyIds } from "@/data/seeker";
-import { mockCardListing, propertyById } from "@/data/mock";
+import { apiMessage } from "@/lib/api";
+import { useSavedIds } from "@/lib/saved";
+import { usePublicListings, toCardListing, EMPTY_QUERY } from "@/lib/marketplace";
+
+// A shortlist is small, and paging one would be strange. One page, generously sized.
+const SAVED_MAX = 48;
 
 export function Saved() {
-  // Dashboard-only mock: seeded from mock data, held locally so Remove empties it live.
-  const [ids, setIds] = useState<string[]>(savedPropertyIds);
-  const items = ids.map(propertyById).filter((p) => p != null);
+  const { ids, isPending: idsPending, isError: idsError, error: idsErr } = useSavedIds();
 
-  const remove = (id: string) => {
-    setIds((prev) => prev.filter((x) => x !== id));
-    toast.info("Removed from saved");
-  };
+  // The cards come from the browse endpoint, filtered to the saved ids, so this page
+  // renders exactly what the marketplace renders and inherits its public gate: a saved
+  // listing whose realtor was suspended quietly drops out instead of 404ing a card.
+  const { data, isPending, isError, error } = usePublicListings(
+    { ...EMPTY_QUERY, ids },
+    SAVED_MAX,
+    ids.length > 0,
+  );
 
+  const loading = idsPending || (ids.length > 0 && isPending);
+  const listings = ids.length > 0 ? (data?.listings ?? []) : [];
+
+  // Removing is the card's own heart, so this page needs no Remove button of its own:
+  // the card leaves the grid when the shortlist it is drawn from changes.
   return (
     <div className="space-y-8">
       <Reveal>
         <PageHeader
           title="Saved homes"
           subtitle={
-            items.length
-              ? `${items.length} home${items.length === 1 ? "" : "s"} you're keeping an eye on`
+            listings.length
+              ? `${listings.length} home${listings.length === 1 ? "" : "s"} you're keeping an eye on`
               : "Your shortlist lives here"
           }
         />
       </Reveal>
 
-      {items.length ? (
+      {idsError || isError ? (
+        <Reveal y={16}>
+          <EmptyState
+            icon={Heart}
+            title="Could not load your shortlist"
+            message={apiMessage(idsErr ?? error)}
+          />
+        </Reveal>
+      ) : loading ? (
+        <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="space-y-3">
+              <div className="aspect-[10/9] animate-pulse rounded-2xl bg-surface-2" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-surface-2" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-surface-2" />
+            </div>
+          ))}
+        </div>
+      ) : listings.length ? (
         <Reveal
           className="grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1"
           y={16}
         >
-          {items.map((p) => (
-            <div key={p.id} className="relative">
-              <PropertyCard listing={mockCardListing(p)} />
-              <button
-                type="button"
-                onClick={() => remove(p.id)}
-                aria-label={`Remove ${p.title} from saved`}
-                className="absolute right-3 top-3 z-20 grid size-8 place-items-center rounded-full bg-white/95 text-slate-700 shadow-sm ring-1 ring-black/5 transition-colors hover:text-rose-500"
-              >
-                <X className="size-4" strokeWidth={2.5} />
-              </button>
-            </div>
+          {listings.map((listing) => (
+            <PropertyCard key={listing.id} listing={toCardListing(listing)} />
           ))}
         </Reveal>
       ) : (

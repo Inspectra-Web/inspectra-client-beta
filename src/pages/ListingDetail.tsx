@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 import {
   ArrowLeft,
@@ -30,6 +30,7 @@ import { VideoTour } from "@/components/listing/VideoTour";
 import { apiMessage } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import { useCreateInquiry } from "@/lib/inquiries";
+import { useSavedIds, useToggleSaved } from "@/lib/saved";
 import { displayName, formatDate, formatPriceFull, initials } from "@/lib/format";
 import { priceSuffix, readTour, toPublicDocCheck } from "@/lib/listing";
 import { typeLabel, type ListingFee } from "@/lib/properties";
@@ -80,7 +81,7 @@ export function ListingDetail() {
             <span className="truncate text-ink max-sm:hidden">{listing.title}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-2">
-            <SaveButton />
+            <SaveButton id={listing.id} />
             <ShareButton />
           </div>
         </div>
@@ -644,12 +645,31 @@ function InquiryBox({ listing, first }: { listing: PublicListingDetail; first: s
 
 /* ---------- small controls ---------- */
 
-function SaveButton() {
-  const [saved, setSaved] = useState(false);
+function SaveButton({ id }: { id: string }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { data: user } = useMe();
+  const { isSaved } = useSavedIds();
+  const toggle = useToggleSaved();
+
+  const saved = isSaved(id);
+
+  // A visitor is sent where saving becomes possible rather than shown a heart that
+  // fills in and forgets, which is what this did before.
+  const save = () => {
+    if (!user) {
+      navigate("/login", { state: { from: pathname } });
+      return;
+    }
+
+    toggle.mutate({ id, saved });
+  };
+
   return (
     <button
       type="button"
-      onClick={() => setSaved((v) => !v)}
+      onClick={save}
+      disabled={toggle.isPending}
       aria-pressed={saved}
       className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3.5 text-sm text-ink transition-colors hover:bg-surface-2"
     >

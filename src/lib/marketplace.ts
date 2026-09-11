@@ -101,6 +101,8 @@ export interface MarketplaceQuery {
   listingStatus: ListingFor | "all";
   /** Whose listings. Omitted on the browse; set on a realtor's public profile. */
   realtor?: string;
+  /** Specific listings, which is how the saved shortlist reads its cards. */
+  ids?: string[];
   /** A minimum, not an exact count: the filter reads "3+ beds". 0 is "any". */
   beds: number;
   minPrice?: number;
@@ -147,8 +149,17 @@ export const EMPTY_QUERY: MarketplaceQuery = {
   page: 1,
 };
 
-/** The browse grid. `limit` is a parameter so the landing strip can ask for six. */
-export function usePublicListings(query: MarketplaceQuery, limit = PAGE_SIZE) {
+/**
+ * The browse grid. `limit` is a parameter so the landing strip can ask for six.
+ *
+ * `enabled` exists for the saved shortlist: axios drops an empty array, so asking with
+ * `ids: []` would send no filter at all and come back with the whole marketplace.
+ */
+export function usePublicListings(
+  query: MarketplaceQuery,
+  limit = PAGE_SIZE,
+  enabled = true,
+) {
   return useQuery({
     queryKey: [...MARKETPLACE_KEY, query, limit],
     queryFn: async () => {
@@ -157,6 +168,7 @@ export function usePublicListings(query: MarketplaceQuery, limit = PAGE_SIZE) {
       });
       return res.data.data;
     },
+    enabled,
     placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
   });

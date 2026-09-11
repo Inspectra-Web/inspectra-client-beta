@@ -1,14 +1,36 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import type { MouseEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Heart, BadgeCheck, BedDouble, Bath, Ruler, Video, Building2 } from "lucide-react";
 import type { CardListing } from "@/types";
 import { formatPriceFull } from "@/lib/format";
+import { useMe } from "@/lib/auth";
+import { useSavedIds, useToggleSaved } from "@/lib/saved";
 import { priceSuffix } from "@/lib/listing";
 import { ListingIntentBadge } from "@/components/ui/ListingIntentBadge";
 import { cn } from "@/lib/cn";
 
 export function PropertyCard({ listing }: { listing: CardListing }) {
-  const [saved, setSaved] = useState(false);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { data: user } = useMe();
+  const { isSaved } = useSavedIds();
+  const toggle = useToggleSaved();
+
+  const saved = isSaved(listing.id);
+
+  // A visitor's heart is not dead, it just goes where saving becomes possible. The
+  // whole card is an overlay link, so the click has to be stopped from opening it.
+  const save = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!user) {
+      navigate("/login", { state: { from: pathname } });
+      return;
+    }
+
+    toggle.mutate({ id: listing.id, saved });
+  };
 
   return (
     <article className="group relative flex flex-col">
@@ -45,10 +67,11 @@ export function PropertyCard({ listing }: { listing: CardListing }) {
 
         <button
           type="button"
-          onClick={() => setSaved((v) => !v)}
+          onClick={save}
+          disabled={toggle.isPending}
           aria-pressed={saved}
           aria-label={saved ? "Remove from saved" : "Save property"}
-          className="absolute right-3 top-3 z-10 transition-transform hover:scale-110"
+          className="absolute right-3 top-3 z-10 transition-transform hover:scale-110 disabled:opacity-60"
         >
           <Heart
             className={cn(

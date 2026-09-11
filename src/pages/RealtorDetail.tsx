@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import {
   ArrowLeft,
+  ArrowRight,
   BadgeCheck,
   Building2,
   CalendarCheck,
@@ -20,6 +21,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { PropertyCard } from "@/components/PropertyCard";
 import { apiMessage } from "@/lib/api";
+import { useMe } from "@/lib/auth";
 import { usePublicRealtor, realtorTagline } from "@/lib/realtors";
 import { usePublicListings, toCardListing, EMPTY_QUERY } from "@/lib/marketplace";
 import { displayName, formatDate, initials, whatsappDigits } from "@/lib/format";
@@ -28,6 +30,9 @@ import { cn } from "@/lib/cn";
 export function RealtorDetail() {
   const { id } = useParams();
   const { data: realtor, isPending, isError, error } = usePublicRealtor(id ?? "");
+  // Contact details are a member feature, socials included. Same cached query the
+  // contact card reads, so this costs no extra request.
+  const { data: viewer } = useMe();
 
   if (isPending) return <ProfileSkeleton />;
   if (isError) return <NotFound message={apiMessage(error, "The profile may have moved.")} />;
@@ -94,7 +99,9 @@ export function RealtorDetail() {
                 <Fact icon={CalendarCheck} label="On INSPECTRA" value={formatDate(realtor.createdAt)} />
               </dl>
 
-              {socials.length > 0 && (
+              {/* Gated with the numbers: an Instagram DM is a direct channel too, so
+                  publishing the handle while hiding the phone would just be a hole. */}
+              {viewer && socials.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {socials.map(([label, href]) => (
                     <a
@@ -236,10 +243,17 @@ function RealtorListings({ id, first }: { id: string; first: string }) {
 }
 
 /**
- * Reach them directly. Every channel is a button and no number is printed on the page:
- * the digits live in the href, not in the copy a reader (or a scraper reading rendered
- * text) can lift off it. Both channels are offered whatever `contactMeans` says, which
- * is stated rather than enforced.
+ * Reach them directly, once you have an account: contacting a realtor is for registered
+ * users, so a visitor gets the sign-in path instead of the buttons.
+ *
+ * The gate is this component, not the API. `GET /realtors/:id` still carries the numbers,
+ * so they are readable to anyone who looks at the response rather than the page. That is
+ * the accepted trade for not adding an endpoint; moving them behind an authenticated read
+ * is what would make the gate real.
+ *
+ * Every channel is a button and no number is printed, so the digits stay in the href
+ * rather than in copy. Both channels are offered whatever `contactMeans` says, which is
+ * stated rather than enforced.
  *
  * WhatsApp takes the brand accent rather than its own green, which would be another
  * company's colour sitting in the middle of this palette.
@@ -255,6 +269,33 @@ function ContactCard({
   whatsapp: string;
   contactMeans: string;
 }) {
+  const { pathname } = useLocation();
+  // Nullable, unlike useAuthUser: this is a public route, so there may be no session.
+  const { data: user, isPending } = useMe();
+
+  // Nothing is offered on a guess while the session resolves.
+  if (isPending)
+    return <div className="mt-5 h-12 animate-pulse rounded-full bg-surface-2/60" />;
+
+  if (!user)
+    return (
+      <div className="mt-5 rounded-2xl border border-line bg-surface-2/40 p-4 text-sm">
+        <p className="inline-flex items-center gap-1.5 font-semibold text-ink">
+          <MessageCircle className="size-4 text-brand-ink" aria-hidden /> Contact {first}
+        </p>
+        <p className="mt-1 text-muted">
+          Phone and WhatsApp are for registered users. Signing up is free.
+        </p>
+        <Link
+          to="/login"
+          state={{ from: pathname }}
+          className={cn(buttonClasses("brand", "md"), "mt-3 w-full")}
+        >
+          Sign in to contact <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </div>
+    );
+
   if (!phone && !whatsapp)
     return (
       <p className="mt-5 rounded-2xl border border-line bg-surface-2/40 px-4 py-3 text-center text-sm text-muted">

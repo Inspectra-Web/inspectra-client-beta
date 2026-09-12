@@ -31,7 +31,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { apiMessage } from "@/lib/api";
 import { useAdminUser, useUpdateUserStatus, type UserDetail } from "@/lib/adminUsers";
 import { documentLabel } from "@/lib/identity";
-import { displayName, formatDate } from "@/lib/format";
+import { displayName, formatDate, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export function AdminRealtorDetail() {
@@ -160,7 +160,7 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
             {/* quick facts */}
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-5 text-sm">
               <Fact icon={Mail} text={user.email} />
-              {user.phone && <Fact icon={Phone} text={user.phone} />}
+              {user.phone && <Fact icon={Phone} text={formatPhone(user.phone)} />}
               {profile?.address && <Fact icon={MapPin} text={profile.address} />}
               {socials.length > 0 && (
                 <div className="ml-auto flex items-center gap-2 max-sm:ml-0">

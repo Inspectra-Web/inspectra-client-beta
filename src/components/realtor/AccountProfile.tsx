@@ -11,7 +11,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { useAuthUser } from "@/lib/auth";
 import { useProfile } from "@/lib/profile";
 import { useIdentity } from "@/lib/identity";
-import { displayName } from "@/lib/format";
+import { displayName, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const SOCIAL_LABELS: { key: "instagram" | "linkedin" | "facebook" | "x"; label: string }[] = [
@@ -98,7 +98,7 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
             <div className="mt-6 border-t border-line pt-5">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
                 {location && <Fact icon={MapPin} text={location} />}
-                {user.phone && <Fact icon={Phone} text={user.phone} />}
+                {user.phone && <Fact icon={Phone} text={formatPhone(user.phone)} />}
                 <Fact icon={Mail} text={user.email} />
               </div>
 

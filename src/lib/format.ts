@@ -45,6 +45,25 @@ export function whatsappDigits(phone: string): string {
   return digits;
 }
 
+/**
+ * A number as a person reads it: "+234 916 581 2629". Accepts whatever the account
+ * holder typed, since the field stores free text: "09165812629", "+2349165812629" and
+ * "0916-581-2629" all come out the same.
+ *
+ * Returns the input untouched when it is not a ten-digit Nigerian number, so a landline,
+ * a foreign number or a half-finished one is shown as entered rather than mangled into a
+ * shape it does not have. Display only: never run a form field through this, or it
+ * rewrites what someone is still typing.
+ */
+export function formatPhone(phone: string): string {
+  const digits = whatsappDigits(phone);
+  const national = digits.startsWith(NIGERIA) ? digits.slice(NIGERIA.length) : "";
+
+  if (national.length !== 10) return phone.trim();
+
+  return `+${NIGERIA} ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+}
+
 /** Avatar fallback when the user has no image: "ada obi" -> "AO". */
 export function initials(name: string): string {
   const words = name.split(/\s+/).filter(Boolean);

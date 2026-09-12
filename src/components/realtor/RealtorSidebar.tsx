@@ -1,10 +1,10 @@
 import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { realtor } from "@/data/realtor";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useLeads, EMPTY_QUERY } from "@/lib/inquiries";
 import { useRealtorInspections, UPCOMING_QUERY } from "@/lib/inspections";
+import { useProfile } from "@/lib/profile";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -70,6 +70,10 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
   // Same again for viewings, counting the ones still waiting on an answer rather
   // than every booking in the diary: the pill is for work, not volume.
   const { data: diary } = useRealtorInspections(UPCOMING_QUERY);
+
+  // Shares the ["profile"] entry the Account and Overview pages already open. Nothing
+  // writes Profile.certified yet, so the ring stays hidden until an admin can grant it.
+  const { data: profile } = useProfile();
 
   const NAV_GROUPS = navGroups(data?.counts.new ?? 0, diary?.counts.requested ?? 0);
 
@@ -139,7 +143,7 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="truncate text-sm font-semibold text-ink">{name}</p>
             <p className="truncate text-xs text-faint">{user.email}</p>
           </div>
-          {realtor.certified && (
+          {profile?.certified && (
             // Signature credential moment: a hairline foil ring (the one place foil is allowed).
             <span
               className="grid size-6 shrink-0 place-items-center rounded-full bg-foil p-px"

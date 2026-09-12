@@ -8,11 +8,13 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { DocCheckList } from "@/components/realtor/DocCheckList";
+import { VerificationBar } from "@/components/realtor/VerificationBar";
 import { apiMessage } from "@/lib/api";
 import { toDocCheck } from "@/lib/listing";
 import {
   listingLocation,
   useMyListings,
+  verifiedRate,
   type ListingQuery,
   type RealtorListing,
 } from "@/lib/properties";
@@ -28,7 +30,9 @@ const SEGMENTS: { key: Filter; label: string; activeCls: string }[] = [
   { key: "disputed", label: "Disputed", activeCls: "bg-rose-500 text-white" },
 ];
 
-/** Disputed first, then pending: the listings that need the realtor rise to the top. */
+/** Verified first, which is what "recommended" sorts to: descending on the status
+ *  string reads verified, pending, disputed. The segmented control is how a realtor
+ *  pulls up the ones still waiting on them. */
 const START: ListingQuery = { q: "", status: "all", sort: "recommended", page: 1 };
 
 export function RealtorVerification() {
@@ -41,7 +45,7 @@ export function RealtorVerification() {
   const { page = 1, pages = 1 } = data ?? {};
 
   const total = counts?.all ?? 0;
-  const verifiedRate = total ? Math.round(((counts?.verified ?? 0) / total) * 100) : 0;
+  const rate = counts ? verifiedRate(counts) : 0;
 
   const segCount = (k: Filter) => counts?.[k] ?? 0;
 
@@ -62,29 +66,13 @@ export function RealtorVerification() {
             </span>
             <div className="min-w-0">
               <p className="display text-3xl leading-none text-ink">
-                <span className="tabular-nums">{verifiedRate}</span>
+                <span className="tabular-nums">{rate}</span>
                 <span className="text-xl text-muted">%</span>
                 <span className="ml-3 align-middle text-sm font-normal text-muted">
                   of {total} {total === 1 ? "listing" : "listings"} verified
                 </span>
               </p>
-              <div className="mt-4 flex h-2.5 w-full max-w-md overflow-hidden rounded-full bg-surface-2">
-                {counts &&
-                  total > 0 &&
-                  (["verified", "pending", "disputed"] as VerificationStatus[]).map((k) =>
-                    counts[k] > 0 ? (
-                      <span
-                        key={k}
-                        className={cn(
-                          k === "verified" && "bg-verified",
-                          k === "pending" && "bg-gold",
-                          k === "disputed" && "bg-rose-500",
-                        )}
-                        style={{ width: `${(counts[k] / total) * 100}%` }}
-                      />
-                    ) : null,
-                  )}
-              </div>
+              {counts && <VerificationBar counts={counts} className="mt-4 w-full max-w-md" />}
             </div>
           </div>
         </Panel>

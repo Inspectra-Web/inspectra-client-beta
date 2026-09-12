@@ -1,7 +1,7 @@
-// Mock data for the signed-in realtor dashboard (identity, portfolio, leads, inspections,
-// activity). This is the realtor's own operating data, distinct from the marketplace
-// realtors in mock.ts. Listing ids reference real properties in mock.ts so cards/thumbnails
-// resolve. UI over mock data (Phase 6): no backend, no persistence.
+// Mock data for the two realtor surfaces that still have no backend: certification and
+// subscription. The portfolio, activity feed and lead list that used to live here went
+// when the Overview was wired; `leads` survives only because data/admin.ts still totals
+// it for the mock admin KPIs. UI over mock data (Phase 6): no backend, no persistence.
 
 import type { VerificationStatus } from "@/types";
 import type { BillingCadence } from "@/data/pricing";
@@ -101,23 +101,6 @@ export const certification: Certification = {
   completedModules: 6,
 };
 
-/** The realtor's own portfolio. Curated to span verification states so the trust panel bites.
- *  `views` / `leads` are the per-listing performance a realtor actually watches. */
-export interface ListingStat {
-  id: string; // property id in mock.ts
-  views: number;
-  leads: number;
-}
-
-export const myListings: ListingStat[] = [
-  { id: "p1", views: 1284, leads: 9 }, // verified
-  { id: "p13", views: 642, leads: 4 }, // verified
-  { id: "p10", views: 411, leads: 3 }, // verified
-  { id: "p18", views: 233, leads: 1 }, // verified
-  { id: "p7", views: 176, leads: 2 }, // pending
-  { id: "p16", views: 88, leads: 0 }, // disputed
-];
-
 export type LeadStatus = "new" | "responded";
 export interface Lead {
   id: string;
@@ -178,27 +161,6 @@ export const leads: Lead[] = [
   },
 ];
 
-export type RealtorActivityKind = "lead" | "inspection" | "verified" | "listed";
-export interface RealtorActivity {
-  id: string;
-  kind: RealtorActivityKind;
-  text: string;
-  at: string;
-}
-
-export const realtorActivity: RealtorActivity[] = [
-  { id: "ra1", kind: "lead", text: "New lead from Chinedu Okafor on Waterfront Duplex", at: "20m ago" },
-  { id: "ra2", kind: "inspection", text: "Amara Okeke booked a virtual tour", at: "2h ago" },
-  { id: "ra4", kind: "verified", text: "Studio Apartment, Yaba entered verification review", at: "Yesterday" },
-  { id: "ra5", kind: "listed", text: "You listed a new property in Lekki Phase 1", at: "2d ago" },
-];
-
-/** New leads still awaiting a first reply. */
-export const newLeadCount = leads.filter((l) => l.status === "new").length;
-
-export const myListingStat = (id: string) => myListings.find((l) => l.id === id);
-export const leadById = (id: string) => leads.find((l) => l.id === id);
-
 /* ------------------------------------------------------------------ *
  * Subscription — the realtor's current plan, usage, payment method and
  * billing history. Mock/marketing only (no Flutterwave yet, Phase 9+):
@@ -238,7 +200,7 @@ export const subscription: Subscription = {
   renewsOn: "1 Aug 2026",
   paymentBrand: "Visa",
   paymentLast4: "4242",
-  listingsUsed: myListings.length,
+  listingsUsed: 6,
   invoices: [
     { id: "inv1", date: "1 Jul 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
     { id: "inv2", date: "1 Jun 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },

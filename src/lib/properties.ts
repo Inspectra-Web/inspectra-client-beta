@@ -103,6 +103,9 @@ export interface ListingCounts {
 export interface ListingPage {
   properties: RealtorListing[];
   counts: ListingCounts;
+  /** Views across the whole portfolio, summed by the API. Like `counts` it is taken
+   *  before the status clause, so it narrows with a search but not with a segment. */
+  views: number;
   page: number;
   limit: number;
   total: number;
@@ -145,6 +148,23 @@ export function listingLocation(listing: RealtorListing): string {
 
   return [fullAddress, city].filter(Boolean).join(", ");
 }
+
+/** The share of a portfolio that has cleared document review, as a whole percent. */
+export function verifiedRate(counts: ListingCounts): number {
+  return counts.all ? Math.round((counts.verified / counts.all) * 100) : 0;
+}
+
+/**
+ * The Overview's one listings read. The API aggregates `counts` and `views` over the
+ * whole portfolio whatever the sort, so this single entry feeds the tiles, the
+ * verification panel and the most-viewed list rather than firing a request for each.
+ */
+export const PORTFOLIO_QUERY: ListingQuery = {
+  q: "",
+  status: "all",
+  sort: "views",
+  page: 1,
+};
 
 export function useMyListings(query: ListingQuery) {
   return useQuery({

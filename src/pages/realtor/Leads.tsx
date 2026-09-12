@@ -129,7 +129,7 @@ export function RealtorLeads() {
                 <th className={cn(thCls, "w-12")}>S/N</th>
                 <th className={thCls}>Buyer</th>
                 <th className={cn(thCls, "max-md:hidden")}>Listing</th>
-                <th className={cn(thCls, "max-sm:hidden")}>Last message</th>
+                <th className={cn(thCls, "max-sm:hidden")}>L. MESSAGE</th>
                 <th className={thCls}>Status</th>
                 <th className={cn(thCls, "w-10")}>
                   <span className="sr-only">Open</span>

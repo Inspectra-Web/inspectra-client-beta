@@ -214,7 +214,7 @@ export function AdminOverview() {
       <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-1">
         <Reveal y={16} className="col-span-2 min-w-0 max-lg:col-span-1">
           <Panel
-            title="Needs a human"
+            title="Verification Queue"
             action={<PanelLink to="/admin/verification">Full queue</PanelLink>}
             bodyClassName="space-y-3"
             className="h-full"

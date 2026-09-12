@@ -4,6 +4,7 @@ import { realtor } from "@/data/realtor";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useLeads, EMPTY_QUERY } from "@/lib/inquiries";
+import { useRealtorInspections, UPCOMING_QUERY } from "@/lib/inspections";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -31,14 +32,14 @@ type NavItem = {
 type NavGroup = { label: string; items: NavItem[] };
 
 // Grouped so trust is a first-class part of the realtor's workspace, not buried in a flat list.
-const navGroups = (newLeads: number): NavGroup[] => [
+const navGroups = (newLeads: number, requested: number): NavGroup[] => [
   {
     label: "Main",
     items: [
       { label: "Overview", to: "/realtor", Icon: LayoutDashboard, end: true },
       { label: "Listings", to: "/realtor/listings", Icon: Building2 },
       { label: "Leads", to: "/realtor/leads", Icon: Inbox, count: newLeads },
-      { label: "Inspections", to: "/realtor/inspections", Icon: CalendarCheck },
+      { label: "Inspections", to: "/realtor/inspections", Icon: CalendarCheck, count: requested },
     ],
   },
   {
@@ -65,7 +66,12 @@ export function RealtorSidebar({ onNavigate }: { onNavigate?: () => void }) {
   // The resting query the Leads page opens on, so the pill and the page share one
   // cache entry. "new" is a thread waiting on a reply: the work, not the total.
   const { data } = useLeads(EMPTY_QUERY);
-  const NAV_GROUPS = navGroups(data?.counts.new ?? 0);
+
+  // Same again for viewings, counting the ones still waiting on an answer rather
+  // than every booking in the diary: the pill is for work, not volume.
+  const { data: diary } = useRealtorInspections(UPCOMING_QUERY);
+
+  const NAV_GROUPS = navGroups(data?.counts.new ?? 0, diary?.counts.requested ?? 0);
 
   return (
     <div className="flex h-full flex-col p-5">

@@ -1,34 +1,32 @@
 import { Link } from "react-router";
-import { toast } from "react-toastify";
 import {
   Heart,
   MessageSquare,
   CalendarCheck,
-  CalendarClock,
-  MapPin,
-  Video,
   ArrowRight,
   ShieldCheck,
-  X,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Panel } from "@/components/dashboard/Panel";
+import { StatusPill } from "@/components/dashboard/StatusPill";
 import { DateBlock } from "@/components/dashboard/DateBlock";
 import { ActivityItem } from "@/components/dashboard/ActivityItem";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { buttonClasses } from "@/components/ui/Button";
-import {
-  savedPropertyIds,
-  inquiries,
-  upcomingInspections,
-  nextInspection,
-  activity,
-} from "@/data/seeker";
-import { mockCardListing, properties, propertyById, realtorById } from "@/data/mock";
+import { savedPropertyIds, activity } from "@/data/seeker";
+import { mockCardListing, properties } from "@/data/mock";
 import { useAuthUser } from "@/lib/auth";
-import { displayName } from "@/lib/format";
+import { displayName, formatTime } from "@/lib/format";
+import { listingAddress } from "@/lib/marketplace";
+import { useMyInquiries, EMPTY_QUERY } from "@/lib/inquiries";
+import {
+  useMyInspections,
+  UPCOMING_QUERY,
+  type InspectionRow,
+} from "@/lib/inspections";
 
 function greeting() {
   const h = new Date().getHours();
@@ -38,10 +36,18 @@ function greeting() {
 }
 
 const recommended = properties.filter((p) => p.status === "verified").slice(0, 3);
-const awaitingReply = inquiries.filter((q) => q.status === "new").length;
 
 export function Overview() {
   const firstName = displayName(useAuthUser().fullname).split(" ")[0];
+
+  // Both read the resting query their own page opens on, so the tiles here and the
+  // pills in the sidebar share the cache entries rather than fetching again.
+  const { data: threads } = useMyInquiries(EMPTY_QUERY);
+  const { data: booked, isPending } = useMyInspections(UPCOMING_QUERY);
+
+  const awaitingReply = threads?.counts.new ?? 0;
+  // Soonest first is the list's own order, so the next viewing is simply the first.
+  const next = booked?.inspections[0];
 
   return (
     <div className="space-y-8">
@@ -63,14 +69,14 @@ export function Overview() {
         <StatCard
           icon={MessageSquare}
           label="Inquiries"
-          value={inquiries.length}
+          value={threads?.counts.all ?? 0}
           hint={awaitingReply > 0 ? `${awaitingReply} awaiting a reply` : "All caught up"}
           to="/dashboard/inquiries"
         />
         <StatCard
           icon={CalendarCheck}
           label="Upcoming inspections"
-          value={upcomingInspections.length}
+          value={booked?.counts.upcoming ?? 0}
           to="/dashboard/inspections"
         />
       </Reveal>
@@ -90,10 +96,18 @@ export function Overview() {
             }
             className="h-full"
           >
-            {nextInspection ? (
-              <NextInspection />
+            {isPending ? (
+              <div className="h-36 animate-pulse rounded-xl bg-surface-2" />
+            ) : next ? (
+              <NextInspection inspection={next} />
             ) : (
-              <p className="py-6 text-muted">No inspections scheduled yet.</p>
+              <div className="py-6">
+                <p className="text-muted">No inspections scheduled yet.</p>
+                <Link to="/listings" className={buttonClasses("outline", "sm", "mt-4")}>
+                  Find a home to view
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              </div>
             )}
           </Panel>
         </Reveal>
@@ -141,74 +155,63 @@ export function Overview() {
   );
 }
 
-function NextInspection() {
-  const property = propertyById(nextInspection.propertyId);
-  const realtor = realtorById(nextInspection.realtorId);
-  if (!property) return null;
-
-  const ModeIcon = nextInspection.mode === "virtual" ? Video : MapPin;
-  const modeLabel = nextInspection.mode === "virtual" ? "Virtual tour" : "In-person visit";
+/**
+ * The soonest viewing. Rescheduling and cancelling live on the detail page, which is
+ * where the booking's whole state is: this card opens it rather than carrying its own
+ * copy of two buttons that used to only fire a toast.
+ */
+function NextInspection({ inspection }: { inspection: InspectionRow }) {
+  const { property, realtor } = inspection;
+  const name = displayName(realtor.fullname);
 
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <DateBlock date={nextInspection.date} />
-        <div>
-          <p className="font-semibold text-ink">{nextInspection.time}</p>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
-            <ModeIcon className="size-4 text-brand-ink" />
-            {modeLabel}
-          </p>
+        <DateBlock date={inspection.slot} />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-ink">{formatTime(inspection.slot)}</p>
+            <StatusPill status={inspection.status} />
+          </div>
         </div>
       </div>
 
       <Link
-        to={`/listings/${property.id}`}
+        to={`/listings/${property.slug}`}
         className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/50 p-3 transition-colors hover:border-brand/40"
       >
-        <img
-          src={property.image}
-          alt={property.title}
-          className="size-14 shrink-0 rounded-lg object-cover"
-        />
+        {property.image ? (
+          <img
+            src={property.image}
+            alt={property.title}
+            className="size-14 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-surface-2 text-faint">
+            <CalendarCheck className="size-5" aria-hidden />
+          </span>
+        )}
         <div className="min-w-0">
           <p className="truncate font-medium text-ink">{property.title}</p>
-          <p className="truncate text-sm text-muted">
-            {property.location}, {property.city}
-          </p>
+          <p className="truncate text-sm text-muted">{listingAddress(property)}</p>
         </div>
       </Link>
 
-      {realtor && (
-        <div className="flex items-center gap-2.5">
-          <img
-            src={`${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=64&h=64&q=80`}
-            alt={realtor.name}
-            className="size-8 rounded-full object-cover ring-1 ring-line"
-          />
-          <p className="text-sm text-muted">
-            with <span className="font-medium text-ink">{realtor.name}</span>
-          </p>
-        </div>
-      )}
+      <div className="flex items-center gap-2.5">
+        <UserAvatar name={name} avatar={realtor.avatar} className="size-8 text-xs" />
+        <p className="text-sm text-muted">
+          with <span className="font-medium text-ink">{name}</span>
+        </p>
+      </div>
 
-      <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => toast.success("Reschedule request sent")}
+      <div className="pt-1">
+        <Link
+          to={`/dashboard/inspections/${inspection.id}`}
           className={buttonClasses("outline", "sm")}
         >
-          <CalendarClock className="size-4" aria-hidden />
-          Reschedule
-        </button>
-        <button
-          type="button"
-          onClick={() => toast.info("Inspection cancelled")}
-          className={buttonClasses("ghost", "sm")}
-        >
-          <X className="size-4" aria-hidden />
-          Cancel
-        </button>
+          Manage this viewing
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
       </div>
     </div>
   );

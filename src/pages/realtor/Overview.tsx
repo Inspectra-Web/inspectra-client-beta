@@ -5,10 +5,8 @@ import {
   CalendarCheck,
   Eye,
   Inbox,
-  MapPin,
   ShieldCheck,
   TriangleAlert,
-  Video,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -21,13 +19,17 @@ import {
   myListings,
   leads,
   newLeadCount,
-  upcomingRealtorInspections,
   realtorActivity,
   type RealtorActivityKind,
 } from "@/data/realtor";
 import { propertyById } from "@/data/mock";
 import { useAuthUser } from "@/lib/auth";
-import { displayName } from "@/lib/format";
+import { displayName, formatTime } from "@/lib/format";
+import {
+  useRealtorInspections,
+  UPCOMING_QUERY,
+  type DiaryRow,
+} from "@/lib/inspections";
 import type { VerificationStatus } from "@/types";
 
 function greeting() {
@@ -51,6 +53,10 @@ const needAttention = counts.pending + counts.disputed;
 export function RealtorOverview() {
   const firstName = displayName(useAuthUser().fullname).split(" ")[0];
 
+  // The resting query the Inspections page opens on, so the tile, the panel below
+  // and the sidebar pill all read one cache entry.
+  const { data: diary } = useRealtorInspections(UPCOMING_QUERY);
+
   return (
     <div className="space-y-8">
       <Reveal>
@@ -73,7 +79,7 @@ export function RealtorOverview() {
         <StatCard
           icon={CalendarCheck}
           label="Upcoming inspections"
-          value={upcomingRealtorInspections.length}
+          value={diary?.counts.upcoming ?? 0}
           to="/realtor/inspections"
         />
       </Reveal>
@@ -107,7 +113,7 @@ export function RealtorOverview() {
             action={<PanelLink to="/realtor/inspections">View all</PanelLink>}
             className="h-full"
           >
-            <InspectionsList />
+            <InspectionsList rows={diary?.inspections ?? []} />
           </Panel>
         </Reveal>
       </div>
@@ -271,34 +277,38 @@ function LeadsList() {
   );
 }
 
-function InspectionsList() {
+/** The diary's next few, soonest first: the list's own order, so no sorting here.
+ *  Each row opens its own booking rather than the list, because answering a request
+ *  is the reason a realtor clicks one. */
+function InspectionsList({ rows }: { rows: DiaryRow[] }) {
+  if (!rows.length)
+    return (
+      <p className="py-6 text-muted">
+        When a buyer books a viewing on one of your listings, it will show up here.
+      </p>
+    );
+
   return (
     <ul className="space-y-3">
-      {upcomingRealtorInspections.map((ins) => {
-        const property = propertyById(ins.propertyId);
-        const ModeIcon = ins.mode === "virtual" ? Video : MapPin;
-        const modeLabel = ins.mode === "virtual" ? "Virtual tour" : "In-person visit";
-        return (
-          <li key={ins.id}>
-            <Link
-              to="/realtor/inspections"
-              className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-3 transition-colors hover:border-brand/40"
-            >
-              <DateBlock date={ins.date} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-ink">{property?.title ?? "A listing"}</p>
-                <p className="mt-0.5 truncate text-sm text-muted">
-                  {ins.time} with {ins.buyerName}
-                </p>
-                <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-brand-ink">
-                  <ModeIcon className="size-3.5" />
-                  {modeLabel}
-                </p>
-              </div>
-            </Link>
-          </li>
-        );
-      })}
+      {rows.slice(0, 3).map((row) => (
+        <li key={row.id}>
+          <Link
+            to={`/realtor/inspections/${row.id}`}
+            className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-3 transition-colors hover:border-brand/40"
+          >
+            <DateBlock date={row.slot} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-ink">{row.property.title}</p>
+              <p className="mt-0.5 truncate text-sm text-muted">
+                {formatTime(row.slot)} with {displayName(row.seeker.fullname)}
+              </p>
+              <p className="mt-1">
+                <StatusPill status={row.status} />
+              </p>
+            </div>
+          </Link>
+        </li>
+      ))}
     </ul>
   );
 }

@@ -87,6 +87,22 @@ export function formatDate(iso: string): string {
   return date.isValid() ? date.format("Do MMM YYYY") : "";
 }
 
+/** An ISO timestamp -> "10:30 AM". A viewing is an appointment, so the hour is not
+ *  optional the way it is on a listing date. */
+export function formatTime(iso: string): string {
+  const date = dayjs(iso);
+
+  return date.isValid() ? date.format("h:mm A") : "";
+}
+
+/** An ISO timestamp -> "Tuesday, 14th July 2026". The weekday earns its place on a
+ *  date someone has to turn up on: "the 14th" is not a plan until it is a Tuesday. */
+export function formatLongDate(iso: string): string {
+  const date = dayjs(iso);
+
+  return date.isValid() ? date.format("dddd, Do MMMM YYYY") : "";
+}
+
 /** An ISO date -> "2 hours ago". A conversation reads in relative time: "10th Sept
  *  2026" on a message sent this morning tells the reader nothing they wanted. */
 export function timeAgo(iso: string): string {

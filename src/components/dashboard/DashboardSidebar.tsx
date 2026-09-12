@@ -1,9 +1,9 @@
 import logoLight from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { upcomingInspections } from "@/data/seeker";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useMyInquiries, EMPTY_QUERY } from "@/lib/inquiries";
+import { useMyInspections, UPCOMING_QUERY } from "@/lib/inspections";
 import { useSavedIds } from "@/lib/saved";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
@@ -27,7 +27,7 @@ type NavItem = {
   count?: number;
 };
 
-const nav = (awaitingReply: number, saved: number): NavItem[] => [
+const nav = (awaitingReply: number, saved: number, upcoming: number): NavItem[] => [
   { label: "Overview", to: "/dashboard", Icon: LayoutDashboard, end: true },
   {
     label: "Saved homes",
@@ -45,7 +45,7 @@ const nav = (awaitingReply: number, saved: number): NavItem[] => [
     label: "Inspections",
     to: "/dashboard/inspections",
     Icon: CalendarCheck,
-    count: upcomingInspections.length,
+    count: upcoming,
   },
   { label: "Account", to: "/dashboard/account", Icon: UserCircle },
 ];
@@ -60,7 +60,12 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   // waiting on the realtor, which is what a seeker wants counted.
   const { data } = useMyInquiries(EMPTY_QUERY);
   const { ids: saved } = useSavedIds();
-  const NAV = nav(data?.counts.new ?? 0, saved.length);
+
+  // Same again for viewings: UPCOMING_QUERY is the tab the page opens on, so the
+  // pill and the page share one cache entry.
+  const { data: booked } = useMyInspections(UPCOMING_QUERY);
+
+  const NAV = nav(data?.counts.new ?? 0, saved.length, booked?.counts.upcoming ?? 0);
 
   return (
     <div className="flex h-full flex-col p-5">

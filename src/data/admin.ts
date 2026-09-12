@@ -6,8 +6,8 @@
 
 import type { Realtor, VerificationStatus } from "@/types";
 import { properties, realtors, propertyById, realtorById } from "@/data/mock";
-import { seeker, inquiries, inspections } from "@/data/seeker";
-import { leads, realtorInspections } from "@/data/realtor";
+import { seeker, inquiries } from "@/data/seeker";
+import { leads } from "@/data/realtor";
 import { TIERS } from "@/data/pricing";
 import { realtorMeta } from "@/lib/realtorMeta";
 
@@ -313,7 +313,9 @@ export const kpis = {
   totalUsers: directoryUsers.length,
   // Platform-wide buyer activity, aggregated across seekers and realtors.
   totalLeads: inquiries.length + leads.length,
-  totalInspections: inspections.length + realtorInspections.length,
+  // Flat, now that the mock inspection arrays are gone: the admin console has no
+  // inspections endpoint yet, so this tile stays mock like the rest of these KPIs.
+  totalInspections: 12,
   // Revenue counts: active paid subscriptions and one-time certification fees collected.
   activeSubscriptions: paidSubscriptions,
   certificationsPaid: certifiedCount,

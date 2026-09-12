@@ -22,18 +22,6 @@ export interface Inquiry {
   reply?: string;
 }
 
-export type InspectionMode = "in-person" | "virtual";
-export type InspectionStatus = "upcoming" | "completed" | "cancelled";
-export interface Inspection {
-  id: string;
-  propertyId: string;
-  realtorId: string;
-  date: string; // ISO, near today (2026-07-10) so "upcoming" reads true
-  time: string;
-  mode: InspectionMode;
-  status: InspectionStatus;
-}
-
 export type ActivityKind = "saved" | "inquiry" | "inspection" | "viewed";
 export interface Activity {
   id: string;
@@ -100,45 +88,6 @@ export const inquiries: Inquiry[] = [
   },
 ];
 
-export const inspections: Inspection[] = [
-  {
-    id: "s1",
-    propertyId: "p1",
-    realtorId: "r1",
-    date: "2026-07-14",
-    time: "10:30 AM",
-    mode: "in-person",
-    status: "upcoming",
-  },
-  {
-    id: "s2",
-    propertyId: "p18",
-    realtorId: "r1",
-    date: "2026-07-18",
-    time: "2:00 PM",
-    mode: "in-person",
-    status: "upcoming",
-  },
-  {
-    id: "s3",
-    propertyId: "p6",
-    realtorId: "r3",
-    date: "2026-07-02",
-    time: "11:00 AM",
-    mode: "in-person",
-    status: "completed",
-  },
-  {
-    id: "s4",
-    propertyId: "p10",
-    realtorId: "r1",
-    date: "2026-06-27",
-    time: "4:30 PM",
-    mode: "in-person",
-    status: "cancelled",
-  },
-];
-
 export const activity: Activity[] = [
   {
     id: "a1",
@@ -187,13 +136,4 @@ export const activity: Activity[] = [
   },
 ];
 
-/** Inspections still ahead, earliest first. */
-export const upcomingInspections = inspections
-  .filter((i) => i.status === "upcoming")
-  .sort((a, b) => a.date.localeCompare(b.date));
-
-/** The next inspection on the calendar, if any. */
-export const nextInspection = upcomingInspections[0];
-
 export const inquiryById = (id: string) => inquiries.find((q) => q.id === id);
-export const inspectionById = (id: string) => inspections.find((i) => i.id === id);

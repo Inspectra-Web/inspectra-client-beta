@@ -178,75 +178,6 @@ export const leads: Lead[] = [
   },
 ];
 
-export type RealtorInspectionMode = "in-person" | "virtual";
-export type RealtorInspectionStatus = "upcoming" | "completed" | "cancelled";
-export interface RealtorInspection {
-  id: string;
-  propertyId: string;
-  buyerName: string;
-  date: string; // ISO, near today (2026-07-12)
-  time: string;
-  mode: RealtorInspectionMode;
-  status: RealtorInspectionStatus;
-}
-
-export const realtorInspections: RealtorInspection[] = [
-  {
-    id: "i1",
-    propertyId: "p1",
-    buyerName: "Chinedu Okafor",
-    date: "2026-07-14",
-    time: "11:00 AM",
-    mode: "in-person",
-    status: "upcoming",
-  },
-  {
-    id: "i2",
-    propertyId: "p13",
-    buyerName: "Amara Okeke",
-    date: "2026-07-16",
-    time: "3:30 PM",
-    mode: "in-person",
-    status: "upcoming",
-  },
-  {
-    id: "i3",
-    propertyId: "p10",
-    buyerName: "Bola Ahmed",
-    date: "2026-07-19",
-    time: "10:00 AM",
-    mode: "in-person",
-    status: "upcoming",
-  },
-  {
-    id: "i4",
-    propertyId: "p1",
-    buyerName: "Fatima Sani",
-    date: "2026-07-08",
-    time: "1:00 PM",
-    mode: "in-person",
-    status: "completed",
-  },
-  {
-    id: "i5",
-    propertyId: "p13",
-    buyerName: "Emeka Nwafor",
-    date: "2026-07-05",
-    time: "4:00 PM",
-    mode: "in-person",
-    status: "completed",
-  },
-  {
-    id: "i6",
-    propertyId: "p10",
-    buyerName: "Grace Ade",
-    date: "2026-07-01",
-    time: "11:30 AM",
-    mode: "in-person",
-    status: "cancelled",
-  },
-];
-
 export type RealtorActivityKind = "lead" | "inspection" | "verified" | "listed";
 export interface RealtorActivity {
   id: string;
@@ -265,15 +196,8 @@ export const realtorActivity: RealtorActivity[] = [
 /** New leads still awaiting a first reply. */
 export const newLeadCount = leads.filter((l) => l.status === "new").length;
 
-/** Inspections still ahead, earliest first. */
-export const upcomingRealtorInspections = realtorInspections
-  .filter((i) => i.status === "upcoming")
-  .sort((a, b) => a.date.localeCompare(b.date));
-
 export const myListingStat = (id: string) => myListings.find((l) => l.id === id);
 export const leadById = (id: string) => leads.find((l) => l.id === id);
-export const realtorInspectionById = (id: string) =>
-  realtorInspections.find((i) => i.id === id);
 
 /* ------------------------------------------------------------------ *
  * Subscription — the realtor's current plan, usage, payment method and

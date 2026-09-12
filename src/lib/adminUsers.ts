@@ -18,8 +18,21 @@ export interface DirectoryUser {
   createdAt: string;
 }
 
+/** Counted before the role and status filters, so choosing a segment cannot zero the
+ *  others. `q` does narrow them, the way it does on the listings directory. */
+export interface DirectoryCounts {
+  all: number;
+  seeker: number;
+  realtor: number;
+  admin: number;
+  active: number;
+  suspended: number;
+  pending: number;
+}
+
 export interface UserDirectory {
   users: DirectoryUser[];
+  counts: DirectoryCounts;
   page: number;
   limit: number;
   total: number;
@@ -53,6 +66,15 @@ interface UserDetailResponse {
 }
 
 export const ADMIN_USERS_KEY = ["admin", "users"];
+
+/** The resting query the directory opens on. The Overview reads the same one, so its
+ *  tiles and the Users page share a cache entry instead of fetching twice. */
+export const DIRECTORY_QUERY: DirectoryQuery = {
+  q: "",
+  role: "all",
+  status: "all",
+  page: 1,
+};
 
 // Mirrors the default in server/src/validators/admin.validator.ts.
 export const PAGE_SIZE = 20;

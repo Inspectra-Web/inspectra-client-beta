@@ -11,7 +11,12 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { apiMessage } from "@/lib/api";
 import type { AuthRole, AuthStatus } from "@/lib/auth";
-import { useAdminUsers, PAGE_SIZE, type DirectoryQuery } from "@/lib/adminUsers";
+import {
+  useAdminUsers,
+  PAGE_SIZE,
+  DIRECTORY_QUERY,
+  type DirectoryQuery,
+} from "@/lib/adminUsers";
 import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -31,12 +36,7 @@ const STATUS_TONE: Record<AuthStatus, string> = {
 export function AdminUsers() {
   const navigate = useNavigate();
   const [typed, setTyped] = useState("");
-  const [query, setQuery] = useState<DirectoryQuery>({
-    q: "",
-    role: "all",
-    status: "all",
-    page: 1,
-  });
+  const [query, setQuery] = useState<DirectoryQuery>(DIRECTORY_QUERY);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const selectProps = (id: string) => ({

@@ -20,8 +20,21 @@ export interface AdminRealtor {
   createdAt: string;
 }
 
+/** Counted before the status, certified and identity filters, so choosing a segment
+ *  cannot zero the others. The two trust axes are separate on purpose: `certified` is
+ *  the paid exam, `identityVerified` is the NIN or BVN face match. */
+export interface RealtorCounts {
+  all: number;
+  certified: number;
+  identityVerified: number;
+  active: number;
+  suspended: number;
+  pending: number;
+}
+
 export interface RealtorDirectory {
   realtors: AdminRealtor[];
+  counts: RealtorCounts;
   page: number;
   limit: number;
   total: number;
@@ -42,6 +55,17 @@ interface RealtorResponse {
 }
 
 export const ADMIN_REALTORS_KEY = ["admin", "realtors"];
+
+/** The resting query the directory opens on, read by the Overview too. React Query
+ *  hashes keys structurally, so an inline literal of the same shape already shared the
+ *  entry: the constant is what stops the two drifting apart later. */
+export const REALTORS_QUERY: RealtorQuery = {
+  q: "",
+  certified: "all",
+  identity: "all",
+  status: "all",
+  page: 1,
+};
 
 // Mirrors the default in server/src/validators/admin.validator.ts.
 export const PAGE_SIZE = 20;

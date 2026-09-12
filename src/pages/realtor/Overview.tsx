@@ -22,7 +22,7 @@ import { ListingGate } from "@/components/realtor/ListingGate";
 import {
   VerificationBar,
   VerificationLegend,
-} from "@/components/realtor/VerificationBar";
+} from "@/components/dashboard/VerificationBar";
 import { apiMessage } from "@/lib/api";
 import { useAuthUser } from "@/lib/auth";
 import { useListingEligibility } from "@/lib/profile";

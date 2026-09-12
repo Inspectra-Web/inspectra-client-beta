@@ -10,20 +10,19 @@ import { Reveal } from "@/components/ui/Reveal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { apiMessage } from "@/lib/api";
-import { useAdminRealtors, PAGE_SIZE, type RealtorQuery } from "@/lib/adminRealtors";
+import {
+  useAdminRealtors,
+  PAGE_SIZE,
+  REALTORS_QUERY,
+  type RealtorQuery,
+} from "@/lib/adminRealtors";
 import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export function AdminRealtors() {
   const navigate = useNavigate();
   const [typed, setTyped] = useState("");
-  const [query, setQuery] = useState<RealtorQuery>({
-    q: "",
-    certified: "all",
-    identity: "all",
-    status: "all",
-    page: 1,
-  });
+  const [query, setQuery] = useState<RealtorQuery>(REALTORS_QUERY);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const selectProps = (id: string) => ({

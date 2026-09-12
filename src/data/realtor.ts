@@ -1,7 +1,7 @@
 // Mock data for the two realtor surfaces that still have no backend: certification and
-// subscription. The portfolio, activity feed and lead list that used to live here went
-// when the Overview was wired; `leads` survives only because data/admin.ts still totals
-// it for the mock admin KPIs. UI over mock data (Phase 6): no backend, no persistence.
+// subscription. Everything else that used to live here (the portfolio, the activity feed,
+// the lead list) went when the consoles were wired, the leads last of all, with the admin
+// KPIs that were their final reader. UI over mock data: no backend, no persistence.
 
 import type { VerificationStatus } from "@/types";
 import type { BillingCadence } from "@/data/pricing";
@@ -100,66 +100,6 @@ export const certification: Certification = {
   examDate: "2025-01-18",
   completedModules: 6,
 };
-
-export type LeadStatus = "new" | "responded";
-export interface Lead {
-  id: string;
-  propertyId: string;
-  buyerName: string;
-  buyerAvatar: string;
-  message: string;
-  at: string;
-  status: LeadStatus;
-  reply?: string;
-}
-
-export const leads: Lead[] = [
-  {
-    id: "l1",
-    propertyId: "p1",
-    buyerName: "Chinedu Okafor",
-    buyerAvatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80",
-    message:
-      "Is the waterfront duplex still available? I'd like to schedule a viewing this week.",
-    at: "20 min ago",
-    status: "new",
-  },
-  {
-    id: "l2",
-    propertyId: "p13",
-    buyerName: "Amara Okeke",
-    buyerAvatar:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80",
-    message: "Could you confirm the service charge and whether the C of O is ready?",
-    at: "2 hours ago",
-    status: "new",
-  },
-  {
-    id: "l3",
-    propertyId: "p10",
-    buyerName: "Bola Ahmed",
-    buyerAvatar:
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80",
-    message: "What's the earliest move-in date for the apartment?",
-    at: "Yesterday",
-    status: "responded",
-    reply:
-      "Hi Bola, the apartment is available from the 1st of next month. Happy to arrange a viewing this week.",
-  },
-  {
-    id: "l4",
-    propertyId: "p18",
-    buyerName: "Ngozi Umeh",
-    buyerAvatar:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80",
-    message: "Is the price negotiable for a cash buyer?",
-    at: "2 days ago",
-    status: "responded",
-    reply:
-      "Thanks Ngozi. There's room to negotiate for a serious cash buyer, let's talk. When works for a quick call?",
-  },
-];
 
 /* ------------------------------------------------------------------ *
  * Subscription — the realtor's current plan, usage, payment method and

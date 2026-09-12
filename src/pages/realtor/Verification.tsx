@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { DocCheckList } from "@/components/realtor/DocCheckList";
-import { VerificationBar } from "@/components/realtor/VerificationBar";
+import { VerificationBar } from "@/components/dashboard/VerificationBar";
 import { apiMessage } from "@/lib/api";
 import { toDocCheck } from "@/lib/listing";
 import {

@@ -1,4 +1,4 @@
-import type { CardListing, Property, Realtor } from "@/types";
+import type { Property, Realtor } from "@/types";
 
 const img = (id: string) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1000&q=70`;
@@ -524,30 +524,3 @@ export const properties: Property[] = [
 export const realtorById = (id: string) => realtors.find((r) => r.id === id);
 export const propertyById = (id: string) => properties.find((p) => p.id === id);
 
-/**
- * A mock property in the shape PropertyCard renders. The bridge for the pages still
- * on mock data (the seeker dashboard); it goes when they are wired to the API.
- */
-export function mockCardListing(property: Property): CardListing {
-  const realtor = realtorById(property.realtorId);
-
-  return {
-    id: property.id,
-    href: `/listings/${property.id}`,
-    title: property.title,
-    image: property.image,
-    location: [property.location, property.city].filter(Boolean).join(", "),
-    price: property.price,
-    listingFor: property.listingFor,
-    status: property.status,
-    beds: property.beds ?? 0,
-    baths: property.baths ?? 0,
-    areaSqm: property.areaSqm ?? 0,
-    hasVideo: property.hasVideo ?? false,
-    realtor: realtor && {
-      name: realtor.name,
-      avatar: `${realtor.avatar}?auto=format&fit=facearea&facepad=3&w=96&h=96&q=80`,
-      certified: realtor.certified,
-    },
-  };
-}

@@ -1,6 +1,7 @@
-// Mock data for the signed-in seeker (buyer/client) dashboard. Everything here references
-// existing property (p*) and realtor (r*) ids from mock.ts so cards and avatars resolve.
-// UI over mock data (Phase 6): no backend, no persistence.
+// What is left of the mock seeker. The dashboard itself is wired to the API now, so the
+// saved ids and the activity feed that used to live here are gone; `seeker` and
+// `inquiries` survive only because data/admin.ts still totals them for the mock admin
+// KPIs. Property (p*) and realtor (r*) ids reference mock.ts so avatars resolve.
 
 export interface SeekerProfile {
   name: string;
@@ -22,16 +23,6 @@ export interface Inquiry {
   reply?: string;
 }
 
-export type ActivityKind = "saved" | "inquiry" | "inspection" | "viewed";
-export interface Activity {
-  id: string;
-  kind: ActivityKind;
-  propertyId?: string;
-  realtorId?: string;
-  label: string;
-  at: string;
-}
-
 export const seeker: SeekerProfile = {
   name: "Amara Okeke",
   email: "amara.okeke@gmail.com",
@@ -41,9 +32,6 @@ export const seeker: SeekerProfile = {
   city: "Lagos",
   memberSince: "March 2025",
 };
-
-// Seed for the Saved page (all verified, mixed cities).
-export const savedPropertyIds: string[] = ["p1", "p6", "p10", "p18"];
 
 export const inquiries: Inquiry[] = [
   {
@@ -87,53 +75,3 @@ export const inquiries: Inquiry[] = [
     status: "new",
   },
 ];
-
-export const activity: Activity[] = [
-  {
-    id: "a1",
-    kind: "saved",
-    propertyId: "p18",
-    label: "You saved",
-    at: "3h ago",
-  },
-  {
-    id: "a2",
-    kind: "inquiry",
-    propertyId: "p3",
-    realtorId: "r1",
-    label: "You messaged",
-    at: "2h ago",
-  },
-  {
-    id: "a3",
-    kind: "inspection",
-    propertyId: "p1",
-    realtorId: "r1",
-    label: "Inspection booked for",
-    at: "Yesterday",
-  },
-  {
-    id: "a4",
-    kind: "viewed",
-    propertyId: "p13",
-    label: "You viewed",
-    at: "Yesterday",
-  },
-  {
-    id: "a5",
-    kind: "inquiry",
-    propertyId: "p5",
-    realtorId: "r2",
-    label: "Realtor replied on",
-    at: "3d ago",
-  },
-  {
-    id: "a6",
-    kind: "saved",
-    propertyId: "p6",
-    label: "You saved",
-    at: "4d ago",
-  },
-];
-
-export const inquiryById = (id: string) => inquiries.find((q) => q.id === id);

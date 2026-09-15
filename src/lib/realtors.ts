@@ -24,6 +24,10 @@ export interface PublicRealtor {
   certified: boolean;
   /** NIN or BVN face-matched against the person. */
   identityVerified: boolean;
+  /** The agency found on the CAC register, with this realtor named on it. */
+  agencyVerified: boolean;
+  /** A recent utility bill read for the trading address. */
+  addressVerified: boolean;
   createdAt: string;
 }
 

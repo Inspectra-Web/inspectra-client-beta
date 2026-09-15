@@ -11,6 +11,7 @@ import {
   CircleCheck,
   CircleDot,
   ExternalLink,
+  FileText,
   Languages,
   Layers,
   Loader2,
@@ -28,9 +29,16 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { Input } from "@/components/ui/Input";
 import { apiMessage } from "@/lib/api";
-import { useAdminUser, useUpdateUserStatus, type UserDetail } from "@/lib/adminUsers";
+import {
+  useAdminUser,
+  useReviewAddress,
+  useUpdateUserStatus,
+  type UserDetail,
+} from "@/lib/adminUsers";
 import { documentLabel } from "@/lib/identity";
+import { companyTypeLabel, type Agency, type AddressState } from "@/lib/agency";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -54,7 +62,7 @@ export function AdminRealtorDetail() {
 }
 
 function RealtorDetailView({ detail }: { detail: UserDetail }) {
-  const { user, profile, identity } = detail;
+  const { user, profile, identity, agency } = detail;
   const [confirming, setConfirming] = useState(false);
   const updateStatus = useUpdateUserStatus();
 
@@ -283,6 +291,37 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
         </Panel>
       </Reveal>
 
+      <Reveal y={16}>
+        <Panel title="Agency">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
+              <span
+                className={cn(
+                  "grid size-10 shrink-0 place-items-center rounded-lg",
+                  agency?.cac.verified
+                    ? "bg-verified/12 text-verified"
+                    : "bg-surface-2 text-faint",
+                )}
+              >
+                <Building2 className="size-5" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink">
+                  {agency?.cac.verified ? "Business registered" : "Business not registered"}
+                </p>
+                <p className="text-xs text-muted">
+                  {agency?.cac.verified
+                    ? `${agency.cac.companyName}, ${companyTypeLabel(agency.cac.companyType)} RC ${agency.cac.rcNumber}.`
+                    : "This realtor has not cleared a CAC check."}
+                </p>
+              </div>
+            </div>
+
+            <AddressReview userId={user.id} agency={agency} />
+          </div>
+        </Panel>
+      </Reveal>
+
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
@@ -309,6 +348,137 @@ function EmptyProfile() {
       This account has no profile yet. One is created the first time they open their account
       page.
     </p>
+  );
+}
+
+const ADDRESS_TONE: Record<AddressState, { label: string; className: string }> = {
+  unsubmitted: { label: "No bill sent", className: "bg-surface-2 text-faint" },
+  "in-review": { label: "Waiting on review", className: "bg-amber-500/12 text-amber-500" },
+  verified: { label: "Address verified", className: "bg-verified/12 text-verified" },
+  flagged: { label: "Bill flagged", className: "bg-rose-500/12 text-rose-500" },
+};
+
+/**
+ * The one control on this page that writes. Manual by design: a Nigerian utility bill
+ * names the supply rather than the occupier, so a person reads it against the meter
+ * number and the address the realtor stated.
+ */
+function AddressReview({
+  userId,
+  agency,
+}: {
+  userId: string;
+  agency: (Agency & { bill: string }) | null;
+}) {
+  const review = useReviewAddress();
+  const [flagging, setFlagging] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const address = agency?.address;
+  const status: AddressState = address?.status ?? "unsubmitted";
+  const tone = ADDRESS_TONE[status];
+  const sent = Boolean(agency?.bill);
+
+  async function decide(next: "verified" | "flagged") {
+    try {
+      const res = await review.mutateAsync({
+        id: userId,
+        status: next,
+        reason: next === "flagged" ? reason.trim() : undefined,
+      });
+      setFlagging(false);
+      setReason("");
+      toast.success(res.message ?? "Address updated.");
+    } catch (err) {
+      toast.error(apiMessage(err));
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-line bg-surface-2/40 p-4">
+      <div className="flex items-center gap-3">
+        <span className={cn("grid size-10 shrink-0 place-items-center rounded-lg", tone.className)}>
+          <MapPin className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ink">{tone.label}</p>
+          <p className="text-xs text-muted">
+            {sent && address
+              ? `Meter ${address.meterNumber}`
+              : "This realtor has not sent a utility bill."}
+          </p>
+        </div>
+      </div>
+
+      {status === "flagged" && address?.reason && (
+        <p className="mt-3 text-xs text-muted">
+          <span className="font-medium text-ink">Flagged.</span> {address.reason}
+        </p>
+      )}
+
+      {sent && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <a
+            href={agency!.bill}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonClasses("outline", "sm")}
+          >
+            <FileText className="size-4" aria-hidden />
+            View the bill
+          </a>
+
+          {status !== "verified" && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={review.isPending}
+              className="text-verified hover:bg-verified/10"
+              onClick={() => void decide("verified")}
+            >
+              {review.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <CircleCheck className="size-4" aria-hidden />
+              )}
+              Verify
+            </Button>
+          )}
+
+          {status !== "flagged" && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={review.isPending}
+              className="text-rose-500 hover:bg-rose-500/10"
+              onClick={() => setFlagging((open) => !open)}
+            >
+              <Ban className="size-4" aria-hidden />
+              Flag
+            </Button>
+          )}
+        </div>
+      )}
+
+      {flagging && (
+        <div className="mt-3 space-y-2">
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Why was it not accepted? The realtor sees this."
+            aria-label="Reason for flagging"
+          />
+          <Button
+            variant="brand"
+            size="sm"
+            disabled={review.isPending || !reason.trim()}
+            onClick={() => void decide("flagged")}
+          >
+            Send the flag
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 

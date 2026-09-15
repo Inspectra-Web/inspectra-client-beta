@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { api } from "./api";
 import type { AuthRole, AuthStatus, AuthUser } from "./auth";
 import type { Identity } from "./identity";
+import type { Agency } from "./agency";
 import type { Profile } from "./profile";
 
 /** A directory row: the account, plus the city that lives on its profile. */
@@ -53,6 +54,8 @@ export interface UserDetail {
   profile: Profile | null;
   /** Realtor-only: the server does not look it up for other roles. */
   identity: Identity | null;
+  /** Realtor-only, same condition as identity. `bill` is admin-only evidence. */
+  agency: (Agency & { bill: string }) | null;
 }
 
 interface DirectoryResponse {
@@ -124,6 +127,43 @@ export function useUpdateUserStatus() {
     onSuccess: ({ data }, { id }) => {
       queryClient.setQueryData<UserDetail>([...ADMIN_USERS_KEY, id], (prev) =>
         prev ? { ...prev, user: data.user } : prev,
+      );
+      void queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY });
+    },
+  });
+}
+
+interface AddressReviewResponse {
+  status: string;
+  message?: string;
+  data: { agency: Agency & { bill: string } };
+}
+
+/**
+ * The reviewer's verdict on a realtor's utility bill. Manual by design: a Nigerian bill
+ * rarely names the occupier, so there is nothing an API could match on.
+ */
+export function useReviewAddress() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      status: "verified" | "flagged";
+      reason?: string;
+    }) => {
+      const res = await api.patch<AddressReviewResponse>(
+        `/admin/realtors/${input.id}/address`,
+        {
+          status: input.status,
+          ...(input.reason ? { reason: input.reason } : {}),
+        },
+      );
+      return res.data;
+    },
+    onSuccess: ({ data }, { id }) => {
+      queryClient.setQueryData<UserDetail>([...ADMIN_USERS_KEY, id], (prev) =>
+        prev ? { ...prev, agency: data.agency } : prev,
       );
       void queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY });
     },

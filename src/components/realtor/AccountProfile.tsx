@@ -11,6 +11,8 @@ import { buttonClasses } from "@/components/ui/Button";
 import { useAuthUser } from "@/lib/auth";
 import { useProfile } from "@/lib/profile";
 import { useIdentity } from "@/lib/identity";
+import { useAgency, fullyVerified } from "@/lib/agency";
+import { VerificationTimeline } from "@/components/realtor/VerificationTimeline";
 import { displayName, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -22,10 +24,18 @@ const SOCIAL_LABELS: { key: "instagram" | "linkedin" | "facebook" | "x"; label: 
 ];
 
 /** Read-only realtor profile overview. The trust-facing "who you are dealing with". */
-export function AccountProfile({ onEdit }: { onEdit: () => void }) {
+export function AccountProfile({
+  onEdit,
+  onVerify,
+}: {
+  onEdit: () => void;
+  /** Sends the realtor to whichever check is next, since identity gates the rest. */
+  onVerify: (tab: "identity" | "agency") => void;
+}) {
   const user = useAuthUser();
   const { data: profile, isPending } = useProfile();
   const { data: identity } = useIdentity();
+  const { data: agency } = useAgency();
 
   if (isPending || !profile)
     return (
@@ -66,9 +76,11 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
                   <div className="flex flex-wrap items-center gap-2.5">
                     <h2 className="display text-2xl text-ink">{name}</h2>
                     {/* On the name, never on the picture: the picture is not what was verified. */}
-                    {identity?.verified && (
+                    {/* One badge for the whole trust axis, not a chip per rung: the
+                        rungs are a sequence, and they are drawn as one below. */}
+                    {fullyVerified(identity?.verified === true, agency) && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-verified/12 px-2.5 py-0.5 text-xs font-semibold text-verified">
-                        <ShieldCheck className="size-3.5" aria-hidden /> Identity verified
+                        <ShieldCheck className="size-3.5" aria-hidden /> Verified realtor
                       </span>
                     )}
                     {profile.certified && (
@@ -123,6 +135,25 @@ export function AccountProfile({ onEdit }: { onEdit: () => void }) {
             </div>
           </div>
         </div>
+      </Reveal>
+
+      {/* verification progress */}
+      <Reveal y={16}>
+        <Panel title="Verification">
+          <VerificationTimeline identityVerified={identity?.verified === true} agency={agency} />
+          {!fullyVerified(identity?.verified === true, agency) && (
+            <p className="mt-5 border-t border-line pt-4 text-sm text-muted">
+              Clear every step to show as a verified realtor.{" "}
+              <button
+                type="button"
+                onClick={() => onVerify(identity?.verified ? "agency" : "identity")}
+                className="font-medium text-brand-ink underline-offset-4 hover:underline"
+              >
+                Continue
+              </button>
+            </p>
+          )}
+        </Panel>
       </Reveal>
 
       {/* self description */}

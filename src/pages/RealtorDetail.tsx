@@ -129,6 +129,8 @@ export function RealtorDetail() {
                 <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
                   <Building2 className="size-4 shrink-0 text-faint" aria-hidden />
                   {realtor.agencyName}
+                  {/* Once the bill has cleared, the API sends the address a reviewer
+                      accepted here in place of the typed one. */}
                   {realtor.agencyAddress && ` · ${realtor.agencyAddress}`}
                 </p>
               )}

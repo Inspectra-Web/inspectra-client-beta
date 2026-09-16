@@ -7,24 +7,36 @@ import { cn } from "@/lib/cn";
 
 const FAQS = [
   {
-    q: "Is certification included in a plan?",
-    a: "No. Certification is a separate one-time step you complete before you can list, and it stays valid for two years. Your subscription is the recurring plan on top of that, and it decides how much you list and how far you reach.",
+    q: "Do I need to be certified to list?",
+    a: "No. Verify your identity, pick a plan and publish. Certification is a separate one-time program we are still building, and when it opens it will be an optional credential on your profile rather than a gate on listing. What every listing goes through today is document review, and that is what puts the verified status on it.",
   },
   {
     q: "Can I really start for free?",
-    a: "Yes. Once you are certified, the Starter plan lets you publish up to three verified listings at no cost. You only move up to a paid plan when you need more listings or the growth features.",
+    a: "Yes. The Starter plan lets you publish up to three verified listings at no cost, with a verified public profile you can share anywhere. Starter shows you when a lead arrives; replying to buyers and seeing their contact details is what a paid plan adds.",
+  },
+  {
+    q: "How do monthly, quarterly and annual compare?",
+    a: "Same features on all three, so it is purely how far ahead you pay. Quarterly takes 10% off the three months, and annual takes 20% off the year. On the Professional plan that is ₦13,500 a month paid quarterly, or ₦12,000 a month paid annually, against ₦15,000 month to month.",
+  },
+  {
+    q: "What is a listing refresh?",
+    a: "A refresh is you re-confirming that a listing is still available, which lifts it back to the top of the newest-first results. Professional gets one every two weeks, Business every week, Elite twice a week. Refreshes belong to your account rather than to each listing, so you choose which home to put back in front of buyers.",
+  },
+  {
+    q: "Can I pay to rank higher in search?",
+    a: "No, and you never will be able to. Default search ranking is earned through verification and your record, so no amount of spending moves you up it. A refresh only affects the newest-first sort, and only because the listing genuinely was re-confirmed that day.",
+  },
+  {
+    q: "What happens if my subscription lapses?",
+    a: "You keep your account, your profile and every conversation already in progress. After a short grace period you drop to Starter limits: listings beyond the free three are hidden rather than deleted, and new leads are held until you renew. Nothing is lost, and your verified listings come back the moment you are active again.",
   },
   {
     q: "Can I change plans later?",
-    a: "Anytime. Upgrade the moment you outgrow your listing limit and the new features apply straight away. You can downgrade at the end of a billing cycle with no penalty.",
-  },
-  {
-    q: "What is the difference between monthly and annual?",
-    a: "Same features either way. Paying yearly costs the equivalent of ten months instead of twelve, so you get two months free for committing up front.",
+    a: "Anytime. Upgrade the moment you outgrow your listing limit and the new features apply straight away. You can move down at the end of a billing cycle with no penalty.",
   },
   {
     q: "Do buyers pay to use INSPECTRA?",
-    a: "No. Browsing, searching, saving homes, booking a viewing, and contacting realtors is always free for buyers. Only realtors pay, through certification and a subscription.",
+    a: "No. Browsing, searching, saving homes, booking a viewing, and contacting realtors is always free for buyers. Only realtors pay, through a subscription.",
   },
 ];
 

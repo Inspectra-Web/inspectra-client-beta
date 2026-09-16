@@ -4,7 +4,7 @@
 // KPIs that were their final reader. UI over mock data: no backend, no persistence.
 
 import type { VerificationStatus } from "@/types";
-import type { BillingCadence } from "@/data/pricing";
+import type { BillingCadence, TierId } from "@/data/pricing";
 
 export type SocialKind = "instagram" | "linkedin" | "facebook" | "x";
 
@@ -120,7 +120,7 @@ export interface Invoice {
 }
 
 export interface Subscription {
-  tierId: "starter" | "professional" | "max";
+  tierId: TierId;
   cadence: BillingCadence;
   status: SubscriptionStatus;
   startedOn: string;
@@ -133,7 +133,7 @@ export interface Subscription {
 }
 
 export const subscription: Subscription = {
-  tierId: "max",
+  tierId: "elite",
   cadence: "monthly",
   status: "active",
   startedOn: "12 Jan 2025",
@@ -142,17 +142,10 @@ export const subscription: Subscription = {
   paymentLast4: "4242",
   listingsUsed: 6,
   invoices: [
-    { id: "inv1", date: "1 Jul 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv2", date: "1 Jun 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv3", date: "1 May 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv4", date: "1 Apr 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv5", date: "1 Mar 2026", plan: "Max", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv1", date: "1 Jul 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv2", date: "1 Jun 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv3", date: "1 May 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv4", date: "1 Apr 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
+    { id: "inv5", date: "1 Mar 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
   ],
-};
-
-/** Active-listing allowance per tier (Infinity = unlimited). */
-export const TIER_LISTING_LIMIT: Record<Subscription["tierId"], number> = {
-  starter: 3,
-  professional: 30,
-  max: 100,
 };

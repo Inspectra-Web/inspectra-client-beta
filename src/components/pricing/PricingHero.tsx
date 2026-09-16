@@ -72,9 +72,9 @@ export function PricingHero() {
             variants={item}
             className="mt-6 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base"
           >
-            One certification to earn buyer trust, then a plan that scales with how
-            much you list. No auctions to appear first, no fees to buy a badge, just
-            verified listings serious buyers act on.
+            Verify your identity, publish your first listings free, then pick a plan
+            that scales with how much you list. No auctions to appear first, no fees
+            to buy a badge, just verified listings serious buyers act on.
           </motion.p>
 
           <motion.div

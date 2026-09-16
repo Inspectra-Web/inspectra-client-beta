@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, BadgeCheck, Check } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, Clock } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -10,6 +10,10 @@ const INCLUDED = [
   "A verifiable credential, valid for two years",
 ];
 
+// Certification is not built yet and is not a gate on listing: a realtor verifies their
+// identity, subscribes and publishes without it. This band previews the program rather
+// than selling it, so nothing here offers a purchase the platform cannot complete.
+
 export function PricingCertification() {
   return (
     <section className="bg-surface-2/50 py-28 max-lg:py-20 max-sm:py-16">
@@ -17,21 +21,21 @@ export function PricingCertification() {
         <div className="grid grid-cols-2 items-center gap-14 max-lg:grid-cols-1 max-lg:gap-10">
           {/* copy */}
           <Reveal>
-            <span className="eyebrow">Before any plan</span>
+            <span className="eyebrow">Coming soon</span>
             <h2 className="display mt-4 text-[2.9rem] text-balance max-lg:text-4xl max-sm:text-[2rem]">
-              First, you get certified.
+              Certification is on the way.
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-muted">
-              Certification is a one-time step every realtor completes before listing,
-              and it is what makes the badge on your listings mean something. Your
-              subscription then decides how much you list and how far you reach. The
-              two are separate: certify once, subscribe as you grow.
+              You do not need it to list. Verify your identity, pick a plan and publish
+              today. Certification is a separate one-time program we are building now:
+              a Nigeria-specific course and exam that will put a credential on your
+              profile for the realtors who want to prove the depth behind their work.
             </p>
             <Link
               to="/enablement"
               className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-brand-ink hover:underline"
             >
-              See how certification works
+              See what it will cover
               <ArrowRight className="size-4" aria-hidden />
             </Link>
           </Reveal>
@@ -49,7 +53,7 @@ export function PricingCertification() {
                 </span>
               </div>
 
-              <p className="mt-5 display text-2xl">Required once, before you list.</p>
+              <p className="mt-5 display text-2xl">What it will include.</p>
 
               <ul className="mt-6 space-y-3">
                 {INCLUDED.map((item) => (
@@ -62,13 +66,12 @@ export function PricingCertification() {
                 ))}
               </ul>
 
-              <Link
-                to="/enablement"
-                className="mt-8 inline-flex h-13 w-full items-center justify-center gap-2 rounded-full bg-ink px-7 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
-              >
-                Get certified
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
+              {/* A status line, not a button: enrolment does not exist yet, so nothing
+                  here should look like it takes payment. */}
+              <p className="mt-8 flex items-center justify-center gap-2 rounded-full border border-line bg-surface-2/60 px-7 py-3.5 text-sm font-medium text-muted">
+                <Clock className="size-4 shrink-0 text-foil" aria-hidden />
+                Enrolment opens soon
+              </p>
             </div>
           </Reveal>
         </div>

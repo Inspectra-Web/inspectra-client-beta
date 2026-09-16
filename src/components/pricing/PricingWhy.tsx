@@ -2,8 +2,8 @@ import {
   BadgeCheck,
   BarChart3,
   Filter,
+  RefreshCw,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -15,7 +15,7 @@ const BENEFITS: { Icon: LucideIcon; title: string; body: string }[] = [
   {
     Icon: ShieldCheck,
     title: "Trust that converts",
-    body: "Every listing you publish carries a verified property status and your certified badge. Buyers who scroll past everything else stop on a listing they can trust.",
+    body: "Every listing you publish carries a verified property status and a realtor whose identity was checked. Buyers who scroll past everything else stop on a listing they can trust.",
   },
   {
     Icon: TrendingUp,
@@ -24,18 +24,18 @@ const BENEFITS: { Icon: LucideIcon; title: string; body: string }[] = [
   },
   {
     Icon: BadgeCheck,
-    title: "A certified, verified profile",
-    body: "Your credential and verified profile travel with you into every deal, the professional signal buyers and other agents recognize on sight.",
+    title: "A verified profile that travels",
+    body: "Your verified profile goes with you into every deal, a link you can send anywhere, and the professional signal buyers and other agents recognize on sight.",
   },
   {
     Icon: Filter,
     title: "Leads worth your time",
-    body: "Itemized fees shown upfront and trust-ranked placement filter out tyre-kickers, so the inquiries that reach you come from buyers ready to move.",
+    body: "Itemized fees upfront and trust-ranked placement filter out tyre-kickers. A paid plan opens the full inbox: reply to buyers, see their contact details, and work the lead through to a viewing.",
   },
   {
-    Icon: Sparkles,
-    title: "Featured when it counts",
-    body: "Paid plans surface your best listings in featured placement, putting them in front of more of the right buyers at the moment they are searching.",
+    Icon: RefreshCw,
+    title: "Never look stale",
+    body: "Your plan gives you scheduled refreshes to re-confirm a listing is still available. Buyers sorting by newest see a home you stand behind today, not one that sold months ago.",
   },
   {
     Icon: BarChart3,

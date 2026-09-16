@@ -31,8 +31,8 @@ function CellValue({ value }: { value: CompareValue }) {
 
 export function PricingCompare() {
   return (
-    <section id="compare" className="scroll-mt-20 py-28 max-lg:py-20 max-sm:py-16">
-      <Container>
+    <section id="compare" className="scroll-mt-24 py-28 max-lg:py-20 max-sm:py-16">
+      <Container className="max-w-[84rem]">
         <SectionHeading
           eyebrow="Compare plans"
           title="Every feature, side by side"
@@ -44,7 +44,7 @@ export function PricingCompare() {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-line bg-surface">
-                <th className="w-2/5 px-6 py-5 align-bottom" scope="col">
+                <th className="w-1/3 px-6 py-5 align-bottom" scope="col">
                   <span className="credential-meta text-[0.62rem] text-faint">
                     Features
                   </span>
@@ -78,9 +78,7 @@ export function PricingCompare() {
 
         {/* mobile: one card per tier */}
         <div className="mt-12 hidden gap-5 max-md:grid">
-          {TIERS.map((tier) => {
-            const key = tier.id;
-            return (
+          {TIERS.map((tier) => (
               <div
                 key={tier.id}
                 className={cn(
@@ -101,14 +99,13 @@ export function PricingCompare() {
                     <div key={row.label} className="flex items-center justify-between gap-4 py-2.5">
                       <dt className="text-[0.9rem] text-muted">{row.label}</dt>
                       <dd className="shrink-0 text-right">
-                        <CellValue value={row[key]} />
+                        <CellValue value={row.values[tier.id]} />
                       </dd>
                     </div>
                   ))}
                 </dl>
               </div>
-            );
-          })}
+          ))}
         </div>
       </Container>
     </section>
@@ -121,7 +118,7 @@ function GroupRows({ group, rows }: { group: string; rows: CompareRow[] }) {
       <tr className="bg-surface-2/40">
         <th
           scope="colgroup"
-          colSpan={4}
+          colSpan={TIERS.length + 1}
           className="px-6 py-3 text-left"
         >
           <span className="credential-meta text-[0.62rem] text-brand-ink">{group}</span>
@@ -132,15 +129,11 @@ function GroupRows({ group, rows }: { group: string; rows: CompareRow[] }) {
           <th scope="row" className="px-6 py-4 text-left text-[0.95rem] font-medium text-ink">
             {row.label}
           </th>
-          <td className="px-4 py-4 text-center">
-            <CellValue value={row.starter} />
-          </td>
-          <td className="px-4 py-4 text-center">
-            <CellValue value={row.professional} />
-          </td>
-          <td className="px-4 py-4 text-center">
-            <CellValue value={row.max} />
-          </td>
+          {TIERS.map((tier) => (
+            <td key={tier.id} className="px-4 py-4 text-center">
+              <CellValue value={row.values[tier.id]} />
+            </td>
+          ))}
         </tr>
       ))}
     </>

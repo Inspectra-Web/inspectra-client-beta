@@ -13,10 +13,25 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button, buttonClasses } from "@/components/ui/Button";
-import { TIERS, type Tier, type BillingCadence } from "@/data/pricing";
-import { subscription, TIER_LISTING_LIMIT, type InvoiceStatus } from "@/data/realtor";
+import {
+  CADENCES,
+  CADENCE_ADVERB,
+  TIERS,
+  discountLabel,
+  tierPrice,
+  type BillingCadence,
+  type Tier,
+} from "@/data/pricing";
+import { subscription, type InvoiceStatus } from "@/data/realtor";
 import { formatPrice, formatPriceFull } from "@/lib/format";
 import { cn } from "@/lib/cn";
+
+/** Compact price suffix for the change-plan cards, where "/quarter" would not fit. */
+const CADENCE_SHORT: Record<BillingCadence, string> = {
+  monthly: "/mo",
+  quarterly: "/qtr",
+  annual: "/yr",
+};
 
 const INVOICE_META: Record<
   InvoiceStatus,
@@ -31,11 +46,9 @@ export function RealtorSubscription() {
   const [cadence, setCadence] = useState<BillingCadence>(subscription.cadence);
 
   const current = TIERS.find((t) => t.id === subscription.tierId)!;
-  const limit = TIER_LISTING_LIMIT[subscription.tierId];
-  const unlimited = limit === Infinity;
-  const usedPct = unlimited ? 30 : Math.min(100, Math.round((subscription.listingsUsed / limit) * 100));
-  const currentPrice =
-    subscription.cadence === "annual" ? current.annual : current.monthly;
+  const limit = current.listings;
+  const usedPct = Math.min(100, Math.round((subscription.listingsUsed / limit) * 100));
+  const currentPrice = tierPrice(current, subscription.cadence);
 
   return (
     <div className="space-y-8">
@@ -67,8 +80,7 @@ export function RealtorSubscription() {
                 ) : (
                   <>
                     <span className="font-semibold text-ink">{formatPriceFull(currentPrice)}</span>{" "}
-                    billed {subscription.cadence === "annual" ? "annually" : "monthly"} · renews{" "}
-                    {subscription.renewsOn}
+                    billed {CADENCE_ADVERB[subscription.cadence]} · renews {subscription.renewsOn}
                   </>
                 )}
               </p>
@@ -90,13 +102,12 @@ export function RealtorSubscription() {
                 Active listings
               </span>
               <span className="tabular-nums text-muted">
-                <span className="font-semibold text-ink">{subscription.listingsUsed}</span> of{" "}
-                {unlimited ? "Unlimited" : limit}
+                <span className="font-semibold text-ink">{subscription.listingsUsed}</span> of {limit}
               </span>
             </div>
             <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-surface-2">
               <div
-                className={cn("h-full rounded-full", unlimited ? "bg-brand/50" : "bg-brand")}
+                className="h-full rounded-full bg-brand"
                 style={{ width: `${usedPct}%` }}
               />
             </div>
@@ -135,8 +146,9 @@ export function RealtorSubscription() {
             <h2 className="text-lg font-semibold text-ink">Change plan</h2>
             {/* cadence toggle */}
             <div className="inline-flex rounded-full border border-line bg-surface-2/60 p-1">
-              {(["monthly", "annual"] as BillingCadence[]).map((c) => {
+              {CADENCES.map((c) => {
                 const active = cadence === c;
+                const discount = discountLabel(c);
                 return (
                   <button
                     key={c}
@@ -144,14 +156,14 @@ export function RealtorSubscription() {
                     onClick={() => setCadence(c)}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-colors",
+                      "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-colors max-sm:px-3",
                       active ? "bg-surface text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink",
                     )}
                   >
                     {c}
-                    {c === "annual" && (
-                      <span className="rounded-full bg-verified/12 px-1.5 text-xs font-semibold text-verified">
-                        2 months free
+                    {discount && (
+                      <span className="rounded-full bg-verified/12 px-1.5 text-xs font-semibold tabular-nums text-verified">
+                        {discount}
                       </span>
                     )}
                   </button>
@@ -160,7 +172,7 @@ export function RealtorSubscription() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-1">
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             {TIERS.map((tier) => (
               <TierCard
                 key={tier.id}
@@ -209,7 +221,7 @@ export function RealtorSubscription() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-ink">{inv.date}</p>
                     <p className="truncate text-xs text-muted">
-                      {inv.plan} · {inv.cadence === "annual" ? "Annual" : "Monthly"} ·{" "}
+                      {inv.plan} · <span className="capitalize">{CADENCE_ADVERB[inv.cadence]}</span> ·{" "}
                       <span className="uppercase tracking-wide">{inv.id}</span>
                     </p>
                   </div>
@@ -249,8 +261,8 @@ function TierCard({
   onSwitch: () => void;
 }) {
   const free = tier.monthly === 0;
-  const price = free ? "Free" : formatPrice(cadence === "annual" ? tier.annual : tier.monthly);
-  const suffix = free ? "" : cadence === "annual" ? "/yr" : "/mo";
+  const price = free ? "Free" : formatPrice(tierPrice(tier, cadence));
+  const suffix = free ? "" : CADENCE_SHORT[cadence];
 
   return (
     <div
@@ -289,7 +301,9 @@ function TierCard({
         ))}
       </ul>
 
-      <div className="mt-5 pt-1">
+      {/* mt-auto: cards stretch to the tallest in their row, so pin the CTA to the
+          bottom rather than letting it float wherever the feature list ends. */}
+      <div className="mt-auto pt-6">
         {current ? (
           <span className={cn(buttonClasses("outline", "md", "w-full"), "pointer-events-none opacity-60")}>
             Current plan

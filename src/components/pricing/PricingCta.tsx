@@ -18,11 +18,12 @@ export function PricingCta() {
                 Start free
               </span>
               <h2 className="display mt-5 text-[3.25rem] text-white text-balance max-lg:text-4xl max-sm:text-3xl">
-                Get certified, list verified, and let buyers come to you.
+                List verified, and let buyers come to you.
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base">
-                Certify once, publish your first verified listings free, and upgrade the
-                day you outgrow them. This is where realtors build a name buyers trust.
+                Verify your identity, publish your first verified listings free, and
+                upgrade the day you outgrow them. This is where realtors build a name
+                buyers trust.
               </p>
 
               <div className="mt-9 flex items-center justify-center gap-3 max-sm:flex-col">
@@ -38,7 +39,7 @@ export function PricingCta() {
                   className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/30 px-8 text-base font-semibold text-white transition-colors hover:bg-white/10 max-sm:w-full"
                 >
                   <BadgeCheck className="size-4" aria-hidden />
-                  Get certified
+                  About certification
                 </Link>
               </div>
 

@@ -174,10 +174,8 @@ function PanelLink({ to, children }: { to: string; children: React.ReactNode }) 
 /**
  * The one strip of real listings on the page.
  *
- * `status: "verified"` is set rather than left to `sort: "recommended"`, which is only
- * verified-first: with three slots a pending listing would otherwise appear under a
- * heading that says verified. The landing page's FeaturedListings can lean on the sort
- * because its copy makes no such claim.
+ * No status filter is needed: the marketplace endpoint returns verified listings only,
+ * so the heading is true of whatever comes back.
  *
  * Deliberately not filtered by the seeker's `preferredCity`. The Account page offers a
  * closed list of state capitals while a realtor types the listing's city as free text
@@ -186,10 +184,7 @@ function PanelLink({ to, children }: { to: string; children: React.ReactNode }) 
  * Lagos yet" would be false when the listings are simply filed under Lekki.
  */
 function VerifiedHomes() {
-  const { data, isPending, isError, error } = usePublicListings(
-    { ...LISTINGS_QUERY, status: "verified" },
-    3,
-  );
+  const { data, isPending, isError, error } = usePublicListings(LISTINGS_QUERY, 3);
 
   const listings = data?.listings ?? [];
 

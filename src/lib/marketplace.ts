@@ -4,7 +4,6 @@ import { api } from "./api";
 import type {
   DocumentStatus,
   ListingAddress,
-  ListingCounts,
   ListingFeatures,
   ListingFees,
   ListingSort,
@@ -16,6 +15,9 @@ import type { CardListing, ListingFor, VerificationStatus } from "@/types";
  * The public marketplace seam. The realtor's own listings live in ./properties and
  * the console's in ./adminListings; this is what a visitor with no account sees, so
  * it carries no reviewer notes and no document files.
+ *
+ * Only verified listings come back from it, so there is no status filter here: a
+ * pending or disputed listing belongs to its realtor's console until it clears.
  */
 
 /** The realtor as a listing shows them: a named person, never a contact card. */
@@ -95,7 +97,6 @@ export interface ListingRealtorProfile extends ListingRealtor {
 /** "all" is a real value, not an omitted param: it is the filters' resting state. */
 export interface MarketplaceQuery {
   q: string;
-  status: VerificationStatus | "all";
   city: string;
   type: string;
   listingStatus: ListingFor | "all";
@@ -113,7 +114,6 @@ export interface MarketplaceQuery {
 
 export interface MarketplacePage {
   listings: PublicListing[];
-  counts: ListingCounts;
   /** Every city and type present, so the filters are built from real data. */
   cities: string[];
   types: string[];
@@ -140,7 +140,6 @@ export const PAGE_SIZE = 12;
 
 export const EMPTY_QUERY: MarketplaceQuery = {
   q: "",
-  status: "all",
   city: "all",
   type: "all",
   listingStatus: "all",

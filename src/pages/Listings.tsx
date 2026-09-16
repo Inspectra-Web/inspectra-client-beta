@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Search,
+  ShieldCheck,
   X,
   SearchX,
   SlidersHorizontal,
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/Select";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Reveal } from "@/components/ui/Reveal";
-import type { VerificationStatus } from "@/types";
 import { LISTING_INTENT_LABEL } from "@/lib/listing";
 import { apiMessage } from "@/lib/api";
 import { typeLabel } from "@/lib/properties";
@@ -35,23 +35,6 @@ import { cn } from "@/lib/cn";
 
 const INTRO_IMAGE =
   "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=2000&q=80";
-
-type StatusFilter = "all" | VerificationStatus;
-
-/* Verification is the primary browsing axis — the active pill takes the status
-   colour, and each segment carries a live count of the matching listings. */
-const SEGMENTS: { key: StatusFilter; label: string; activeCls: string }[] = [
-  { key: "all", label: "All", activeCls: "bg-ink text-bg" },
-  { key: "verified", label: "Verified", activeCls: "bg-verified text-white" },
-  { key: "pending", label: "Pending", activeCls: "bg-gold text-white" },
-  { key: "disputed", label: "Disputed", activeCls: "bg-rose-500 text-white" },
-];
-
-const STATUS_LABEL: Record<VerificationStatus, string> = {
-  verified: "Verified",
-  pending: "Pending",
-  disputed: "Disputed",
-};
 
 const FOR_OPTIONS = [
   { value: "all", label: "Any offer type" },
@@ -81,7 +64,8 @@ const PRICE_RANGES: { value: string; label: string; min?: number; max?: number }
   { value: "500", label: "₦500M+", min: 500_000_000 },
 ];
 
-/* "Recommended" is verified-first, not paid placement: there is no featured tier. */
+/* "Recommended" is verified-first, not paid placement: there is no featured tier. Now
+   that the grid is verified-only it lands on the newest, which is the honest order. */
 const SORT_OPTIONS = [
   { value: "recommended", label: "Recommended" },
   { value: "newest", label: "Newest" },
@@ -113,7 +97,6 @@ export function Listings() {
   const { data, isPending, isError, error, isPlaceholderData } = usePublicListings(query);
 
   const listings = data?.listings ?? [];
-  const counts = data?.counts ?? { all: 0, verified: 0, pending: 0, disputed: 0 };
   const cities = data?.cities ?? [];
   const types = data?.types ?? [];
   const total = data?.total ?? 0;
@@ -139,12 +122,6 @@ export function Listings() {
         setTyped("");
         set({ q: "" });
       },
-    });
-  if (query.status !== "all")
-    chips.push({
-      key: "status",
-      label: STATUS_LABEL[query.status],
-      clear: () => set({ status: "all" }),
     });
   if (query.type !== "all")
     chips.push({
@@ -212,8 +189,8 @@ export function Listings() {
             Homes you can actually trust
           </h1>
           <p className="mt-4 max-w-xl text-lg text-white/80 text-pretty max-sm:text-base">
-            Every INSPECTRA listing shows exactly where its paperwork stands — title, survey and
-            consent — before you ever place a call.
+            Every home here is verified, and so is the realtor behind it, before it ever
+            reaches this page. Browse knowing the paperwork already holds.
           </p>
         </Container>
       </section>
@@ -249,6 +226,13 @@ export function Listings() {
               {total === 1 ? "home" : "homes"}
             </p>
 
+            {/* Verification is no longer a filter, so it is stated instead: the grid
+                only ever holds verified listings. */}
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-verified/25 bg-verified/10 px-3 py-1 text-sm font-medium text-verified max-sm:hidden">
+              <ShieldCheck className="size-4" aria-hidden />
+              Verified only
+            </span>
+
             {chips.map((c) => (
               <button
                 key={c.key}
@@ -272,7 +256,7 @@ export function Listings() {
             )}
           </div>
 
-          {/* Collapsible panel: verification segments + filter controls. */}
+          {/* Collapsible panel: search + filter controls. */}
           <AnimatePresence initial={false}>
             {open && (
               <motion.div
@@ -284,54 +268,20 @@ export function Listings() {
                 className="-mx-1 -mt-1 overflow-hidden px-1 pt-1"
               >
                 <div className="flex flex-col gap-3 pb-4">
-                  {/* search + verification segments share the top row */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative min-w-64 flex-1">
-                      <Search
-                        className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-faint"
-                        aria-hidden
-                      />
-                      <Input
-                        type="search"
-                        value={typed}
-                        onChange={(e) => setTyped(e.target.value)}
-                        placeholder="Search by area, city or listing ref…"
-                        aria-label="Search listings"
-                        className="h-10 pl-11"
-                      />
-                    </div>
-
-                    <div
-                      role="group"
-                      aria-label="Filter by verification status"
-                      className="no-scrollbar inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface p-1 max-sm:w-full max-sm:overflow-x-auto"
-                    >
-                      {SEGMENTS.map((s) => {
-                        const active = query.status === s.key;
-                        return (
-                          <button
-                            key={s.key}
-                            type="button"
-                            onClick={() => set({ status: s.key })}
-                            aria-pressed={active}
-                            className={cn(
-                              "inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors",
-                              active ? s.activeCls : "text-muted hover:text-ink",
-                            )}
-                          >
-                            {s.label}
-                            <span
-                              className={cn(
-                                "rounded-full px-1.5 text-xs tabular-nums",
-                                active ? "bg-white/20" : "bg-surface-2 text-faint",
-                              )}
-                            >
-                              {counts[s.key]}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                  {/* search takes the top row on its own */}
+                  <div className="relative">
+                    <Search
+                      className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-faint"
+                      aria-hidden
+                    />
+                    <Input
+                      type="search"
+                      value={typed}
+                      onChange={(e) => setTyped(e.target.value)}
+                      placeholder="Search by area, city or listing ref…"
+                      aria-label="Search listings"
+                      className="h-10 pl-11"
+                    />
                   </div>
 
                   {/* filter controls grow to fill the width; sort sits at the end */}
@@ -471,7 +421,7 @@ export function Listings() {
               }
               body={
                 chips.length > 0
-                  ? "Try widening the price range or clearing the verification filter. New listings are checked and added every week."
+                  ? "Try widening the price range or clearing a filter. New homes are checked and added every week."
                   : "The first verified homes are on their way. Check back shortly."
               }
               action={

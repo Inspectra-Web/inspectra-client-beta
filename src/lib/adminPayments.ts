@@ -1,7 +1,14 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { api } from "./api";
-import type { Cadence, PaymentStatus, Tier } from "./subscription";
+import type {
+  Allowance,
+  Cadence,
+  PaymentStatus,
+  Plan,
+  Subscription,
+  Tier,
+} from "./subscription";
 
 /**
  * The platform payment ledger, for the admin console.
@@ -104,4 +111,56 @@ export function ledgerMethod(payment: LedgerPayment): string {
   if (payment.cardLast4) return `Card ····${payment.cardLast4}`;
   if (payment.channel === "banktransfer") return "Bank transfer";
   return payment.channel || "-";
+}
+
+/**
+ * One payment in full, as an admin sees it.
+ *
+ * Carries `flwId` and `flwRef`, which the realtor's own view deliberately does not: they
+ * mean nothing to the person who paid, and they are how an admin finds the same
+ * transaction in Flutterwave when a figure has to be reconciled.
+ */
+export interface AdminPayment extends LedgerPayment {
+  currency: string;
+  /** The detail carries both ends of the span; the ledger row only needs the last. */
+  periodStart?: string;
+  cardBrand: string;
+  flwId?: number;
+  flwRef: string;
+  failureReason: string;
+  updatedAt: string;
+}
+
+export interface LedgerDetail {
+  payment: AdminPayment;
+  realtor: {
+    id: string;
+    fullname: string;
+    email: string;
+    phone?: string;
+    avatar: string;
+    status: string;
+    createdAt: string;
+  };
+  subscription: Subscription;
+  plan: Plan;
+  allowance: Allowance;
+  /** This realtor's last ten payments, so a disputed figure reads in context. */
+  history: AdminPayment[];
+}
+
+interface DetailResponse {
+  status: string;
+  data: LedgerDetail;
+}
+
+export function useAdminPayment(reference: string) {
+  return useQuery({
+    queryKey: [...ADMIN_PAYMENTS_KEY, reference],
+    queryFn: async () => {
+      const res = await api.get<DetailResponse>(`/admin/payments/${reference}`);
+      return res.data.data;
+    },
+    enabled: reference.length > 0,
+  });
 }

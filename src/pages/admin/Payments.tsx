@@ -10,14 +10,21 @@ import {
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
-import { DataTable, thCls, tdCls } from "@/components/dashboard/DataTable";
+import { DataTable, thCls, tdCls, rowCls } from "@/components/dashboard/DataTable";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { Reveal } from "@/components/ui/Reveal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import {
   ledgerMethod,
+  useAdminPayment,
   useAdminPayments,
   type LedgerQuery,
 } from "@/lib/adminPayments";
@@ -44,6 +51,7 @@ const planName = (tier?: string) =>
 export function AdminPayments() {
   const [query, setQuery] = useState<LedgerQuery>({ q: "", status: "all", page: 1 });
   const [typed, setTyped] = useState("");
+  const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(
@@ -203,7 +211,11 @@ export function AdminPayments() {
               }
             >
               {rows.map((payment, i) => (
-                <tr key={payment.id} className="transition-colors hover:bg-surface-2/40">
+                <tr
+                  key={payment.id}
+                  className={rowCls}
+                  onClick={() => setOpen(payment.reference)}
+                >
                   <td className={cn(tdCls, "tabular-nums text-faint")}>
                     {(query.page - 1) * (data?.limit ?? 12) + i + 1}
                   </td>
@@ -285,6 +297,185 @@ export function AdminPayments() {
           )}
         </div>
       )}
+
+      <PaymentDetail reference={open} onClose={() => setOpen(null)} />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * One payment in full, opened from its row.
+ *
+ * A Dialog rather than a detail page, unlike the rest of the admin console. The ledger
+ * carries a search, a filter and a page number, and a navigation away would throw all
+ * three away for a look at one row. Nothing here is edited, so dismissing it costs
+ * nothing either.
+ */
+function PaymentDetail({
+  reference,
+  onClose,
+}: {
+  reference: string | null;
+  onClose: () => void;
+}) {
+  const { data, isPending, isError, error } = useAdminPayment(reference ?? "");
+
+  if (!reference) return null;
+
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent closeLabel="Close payment" className="max-w-xl">
+        {isError ? (
+          <>
+            <DialogTitle>Could not load that payment</DialogTitle>
+            <DialogDescription>{apiMessage(error)}</DialogDescription>
+          </>
+        ) : isPending || !data ? (
+          <>
+            <DialogTitle>Loading payment</DialogTitle>
+            <DialogDescription>Fetching {reference}.</DialogDescription>
+            <div className="mt-5 h-48 animate-pulse rounded-xl bg-surface-2/60" />
+          </>
+        ) : (
+          <Detail data={data} />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Detail({ data }: { data: NonNullable<ReturnType<typeof useAdminPayment>["data"]> }) {
+  const { payment, realtor, subscription, plan, allowance, history } = data;
+
+  return (
+    <>
+      <DialogTitle>
+        {planName(payment.tier)} plan · {formatPriceFull(payment.amount)}
+      </DialogTitle>
+      <DialogDescription>
+        <span className={cn("font-semibold", STATUS_TONE[payment.status])}>
+          {STATUS_LABEL[payment.status]}
+        </span>
+        {payment.paidAt ? ` on ${formatDate(payment.paidAt)}` : ""}
+        {payment.failureReason ? ` · ${payment.failureReason}` : ""}
+      </DialogDescription>
+
+      {/* who paid */}
+      <div className="mt-5 flex items-center gap-3 rounded-xl bg-surface-2/60 p-4">
+        <UserAvatar
+          avatar={realtor.avatar}
+          name={realtor.fullname}
+          className="size-10 shrink-0"
+        />
+        <div className="min-w-0">
+          <p className="truncate font-semibold capitalize text-ink">{realtor.fullname}</p>
+          <p className="truncate text-sm text-muted">{realtor.email}</p>
+        </div>
+        <span
+          className={cn(
+            "ml-auto shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize",
+            realtor.status === "active"
+              ? "bg-verified/12 text-verified"
+              : "bg-rose-500/12 text-rose-500",
+          )}
+        >
+          {realtor.status}
+        </span>
+      </div>
+
+      <Section title="This payment">
+        <Row label="Reference" value={payment.reference} mono />
+        <Row label="Amount" value={`${formatPriceFull(payment.amount)} ${payment.currency}`} />
+        <Row label="Billing" value={payment.cadence ?? "-"} capitalize />
+        <Row label="Method" value={ledgerMethod(payment)} />
+        {payment.periodStart && payment.periodEnd && (
+          <Row
+            label="Covers"
+            value={`${formatDate(payment.periodStart)} to ${formatDate(payment.periodEnd)}`}
+          />
+        )}
+        <Row label="Started" value={formatDate(payment.createdAt)} />
+      </Section>
+
+      {/* The two strings that find this charge in Flutterwave. */}
+      {(payment.flwId || payment.flwRef) && (
+        <Section title="Gateway">
+          {payment.flwId !== undefined && (
+            <Row label="Transaction id" value={String(payment.flwId)} mono />
+          )}
+          {payment.flwRef && <Row label="Flutterwave ref" value={payment.flwRef} mono />}
+        </Section>
+      )}
+
+      <Section title="Plan today">
+        <Row label="Tier" value={plan.name} />
+        <Row
+          label="State"
+          value={
+            subscription.status === "canceled"
+              ? "Cancelled, runs to period end"
+              : subscription.status === "past_due"
+                ? "Payment due"
+                : "Active"
+          }
+        />
+        {subscription.currentPeriodEnd && (
+          <Row label="Runs until" value={formatDate(subscription.currentPeriodEnd)} />
+        )}
+        <Row label="Listings" value={`${allowance.used} of ${allowance.limit}`} />
+      </Section>
+
+      {history.length > 1 && (
+        <Section title={`Their last ${history.length} payments`}>
+          {history.map((row) => (
+            <Row
+              key={row.id}
+              label={formatDate(row.paidAt ?? row.createdAt)}
+              value={`${formatPriceFull(row.amount)} · ${STATUS_LABEL[row.status] ?? row.status}`}
+            />
+          ))}
+        </Section>
+      )}
+    </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-5">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-faint">
+        {title}
+      </p>
+      <dl className="mt-2 space-y-2.5 text-sm">{children}</dl>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  mono,
+  capitalize,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  capitalize?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-6 border-b border-line pb-2.5 last:border-0 last:pb-0">
+      <dt className="shrink-0 text-muted">{label}</dt>
+      <dd
+        className={cn(
+          "min-w-0 break-all text-right font-medium text-ink",
+          mono && "text-xs uppercase tracking-wide",
+          capitalize && "capitalize",
+        )}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://inspectra-server-beta.onrender.com/api/:path*"
+      "destination": "https://api.inspectraweb.com/api/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

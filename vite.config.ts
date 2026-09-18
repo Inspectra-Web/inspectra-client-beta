@@ -8,7 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
  *
  *    VITE_API_PROXY=http://localhost:5000
  */
-const DEPLOYED_API = "https://inspectra-server-beta.onrender.com";
+const DEPLOYED_API = "https://api.inspectraweb.com";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {

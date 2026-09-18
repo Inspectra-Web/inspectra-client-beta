@@ -46,7 +46,8 @@ const navGroups = (newLeads: number, requested: number): NavGroup[] => [
     label: "Standing",
     items: [
       { label: "Verification", to: "/realtor/verification", Icon: ShieldCheck },
-      { label: "Certification", to: "/realtor/certification", Icon: BadgeCheck },
+      // Certification is coming soon: hidden until the program exists.
+      // { label: "Certification", to: "/realtor/certification", Icon: BadgeCheck },
     ],
   },
   {

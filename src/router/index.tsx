@@ -34,7 +34,8 @@ import { RealtorLeadDetail } from "@/pages/realtor/LeadDetail";
 import { RealtorInspections } from "@/pages/realtor/Inspections";
 import { RealtorInspectionDetail } from "@/pages/realtor/InspectionDetail";
 import { RealtorVerification } from "@/pages/realtor/Verification";
-import { RealtorCertification } from "@/pages/realtor/Certification";
+// Certification is not built yet. Route removed, page kept: see below.
+// import { RealtorCertification } from "@/pages/realtor/Certification";
 import { RealtorSubscription } from "@/pages/realtor/Subscription";
 import { RealtorSubscriptionCallback } from "@/pages/realtor/SubscriptionCallback";
 import { RealtorAccount } from "@/pages/realtor/Account";
@@ -119,7 +120,10 @@ export const router = createBrowserRouter([
           { path: "inspections", element: <RealtorInspections /> },
           { path: "inspections/:id", element: <RealtorInspectionDetail /> },
           { path: "verification", element: <RealtorVerification /> },
-          { path: "certification", element: <RealtorCertification /> },
+          // Certification is coming soon and the program has not been built, so the
+          // page is unrouted rather than deleted. /realtor/certification falls through
+          // to the in-shell NotFound until it ships.
+          // { path: "certification", element: <RealtorCertification /> },
           { path: "subscription", element: <RealtorSubscription /> },
           // Where Flutterwave returns. Inside the realtor branch on purpose: the jwt
           // cookie has to ride along, and it only does on our own origin.

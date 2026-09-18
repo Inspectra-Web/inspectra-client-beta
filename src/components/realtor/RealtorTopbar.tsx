@@ -10,7 +10,7 @@ const TITLES: Record<string, string> = {
   "/realtor/leads": "Leads",
   "/realtor/inspections": "Inspections",
   "/realtor/verification": "Verification",
-  "/realtor/certification": "Certification",
+  // "/realtor/certification": "Certification",
   "/realtor/subscription": "Subscription",
   "/realtor/account": "Account",
 };

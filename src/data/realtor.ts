@@ -1,10 +1,9 @@
-// Mock data for the two realtor surfaces that still have no backend: certification and
-// subscription. Everything else that used to live here (the portfolio, the activity feed,
-// the lead list) went when the consoles were wired, the leads last of all, with the admin
-// KPIs that were their final reader. UI over mock data: no backend, no persistence.
+// Mock data for the one realtor surface that still has no backend: certification.
+// Everything else that used to live here (the portfolio, the activity feed, the lead
+// list, and the subscription block, which went when Flutterwave landed) is real now.
+// UI over mock data: no backend, no persistence.
 
 import type { VerificationStatus } from "@/types";
-import type { BillingCadence, TierId } from "@/data/pricing";
 
 export type SocialKind = "instagram" | "linkedin" | "facebook" | "x";
 
@@ -99,53 +98,4 @@ export const certification: Certification = {
   examScore: 88,
   examDate: "2025-01-18",
   completedModules: 6,
-};
-
-/* ------------------------------------------------------------------ *
- * Subscription — the realtor's current plan, usage, payment method and
- * billing history. Mock/marketing only (no Flutterwave yet, Phase 9+):
- * plan changes and payment updates just toast.
- * ------------------------------------------------------------------ */
-
-export type SubscriptionStatus = "active" | "past_due" | "canceled";
-export type InvoiceStatus = "paid" | "pending" | "failed";
-
-export interface Invoice {
-  id: string;
-  date: string; // display label, e.g. "1 Jul 2026"
-  plan: string; // "Agency"
-  cadence: BillingCadence;
-  amount: number; // naira charged
-  status: InvoiceStatus;
-}
-
-export interface Subscription {
-  tierId: TierId;
-  cadence: BillingCadence;
-  status: SubscriptionStatus;
-  startedOn: string;
-  renewsOn: string;
-  paymentBrand: string; // "Visa"
-  paymentLast4: string; // "4242"
-  /** How many active listings the realtor is currently using. */
-  listingsUsed: number;
-  invoices: Invoice[];
-}
-
-export const subscription: Subscription = {
-  tierId: "elite",
-  cadence: "monthly",
-  status: "active",
-  startedOn: "12 Jan 2025",
-  renewsOn: "1 Aug 2026",
-  paymentBrand: "Visa",
-  paymentLast4: "4242",
-  listingsUsed: 6,
-  invoices: [
-    { id: "inv1", date: "1 Jul 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv2", date: "1 Jun 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv3", date: "1 May 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv4", date: "1 Apr 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
-    { id: "inv5", date: "1 Mar 2026", plan: "Elite", cadence: "monthly", amount: 60_000, status: "paid" },
-  ],
 };

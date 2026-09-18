@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { ArrowDown, ArrowRight, Check } from "lucide-react";
+import { toast } from "react-toastify";
+import { ArrowDown, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { buttonClasses } from "@/components/ui/Button";
+import { useMe } from "@/lib/auth";
+import { useCheckout, type Cadence } from "@/lib/subscription";
+import { apiMessage } from "@/lib/api";
 import { formatPriceFull } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import {
@@ -42,6 +46,26 @@ const CARD_ROWS =
 export function PricingTiers() {
   const [cadence, setCadence] = useState<BillingCadence>("monthly");
 
+  // The page is public and most readers have no session, so the card falls back to
+  // signing up. A realtor already signed in can pay from here instead of being sent
+  // to a console page that only repeated these same four cards.
+  const { data: me } = useMe();
+  const checkout = useCheckout();
+  const canPay = me?.role === "realtor";
+  const signedIn = Boolean(me);
+
+  const buy = (tier: Tier) => {
+    if (checkout.isPending) return;
+
+    checkout.mutate(
+      { tier: tier.id, cadence: cadence as Cadence },
+      {
+        onError: (error) =>
+          toast.error(apiMessage(error, "We could not start that payment.")),
+      },
+    );
+  };
+
   return (
     <section className="pb-28 max-lg:pb-20 max-sm:pb-16">
       {/* Four tiers need more room than the 6xl reading measure. */}
@@ -51,7 +75,14 @@ export function PricingTiers() {
         <div className="mt-14 grid grid-cols-4 grid-rows-[repeat(6,auto)] gap-x-6 gap-y-0 max-xl:mx-auto max-xl:max-w-4xl max-xl:grid-cols-2 max-xl:grid-rows-none max-xl:gap-7 max-sm:mt-10 max-sm:max-w-md max-sm:grid-cols-1">
           {TIERS.map((tier, i) => (
             <Reveal key={tier.id} delay={i * 0.07} className={cn(CARD_ROWS, "max-xl:block")}>
-              <TierCard tier={tier} cadence={cadence} />
+              <TierCard
+                tier={tier}
+                cadence={cadence}
+                canPay={canPay}
+                signedIn={signedIn}
+                busy={checkout.isPending}
+                onBuy={() => buy(tier)}
+              />
             </Reveal>
           ))}
         </div>
@@ -114,7 +145,21 @@ function BillingToggle({
   );
 }
 
-function TierCard({ tier, cadence }: { tier: Tier; cadence: BillingCadence }) {
+function TierCard({
+  tier,
+  cadence,
+  canPay,
+  signedIn,
+  busy,
+  onBuy,
+}: {
+  tier: Tier;
+  cadence: BillingCadence;
+  canPay: boolean;
+  signedIn: boolean;
+  busy: boolean;
+  onBuy: () => void;
+}) {
   const isFree = tier.monthly === 0;
   const highlighted = tier.highlighted;
   const price = tierPrice(tier, cadence);
@@ -171,15 +216,49 @@ function TierCard({ tier, cadence }: { tier: Tier; cadence: BillingCadence }) {
         </p>
       </div>
 
-      <Link
-        to="/register"
-        // px-4 rather than the lg default px-8: the button is full width, so its label is
-        // centred regardless, and the wide padding only inflated the card's min-content.
-        className={cn("mt-7", buttonClasses(highlighted ? "brand" : "outline", "lg", "w-full px-4"))}
-      >
-        {tier.ctaLabel}
-        <ArrowRight className="size-4" aria-hidden />
-      </Link>
+      {/* px-4 rather than the lg default px-8 on both branches: the control is full
+          width, so its label is centred regardless, and the wide padding only inflated
+          the card's min-content width. */}
+      {canPay && !isFree ? (
+        <button
+          type="button"
+          onClick={onBuy}
+          disabled={busy}
+          className={cn(
+            "mt-7",
+            buttonClasses(highlighted ? "brand" : "outline", "lg", "w-full px-4"),
+          )}
+        >
+          {busy ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <>
+              Subscribe
+              <ArrowRight className="size-4" aria-hidden />
+            </>
+          )}
+        </button>
+      ) : (
+        // A visitor with no session goes to sign in carrying where they meant to end
+        // up, which SignIn reads off location.state and returns them to. Sending them
+        // to /register instead would make an existing realtor create a second account
+        // to buy a plan for the one they already have.
+        <Link
+          to={canPay ? "/realtor/subscription" : signedIn ? "/register" : "/login"}
+          state={signedIn ? undefined : { from: "/realtor/subscription" }}
+          className={cn(
+            "mt-7",
+            buttonClasses(highlighted ? "brand" : "outline", "lg", "w-full px-4"),
+          )}
+        >
+          {canPay
+            ? "Go to your subscription"
+            : isFree
+              ? tier.ctaLabel
+              : "Subscribe"}
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      )}
 
       <ul className="mt-8 space-y-3.5 border-t border-line pt-7">
         {tier.features.map((feature) => (

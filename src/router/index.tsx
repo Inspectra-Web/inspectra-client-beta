@@ -36,6 +36,7 @@ import { RealtorInspectionDetail } from "@/pages/realtor/InspectionDetail";
 import { RealtorVerification } from "@/pages/realtor/Verification";
 import { RealtorCertification } from "@/pages/realtor/Certification";
 import { RealtorSubscription } from "@/pages/realtor/Subscription";
+import { RealtorSubscriptionCallback } from "@/pages/realtor/SubscriptionCallback";
 import { RealtorAccount } from "@/pages/realtor/Account";
 import { RealtorNotFound } from "@/pages/realtor/RealtorNotFound";
 import { AdminDashboardLayout } from "@/layouts/AdminDashboardLayout";
@@ -120,6 +121,12 @@ export const router = createBrowserRouter([
           { path: "verification", element: <RealtorVerification /> },
           { path: "certification", element: <RealtorCertification /> },
           { path: "subscription", element: <RealtorSubscription /> },
+          // Where Flutterwave returns. Inside the realtor branch on purpose: the jwt
+          // cookie has to ride along, and it only does on our own origin.
+          {
+            path: "subscription/callback",
+            element: <RealtorSubscriptionCallback />,
+          },
           { path: "account", element: <RealtorAccount /> },
           { path: "*", element: <RealtorNotFound /> },
         ],

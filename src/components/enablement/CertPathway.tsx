@@ -6,32 +6,32 @@ import { Reveal } from "@/components/ui/Reveal";
 import { cn } from "@/lib/cn";
 
 const PATHWAY_IMAGE =
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&crop=faces&w=1000&q=80";
+  "https://images.unsplash.com/photo-1573496528298-f0e9d3c7ce55?auto=format&fit=crop&crop=faces&w=1000&q=80";
 
 const STAGES = [
   {
     n: "01",
     title: "Enroll",
-    body: "Create your realtor account and pay the one-time fee to join the next cohort. No subscription, no renewals to pass.",
-    meta: "One-time payment",
+    body: "Register online and pick the schedule you can actually keep: Full-time through the week, or Executive on weekends. Same certification either way, and your study materials are issued upfront.",
+    meta: "Weekdays or weekends",
   },
   {
     n: "02",
     title: "Train",
-    body: "Work through six self-paced modules of video and reading, from reading a C of O to closing with a buyer abroad. Your progress saves as you go.",
-    meta: "6 modules · ~8 hours",
+    body: "Thirteen subjects taught by practising professionals, from the legal framework and valuation through to project management, HSSE and the business of running your own practice.",
+    meta: "13 subjects",
   },
   {
     n: "03",
-    title: "Sit the exam",
-    body: "Take a timed assessment across the full syllabus. Score 75% or higher to pass; you get two free retakes if you don't clear it the first time.",
-    meta: "40 questions · 60 min · 75% to pass",
+    title: "Practise",
+    body: "Weekly assessments track you as you go, then a one month internship puts the curriculum on real transactions before anyone calls you certified.",
+    meta: "Weekly, plus internship",
   },
   {
     n: "04",
     title: "Get certified",
-    body: "Pass and your credential is issued on the spot. Your Certified status shows on your profile and every listing, recognized by every buyer on INSPECTRA.",
-    meta: "Valid two years",
+    body: "The final exam is built on real-life scenarios rather than recall. Pass it and your Certified status shows on your profile and every listing you publish.",
+    meta: "Online exam",
     last: true,
   },
 ];
@@ -45,12 +45,12 @@ export function CertPathway() {
         <SectionHeading
           eyebrow="The pathway"
           title="From enrolled to certified"
-          intro="A single, honest route with no shortcuts to certification. Here's every stage between signing up and carrying the credential."
+          intro="One level of certification, one honest route to it, and all of it online. Here's every stage between registering and carrying the credential."
         />
 
-        <div className="mt-16 grid grid-cols-[1.05fr_0.95fr] items-stretch gap-14 max-lg:grid-cols-1 max-sm:mt-12">
+        <div className="mt-16 grid grid-cols-[1.25fr_0.75fr] items-stretch gap-14 max-xl:gap-10 max-lg:grid-cols-1 max-sm:mt-12">
           {/* the pathway spine */}
-          <div className="relative">
+          <div className="relative min-w-0">
           <span
             className="absolute left-[1.4rem] top-3 bottom-3 w-px bg-line max-sm:left-[1.15rem]"
             aria-hidden
@@ -83,8 +83,8 @@ export function CertPathway() {
                 </span>
 
                 {/* content */}
-                <div className="pt-1 pb-1">
-                  <div className="flex items-baseline gap-3">
+                <div className="min-w-0 pt-1 pb-1">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <h3 className="display text-2xl max-sm:text-xl">{stage.title}</h3>
                     <span
                       className={cn(
@@ -111,8 +111,8 @@ export function CertPathway() {
           >
             <img
               src={PATHWAY_IMAGE}
-              alt="A realtor working through the certification program"
-              className="absolute inset-0 size-full object-cover"
+              alt="A realtor working through the online certification program"
+              className="absolute inset-0 size-full object-cover object-[35%_center]"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
           </Reveal>

@@ -7,28 +7,36 @@ import { cn } from "@/lib/cn";
 
 const FAQS = [
   {
-    q: "Is certification required to list on INSPECTRA?",
-    a: "Yes. Every realtor completes certification before publishing a listing. It's the trust bar the whole platform is built on, and the reason buyers trust who they're dealing with.",
+    q: "Who runs the certification?",
+    a: "INSPECTRA. We built the curriculum with industry experts and review it against how the market is actually moving, we teach it, and we certify you at the end. The credential then sits on your INSPECTRA profile, qualifying you as a Certified Real Estate Practitioner of Nigeria.",
   },
   {
-    q: "What's the pass mark, and can I retake the exam?",
-    a: "You need 75% to pass. If you don't clear it the first time, you get two free retakes before you'd need to re-enroll, so a bad exam day doesn't cost you the program.",
+    q: "What's the difference between Full-time and Executive?",
+    a: "Only the schedule, and so the duration. Full-time runs through the week; Executive runs at weekends for practitioners who already have a full desk. There is one level of certification, and both routes lead to the same one.",
   },
   {
-    q: "How long does it take?",
-    a: "The six modules are self-paced and run about eight hours in total; the exam itself is 60 minutes. Most realtors finish within a week of enrolling.",
+    q: "Do I need to be certified to list on INSPECTRA?",
+    a: "Not today. You can verify your identity, pick a plan and publish without it. Certification is what lifts you above everyone who did the minimum: it shows on your profile and every listing, and certified realtors rank ahead of uncertified ones in buyer search.",
   },
   {
-    q: "Does the certification expire?",
-    a: "It stays valid for two years. When it's time to renew, you take a short refresher rather than sitting the full program again.",
+    q: "What does the syllabus cover?",
+    a: "Thirteen subjects, from the legal framework of real estate, ethics and valuation through to digital marketing, financing, facility management, project management, reading technical drawings and HSSE. The full list is in the syllabus section above.",
   },
   {
-    q: "How does it help my listings?",
-    a: "Once you're certified, your status shows on your public profile and every listing you publish, and certified realtors rank ahead of uncertified ones in buyer search, so more of the right buyers find you.",
+    q: "How am I assessed?",
+    a: "Weekly assessments while you study, then a one month internship, then a final exam written around real-life scenarios rather than recall. The grading system is published and applied the same way for everyone, and study materials are issued when you register.",
   },
   {
-    q: "What does it cost?",
-    a: "A single one-time payment to enroll, with the full amount shown in the enrollment section above. There's no subscription to stay certified, and no charge for retakes.",
+    q: "Do I have to travel for any of it?",
+    a: "No. The program is fully online, start to finish: the teaching, the weekly assessments, the internship supervision and the final exam. Wherever you are in the country, you take the same program on the same terms.",
+  },
+  {
+    q: "What does it cost, and are there discounts?",
+    a: "The fee depends on the schedule you pick, with both shown in the enrollment section above. Registering early takes 15% off, and organizations enrolling their team in bulk take 30% off.",
+  },
+  {
+    q: "What happens after I'm certified?",
+    a: "You're held to our code of ethics and standards of practice, and you keep access to ongoing professional development: workshops, webinars and seminars. There's also an annual awards program for practitioners who have made a real contribution to the industry.",
   },
 ];
 

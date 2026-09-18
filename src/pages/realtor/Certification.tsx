@@ -4,8 +4,6 @@ import { toast } from "react-toastify";
 import {
   BadgeCheck,
   Check,
-  Clock,
-  FileText,
   Download,
   Share2,
   UserPlus,
@@ -27,7 +25,7 @@ import {
   certification,
   type CertStatus,
 } from "@/data/realtor";
-import { CERT_MODULES, EXAM } from "@/data/certification";
+import { CERT_MODULES } from "@/data/certification";
 import { cn } from "@/lib/cn";
 
 const MONTHS = [
@@ -173,15 +171,13 @@ function CertifiedView({
       {/* exam result */}
       <Reveal y={16}>
         <Panel title="Exam result">
-          <div className="grid grid-cols-4 gap-px overflow-hidden rounded-2xl border border-line bg-line max-sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line max-sm:grid-cols-1">
             <ExamStat value={`${score}%`} label="Your score" highlight />
-            <ExamStat value={`${EXAM.passMark}%`} label="Pass mark" />
-            <ExamStat value={String(EXAM.questions)} label="Questions" />
-            <ExamStat value={`${EXAM.minutes}`} label="Minutes, timed" />
+            <ExamStat value="Passed" label={longMonth(certification.examDate)} />
           </div>
           <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted">
             <BadgeCheck className="size-4 text-verified" aria-hidden />
-            Passed on {longMonth(certification.examDate)}, well above the {EXAM.passMark}% mark.
+            The scenario-based certification exam, graded on published criteria.
           </p>
         </Panel>
       </Reveal>
@@ -206,16 +202,6 @@ function CertifiedView({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-ink">{m.title}</p>
-                  <p className="credential-meta mt-0.5 flex items-center gap-3 text-[0.62rem] text-faint">
-                    <span className="inline-flex items-center gap-1.5">
-                      <FileText className="size-3.5" aria-hidden />
-                      {m.lessons} lessons
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock className="size-3.5" aria-hidden />
-                      {m.minutes} min
-                    </span>
-                  </p>
                 </div>
                 <span className="shrink-0 text-xs font-semibold text-verified">Completed</span>
               </li>
@@ -338,8 +324,8 @@ function JourneyView({
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-ink">Get certified to start listing</h3>
                 <p className="mt-1 text-sm text-muted">
-                  Six self-paced modules built for the Nigerian market, then one timed exam. Pass
-                  once and your credential is permanent.
+                  Thirteen subjects built for the Nigerian market, weekly assessments and a one
+                  month internship, then one scenario-based exam.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2.5">
                   <button type="button" onClick={onEnroll} className={buttonClasses("brand", "md")}>
@@ -402,16 +388,6 @@ function JourneyView({
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-ink">{m.title}</p>
-                        <p className="credential-meta mt-0.5 flex items-center gap-3 text-[0.62rem] text-faint">
-                          <span className="inline-flex items-center gap-1.5">
-                            <FileText className="size-3.5" aria-hidden />
-                            {m.lessons} lessons
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <Clock className="size-3.5" aria-hidden />
-                            {m.minutes} min
-                          </span>
-                        </p>
                       </div>
                       {complete ? (
                         <span className="shrink-0 text-xs font-semibold text-verified">Completed</span>
@@ -448,12 +424,12 @@ function JourneyView({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-ink">
-                    {EXAM.questions} questions · {EXAM.minutes} minutes · {EXAM.passMark}% to pass
+                    The certification exam
                   </p>
                   <p className="mt-1 text-sm text-muted">
                     {trainingDone
-                      ? `A timed assessment across the full syllabus. ${EXAM.retakes} free retakes if you don't clear it.`
-                      : "Complete all six modules to unlock the exam."}
+                      ? "Built on real-life scenarios across the full syllabus, taken online."
+                      : "Work through every subject to unlock the exam."}
                   </p>
                   <button
                     type="button"

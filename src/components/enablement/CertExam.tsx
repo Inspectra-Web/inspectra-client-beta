@@ -1,12 +1,7 @@
 import { Reveal } from "@/components/ui/Reveal";
 import { Container } from "@/components/ui/Container";
-
-const STATS = [
-  { value: "75%", label: "Pass mark" },
-  { value: "60", label: "Minutes, timed" },
-  { value: "40", label: "Questions" },
-  { value: "2", label: "Free retakes" },
-];
+import { ASSESSMENT } from "@/data/certification";
+import { cn } from "@/lib/cn";
 
 export function CertExam() {
   return (
@@ -15,28 +10,35 @@ export function CertExam() {
         <div className="grid grid-cols-2 items-center gap-16 max-lg:grid-cols-1 max-lg:gap-12">
           <Reveal>
             <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[#7ad4ff]">
-              The exam
+              How you're assessed
             </span>
             <h2 className="display mt-4 text-[2.9rem] text-balance max-lg:text-4xl max-sm:text-[2rem]">
               Earned, never bought.
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-white/70">
-              Anyone can pay for a badge. On INSPECTRA, getting certified comes
-              down to one timed exam across the full syllabus, so a Certified
-              realtor has actually proven they know how to sell property a buyer
-              can trust. That's what makes the credential worth carrying.
+              Anyone can pay for a badge. INSPECTRA grades you every week, puts you
+              through a month of supervised practice, then sits you in front of an
+              exam written from real transactions. By the time you are certified,
+              you have proven you can do the work, not just describe it.
             </p>
           </Reveal>
 
           <Reveal delay={0.1}>
-            <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
-              {STATS.map((s) => (
-                <div key={s.label} className="bg-[#0a1a25] p-8 max-sm:p-6">
-                  <dt className="display text-5xl text-foil max-sm:text-4xl">
-                    {s.value}
-                  </dt>
-                  <dd className="credential-meta mt-3 text-[0.62rem] text-white/55">
-                    {s.label}
+            {/* One column, not a 2x2 grid: at half the container width a two-up tile
+                is narrower than its own heading, so "One month internship" wrapped
+                to three cramped lines. */}
+            <dl className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a1a25]">
+              {ASSESSMENT.map((a, i) => (
+                <div
+                  key={a.title}
+                  className={cn(
+                    "grid grid-cols-[auto_1fr] items-baseline gap-x-5 gap-y-1.5 p-6 max-sm:grid-cols-1 max-sm:gap-y-2",
+                    i > 0 && "border-t border-white/10",
+                  )}
+                >
+                  <dt className="display whitespace-nowrap text-lg text-foil">{a.title}</dt>
+                  <dd className="min-w-0 text-[0.9rem] leading-relaxed text-white/60">
+                    {a.body}
                   </dd>
                 </div>
               ))}

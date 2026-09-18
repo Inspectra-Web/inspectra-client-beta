@@ -1,4 +1,3 @@
-import { Clock, FileText } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
@@ -10,8 +9,8 @@ export function CertSyllabus() {
       <Container>
         <SectionHeading
           eyebrow="The syllabus"
-          title="Six modules, built for this market"
-          intro="Not generic sales theory. It's the exact ground a Nigerian realtor has to hold to sell property buyers can trust."
+          title="Thirteen subjects, built for this market"
+          intro="Not generic sales theory. It's the exact ground a Nigerian realtor has to hold to sell property buyers can trust, set by practitioners and reviewed against how the industry actually moves."
         />
 
         <div className="mt-16 grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:mt-12 max-sm:grid-cols-1">
@@ -28,16 +27,6 @@ export function CertSyllabus() {
               <p className="mt-2.5 grow text-[0.95rem] leading-relaxed text-muted">
                 {m.body}
               </p>
-              <div className="credential-meta mt-6 flex items-center gap-4 border-t border-line pt-4 text-[0.62rem] text-faint">
-                <span className="inline-flex items-center gap-1.5">
-                  <FileText className="size-3.5" aria-hidden />
-                  {m.lessons} lessons
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Clock className="size-3.5" aria-hidden />
-                  {m.minutes} min
-                </span>
-              </div>
             </Reveal>
           ))}
         </div>

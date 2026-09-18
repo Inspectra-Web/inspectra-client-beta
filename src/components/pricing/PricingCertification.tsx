@@ -4,10 +4,10 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 
 const INCLUDED = [
-  "Six Nigeria-specific training modules",
-  "One timed certification exam",
+  "Thirteen Nigeria-specific subjects",
+  "Weekly assessments and a one month internship",
+  "One scenario-based certification exam",
   "Certified badge on your profile and listings",
-  "A verifiable credential, valid for two years",
 ];
 
 // Certification is not built yet and is not a gate on listing: a realtor verifies their
@@ -27,9 +27,10 @@ export function PricingCertification() {
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-muted">
               You do not need it to list. Verify your identity, pick a plan and publish
-              today. Certification is a separate one-time program we are building now:
-              a Nigeria-specific course and exam that will put a credential on your
-              profile for the realtors who want to prove the depth behind their work.
+              today. Certification is a separate program we run online: a Nigeria-specific
+              curriculum and exam that will qualify you as a Certified Real Estate
+              Practitioner of Nigeria and put the credential on your profile, for the
+              realtors who want to prove the depth behind their work.
             </p>
             <Link
               to="/enablement"

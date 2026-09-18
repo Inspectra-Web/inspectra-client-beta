@@ -16,14 +16,14 @@ const STAKES: { Icon: LucideIcon; title: string; body: string }[] = [
     body: "Certified realtors and their verified listings surface first. Standing earned through your work decides your place, not who paid to appear.",
   },
   {
-    Icon: Globe,
-    title: "Ready for diaspora buyers",
-    body: "Learn the remote-ready tools, from virtual tours to live walkthroughs, and close with buyers deciding from abroad.",
+    Icon: ShieldCheck,
+    title: "Held to a published standard",
+    body: "Certified practitioners sign a code of ethics and standards of practice, so a client knows the conduct they can expect before you meet.",
   },
   {
-    Icon: ShieldCheck,
-    title: "A reputation you own",
-    body: "One portable, verifiable credential you carry into every deal, backed by INSPECTRA and recognized by every buyer on the platform.",
+    Icon: Globe,
+    title: "It keeps going after the exam",
+    body: "Workshops, webinars and seminars keep certified practitioners current, and an annual awards program recognizes the ones setting the pace.",
   },
 ];
 
@@ -34,7 +34,7 @@ export function CertStakes() {
         <SectionHeading
           eyebrow="Why it's worth it"
           title="What certification does for you"
-          intro="Getting certified is the standard to list on INSPECTRA. It's also the fastest way to be taken seriously by the buyers who used to walk away."
+          intro="Certification is the standard the serious end of this market runs on. It is also the fastest way to be taken seriously by the buyers who used to walk away."
         />
 
         <div className="mt-16 grid grid-cols-2 gap-5 max-sm:mt-12 max-sm:grid-cols-1">

@@ -1,15 +1,16 @@
-import { Link } from "react-router";
-import { ArrowRight, Check } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
+import { CERT_TRACKS, CERT_DISCOUNTS } from "@/data/certification";
+import { formatPriceFull } from "@/lib/format";
 
 const INCLUDED = [
-  "Six training modules, self-paced (~8 hours)",
-  "The timed certification exam",
-  "Two free retakes if you need them",
+  "All thirteen subjects, taught by practitioners",
+  "Study materials issued on registration",
+  "Weekly assessments and a one month internship",
+  "The scenario-based certification exam",
   "Certified badge on your profile and every listing",
-  "A verifiable credential, valid for two years",
-  "Priority standing in buyer search",
+  "Workshops, webinars and seminars after you qualify",
 ];
 
 export function CertEnroll() {
@@ -21,12 +22,17 @@ export function CertEnroll() {
           <Reveal>
             <span className="eyebrow">Enrollment</span>
             <h2 className="display mt-4 text-[2.9rem] text-balance max-lg:text-4xl max-sm:text-[2rem]">
-              One fee. One exam. Certified for two years.
+              One certification. Two ways to earn it.
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-muted">
-              No subscription to stay certified and no fee to pass. You pay once
-              to enroll, and the credential is yours for two full years, renewed
-              with a short refresher when it's time.
+              There is one level of certification, and the schedule you pick only
+              changes how long it takes. Full-time runs through the week; Executive
+              runs at weekends for practitioners who cannot leave a desk. Same
+              curriculum, same exam, same credential at the end.
+            </p>
+            <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
+              Register early and {CERT_DISCOUNTS.early}% comes off your fee.
+              Organizations enrolling their team in bulk take {CERT_DISCOUNTS.bulk}% off.
             </p>
           </Reveal>
 
@@ -39,14 +45,28 @@ export function CertEnroll() {
                   Certification program
                 </span>
                 <span className="rounded-full bg-brand/12 px-2.5 py-1 text-[0.7rem] font-semibold text-brand-ink">
-                  Required to list
+                  Fully online
                 </span>
               </div>
 
-              <div className="mt-5 flex items-baseline gap-2">
-                <span className="display text-6xl max-sm:text-5xl">₦75,000</span>
-                <span className="text-sm text-muted">one-time</span>
-              </div>
+              <dl className="mt-6 divide-y divide-line border-y border-line">
+                {CERT_TRACKS.map((track) => (
+                  <div
+                    key={track.id}
+                    className="flex items-baseline justify-between gap-4 py-4"
+                  >
+                    <div className="min-w-0">
+                      <dt className="display text-xl">{track.name}</dt>
+                      <p className="credential-meta mt-1 text-[0.6rem] text-faint">
+                        {track.schedule}
+                      </p>
+                    </div>
+                    <dd className="display shrink-0 text-3xl max-sm:text-2xl">
+                      {formatPriceFull(track.fee)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
 
               <ul className="mt-7 space-y-3">
                 {INCLUDED.map((item) => (
@@ -59,15 +79,14 @@ export function CertEnroll() {
                 ))}
               </ul>
 
-              <Link
-                to="/register"
-                className="mt-8 inline-flex h-13 w-full items-center justify-center gap-2 rounded-full bg-ink px-7 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
-              >
-                Start certification
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
+              {/* A status line, not a button: enrollment is not open yet, so nothing
+                  here should look like it takes payment. */}
+              <p className="mt-8 flex items-center justify-center gap-2 rounded-full border border-line bg-surface-2/60 px-7 py-3.5 text-sm font-medium text-muted">
+                <Clock className="size-4 shrink-0 text-foil" aria-hidden />
+                Enrollment opens soon
+              </p>
               <p className="mt-3 text-center text-xs text-faint">
-                Pay once. No subscription, no hidden fees.
+                One payment for the program. No subscription, no hidden fees.
               </p>
             </div>
           </Reveal>

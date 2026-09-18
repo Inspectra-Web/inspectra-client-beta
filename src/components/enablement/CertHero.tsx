@@ -1,11 +1,10 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { ArrowRight, BadgeCheck, ShieldCheck } from "lucide-react";
-import { Link } from "react-router";
+import { ArrowRight, BadgeCheck, Clock, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { cn } from "@/lib/cn";
 
 const REALTOR_IMAGE =
-  "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&crop=faces&w=900&q=80";
+  "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&crop=faces&w=900&q=80";
 
 // Subtle architectural backdrop, kept very faint so it reads as texture, not a photo.
 const HERO_BG =
@@ -69,8 +68,9 @@ export function CertHero() {
             variants={item}
             className="mt-6 max-w-lg text-lg leading-relaxed text-white/70 max-sm:text-base"
           >
-            On INSPECTRA, every realtor gets certified before they can list. Train
-            on the ground that matters, pass the exam once, and earn a credential
+            Train with INSPECTRA and qualify as a Certified Real Estate
+            Practitioner of Nigeria: thirteen subjects, a supervised internship and
+            one scenario-based exam, all of it online. Come out with a credential
             buyers recognize on your profile, on your listings, in every deal.
           </motion.p>
 
@@ -78,19 +78,20 @@ export function CertHero() {
             variants={item}
             className="mt-9 flex items-center gap-3 max-sm:flex-col max-sm:items-stretch"
           >
-            <Link
-              to="/register"
-              className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand px-8 text-base font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5 max-sm:h-12"
-            >
-              Start certification
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
+            {/* The program has not opened, so the only real action here is reading
+                the syllabus. A status pill states that rather than a button that
+                would take someone to a registration the program cannot honour. */}
             <a
               href="#syllabus"
-              className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/15 max-sm:h-12"
+              className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand px-8 text-base font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5 max-sm:h-12"
             >
               See the syllabus
+              <ArrowRight className="size-4" aria-hidden />
             </a>
+            <span className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-8 text-base font-semibold text-white/75 backdrop-blur-md max-sm:h-12">
+              <Clock className="size-4 shrink-0 text-foil" aria-hidden />
+              Enrollment opens soon
+            </span>
           </motion.div>
         </motion.div>
 
@@ -157,8 +158,6 @@ function CredentialCard({ reduced }: { reduced: boolean }) {
             <span>INS-CR-2026-0473</span>
             <span className="text-white/25">·</span>
             <span>Issued Jul 2026</span>
-            <span className="text-white/25">·</span>
-            <span>Valid through Jul 2028</span>
           </div>
         </div>
       </div>

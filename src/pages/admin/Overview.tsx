@@ -73,10 +73,7 @@ export function AdminOverview() {
 
   const header = (
     <Reveal>
-      <PageHeader
-        title={`${greeting()}, ${firstName}`}
-        subtitle="Platform health at a glance, and the work waiting on a human."
-      />
+      <PageHeader title={`${greeting()}, ${firstName}`} />
     </Reveal>
   );
 

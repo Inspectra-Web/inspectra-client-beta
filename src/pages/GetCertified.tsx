@@ -3,7 +3,7 @@ import { CertStakes } from "@/components/enablement/CertStakes";
 import { CertPathway } from "@/components/enablement/CertPathway";
 import { CertSyllabus } from "@/components/enablement/CertSyllabus";
 import { CertExam } from "@/components/enablement/CertExam";
-import { CertProof } from "@/components/enablement/CertProof";
+// import { CertProof } from "@/components/enablement/CertProof";
 import { CertEnroll } from "@/components/enablement/CertEnroll";
 import { CertFaq } from "@/components/enablement/CertFaq";
 
@@ -15,7 +15,9 @@ export function GetCertified() {
       <CertPathway />
       <CertSyllabus />
       <CertExam />
-      <CertProof />
+      {/* Testimonial. Commented out until a certified realtor has actually said this:
+          the quote and the person in it are invented. Put it back with a real one. */}
+      {/* <CertProof /> */}
       <CertEnroll />
       <CertFaq />
     </>

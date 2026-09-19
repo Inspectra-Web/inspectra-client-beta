@@ -16,8 +16,8 @@ export function AboutCta() {
               Whether you're buying or selling, start with trust.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-[1.05rem] leading-relaxed text-white/70 max-sm:text-base">
-              Browse homes that are verified before they list, or get certified and sell
-              on the platform buyers already trust.
+              Browse listings that were checked before they ever went live, or earn the
+              certification that lets you sell on INSPECTRA.
             </p>
           </div>
 

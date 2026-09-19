@@ -44,7 +44,7 @@ const TEAM: { name: string; role: string; bio: string; photo: string }[] = [
 
 export function AboutTeam() {
   return (
-    <section className="border-y border-line bg-surface-2/40 py-28 max-lg:py-20 max-sm:py-16">
+    <section className="py-28 max-lg:py-20 max-sm:py-16">
       <Container>
         <SectionHeading
           eyebrow="The team"

@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
-import { Menu, X, LogIn, UserPlus, LayoutDashboard } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  Menu,
+  X,
+  LogIn,
+  UserPlus,
+  LayoutDashboard,
+  Building2,
+  Users,
+  BadgeCheck,
+  Tag,
+  Info,
+} from "lucide-react";
 import logo from "@/assets/inspectra-logo-primary-lg.png";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
@@ -9,12 +21,13 @@ import { cn } from "@/lib/cn";
 import { homeFor, useMe } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 
+// Icons are drawer-only: the desktop nav is text.
 const NAV = [
-  { label: "Listings", to: "/listings" },
-  { label: "Realtors", to: "/realtors" },
-  { label: "Get Certified", to: "/enablement" },
-  { label: "Pricing", to: "/pricing" },
-  { label: "About", to: "/about" },
+  { label: "Listings", to: "/listings", Icon: Building2 },
+  { label: "Realtors", to: "/realtors", Icon: Users },
+  { label: "Get Certified", to: "/enablement", Icon: BadgeCheck },
+  { label: "Pricing", to: "/pricing", Icon: Tag },
+  { label: "About", to: "/about", Icon: Info },
 ];
 
 export function Header() {
@@ -30,6 +43,20 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // While the drawer is open it owns the screen: the page behind it holds still
+  // and Escape closes it.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   // The header is transparent on every page until you scroll (or open the menu).
   // White nav is only used while floating over a dark hero/intro.
   const hasDarkHero =
@@ -43,6 +70,7 @@ export function Header() {
   const onDarkHero = hasDarkHero && !solid;
 
   return (
+    <>
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-colors duration-300",
@@ -132,74 +160,143 @@ export function Header() {
           <ThemeToggle onDark={onDarkHero} />
           <button
             type="button"
-            className={onDarkHero ? "text-white" : "text-ink"}
-            aria-label={open ? "Close menu" : "Open menu"}
+            className={cn(
+              "-mr-2 grid size-11 place-items-center rounded-full transition-colors",
+              onDarkHero
+                ? "text-white hover:bg-white/10"
+                : "text-ink hover:bg-surface-2",
+            )}
+            aria-label="Open menu"
             aria-expanded={open}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen(true)}
           >
-            {open ? <X className="size-6" /> : <Menu className="size-6" />}
+            <Menu className="size-6" />
           </button>
         </div>
       </Container>
-
-      {/* mobile drawer */}
-      {open && (
-        <div className="hidden border-b border-line bg-bg/95 backdrop-blur-xl max-lg:block">
-          <Container className="flex flex-col gap-1 py-4">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    "rounded-lg px-3 py-2.5 text-sm font-medium",
-                    isActive ? "bg-surface-2 text-ink" : "text-muted",
-                  )
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-            {!isPending &&
-              (user ? (
-                <>
-                  <Link
-                    to={homeFor(user.role)}
-                    onClick={() => setOpen(false)}
-                    className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted"
-                  >
-                    <LayoutDashboard className="size-4" aria-hidden />
-                    Dashboard
-                  </Link>
-                  <LogoutButton
-                    onNavigate={() => setOpen(false)}
-                    className={cn("mt-2", buttonClasses("outline", "md"))}
-                  />
-                </>
-              ) : (
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <Link
-                    to="/login"
-                    onClick={() => setOpen(false)}
-                    className={buttonClasses("outline", "md")}
-                  >
-                    <LogIn className="size-4" aria-hidden />
-                    Log in
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setOpen(false)}
-                    className={buttonClasses("brand", "md")}
-                  >
-                    <UserPlus className="size-4" aria-hidden />
-                    Sign up
-                  </Link>
-                </div>
-              ))}
-          </Container>
-        </div>
-      )}
     </header>
+
+      {/* Mobile drawer. It lives OUTSIDE <header> on purpose: the header's
+          backdrop-blur makes it the containing block for fixed children, which
+          clipped the panel to the 4rem header bar. */}
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-60 hidden bg-[#04121f]/60 backdrop-blur-[2px] max-lg:block"
+            />
+
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-y-0 left-0 z-70 hidden w-[19.5rem] max-w-[86vw] flex-col border-r border-line bg-surface shadow-[0_0_70px_-10px_rgba(4,18,31,0.55)] max-lg:flex"
+            >
+              <div className="flex h-16 shrink-0 items-center justify-between border-b border-line pl-5 pr-3">
+                <Link
+                  to="/"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center"
+                  aria-label="INSPECTRA home"
+                >
+                  <img src={logo} alt="INSPECTRA" className="h-9 w-auto" />
+                </Link>
+                <button
+                  type="button"
+                  aria-label="Close menu"
+                  onClick={() => setOpen(false)}
+                  className="grid size-10 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+                {NAV.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] font-medium transition-colors",
+                        isActive
+                          ? "bg-brand/10 text-brand-ink"
+                          : "text-muted hover:bg-surface-2 hover:text-ink",
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.Icon
+                          className={cn(
+                            "size-4.5 shrink-0",
+                            !isActive && "text-faint",
+                          )}
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                        {item.label}
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </nav>
+
+              {!isPending && (
+                <div className="shrink-0 border-t border-line p-4">
+                  {user ? (
+                    <div className="grid gap-2">
+                      <Link
+                        to={homeFor(user.role)}
+                        onClick={() => setOpen(false)}
+                        className={buttonClasses("brand", "md")}
+                      >
+                        <LayoutDashboard className="size-4" aria-hidden />
+                        Dashboard
+                      </Link>
+                      <LogoutButton
+                        onNavigate={() => setOpen(false)}
+                        className={buttonClasses("outline", "md")}
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      <Link
+                        to="/register"
+                        onClick={() => setOpen(false)}
+                        className={buttonClasses("brand", "md")}
+                      >
+                        <UserPlus className="size-4" aria-hidden />
+                        Sign up
+                      </Link>
+                      <Link
+                        to="/login"
+                        onClick={() => setOpen(false)}
+                        className={buttonClasses("outline", "md")}
+                      >
+                        <LogIn className="size-4" aria-hidden />
+                        Log in
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

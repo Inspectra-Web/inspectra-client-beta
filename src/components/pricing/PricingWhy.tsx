@@ -15,32 +15,32 @@ const BENEFITS: { Icon: LucideIcon; title: string; body: string }[] = [
   {
     Icon: ShieldCheck,
     title: "Trust that converts",
-    body: "Every listing you publish carries a verified property status and a realtor whose identity was checked. Buyers who scroll past everything else stop on a listing they can trust.",
+    body: "Every listing carries a verified status and a realtor whose identity was checked. Buyers stop on those.",
   },
   {
     Icon: TrendingUp,
     title: "Ranked by trust, not ad spend",
-    body: "Placement is earned through verification and your record, not bought in a boost auction. Do the work well and you rise, without paying to outbid the next agent.",
+    body: "Placement is earned through verification and your record, never bought in a boost auction.",
   },
   {
     Icon: BadgeCheck,
     title: "A verified profile that travels",
-    body: "Your verified profile goes with you into every deal, a link you can send anywhere, and the professional signal buyers and other agents recognize on sight.",
+    body: "A link you can send anywhere, carrying the signal buyers and other agents recognize on sight.",
   },
   {
     Icon: Filter,
     title: "Leads worth your time",
-    body: "Itemized fees upfront and trust-ranked placement filter out tyre-kickers. A paid plan opens the full inbox: reply to buyers, see their contact details, and work the lead through to a viewing.",
+    body: "Itemized fees and trust-ranked placement filter out tyre-kickers. A paid plan opens the full inbox.",
   },
   {
     Icon: RefreshCw,
     title: "Never look stale",
-    body: "Your plan gives you scheduled refreshes to re-confirm a listing is still available. Buyers sorting by newest see a home you stand behind today, not one that sold months ago.",
+    body: "Scheduled refreshes re-confirm a listing is still available, so buyers see a home you stand behind today.",
   },
   {
     Icon: BarChart3,
     title: "Know what is working",
-    body: "See views, inquiries, and conversion on every listing, so you know exactly what is landing and can build an on-record track record.",
+    body: "Views, inquiries and conversion on every listing, so you know what is landing.",
   },
 ];
 
@@ -51,7 +51,6 @@ export function PricingWhy() {
         <SectionHeading
           eyebrow="Why realtors pay"
           title="What your plan is really buying"
-          intro="INSPECTRA is not another directory that hands over a phone number and walks away. Paying puts verified trust, real visibility, and the tools to close behind every listing you publish."
         />
 
         <div className="mt-16 grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:mt-12 max-sm:grid-cols-1">

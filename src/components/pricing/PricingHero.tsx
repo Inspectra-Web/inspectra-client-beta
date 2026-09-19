@@ -31,7 +31,7 @@ export function PricingHero() {
   const reduced = useReducedMotion();
 
   return (
-    <section className="relative overflow-hidden bg-[#06121b] text-center text-white">
+    <section className="relative overflow-hidden bg-[#06121b] text-center text-white max-sm:flex max-sm:min-h-svh max-sm:items-center">
       {/* full-bleed architectural backdrop */}
       <img
         src={HERO_IMAGE}
@@ -45,7 +45,7 @@ export function PricingHero() {
       <div className="pointer-events-none absolute -right-40 top-1/4 size-[36rem] rounded-full bg-[radial-gradient(circle,rgba(26,172,240,0.18),transparent_65%)]" />
       <div className="pointer-events-none absolute -left-32 bottom-0 size-[30rem] rounded-full bg-[radial-gradient(circle,rgba(26,172,240,0.1),transparent_65%)]" />
 
-      <Container className="relative z-10 flex flex-col items-center pb-28 pt-32 max-sm:pb-20 max-sm:pt-28">
+      <Container className="relative z-10 flex flex-col items-center pb-28 pt-32 max-sm:pb-16 max-sm:pt-24">
         <motion.div
           variants={container}
           initial={reduced ? false : "hidden"}
@@ -72,14 +72,13 @@ export function PricingHero() {
             variants={item}
             className="mt-6 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base"
           >
-            Verify your identity, publish your first listings free, then pick a plan
-            that scales with how much you list. No auctions to appear first, no fees
-            to buy a badge, just verified listings serious buyers act on.
+            Publish your first listings free, then pick a plan that scales with how
+            much you list. No boost auctions, no fees to buy a badge.
           </motion.p>
 
           <motion.div
             variants={item}
-            className="mt-9 flex items-center gap-3 max-sm:flex-col max-sm:items-stretch"
+            className="mt-9 flex items-center gap-3 max-sm:mt-8 max-sm:flex-col max-sm:items-center"
           >
             <Link
               to="/register"

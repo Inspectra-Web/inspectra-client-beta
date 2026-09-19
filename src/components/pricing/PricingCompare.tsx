@@ -36,7 +36,6 @@ export function PricingCompare() {
         <SectionHeading
           eyebrow="Compare plans"
           title="Every feature, side by side"
-          intro="The full breakdown of what each plan includes, so you can pick the one that fits how you list today and upgrade the moment you outgrow it."
         />
 
         {/* desktop table */}

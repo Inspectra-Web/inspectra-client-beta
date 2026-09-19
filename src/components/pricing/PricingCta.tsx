@@ -21,9 +21,8 @@ export function PricingCta() {
                 List verified, and let buyers come to you.
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base">
-                Verify your identity, publish your first verified listings free, and
-                upgrade the day you outgrow them. This is where realtors build a name
-                buyers trust.
+                Publish your first verified listings free, and upgrade the day you
+                outgrow them.
               </p>
 
               <div className="mt-9 flex items-center justify-center gap-3 max-sm:flex-col">

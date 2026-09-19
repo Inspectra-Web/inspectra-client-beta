@@ -26,11 +26,9 @@ export function PricingCertification() {
               Certification is on the way.
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-muted">
-              You do not need it to list. Verify your identity, pick a plan and publish
-              today. Certification is a separate program we run online: a Nigeria-specific
-              curriculum and exam that will qualify you as a Certified Real Estate
-              Practitioner of Nigeria and put the credential on your profile, for the
-              realtors who want to prove the depth behind their work.
+              You do not need it to list: verify your identity, pick a plan and publish
+              today. Certification is a separate online program, and the credential will
+              sit on your profile once it opens.
             </p>
             <Link
               to="/enablement"

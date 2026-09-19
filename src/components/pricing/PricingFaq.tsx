@@ -5,38 +5,36 @@ import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { cn } from "@/lib/cn";
 
+// Answers stay to two sentences. "Do I need to be certified to list?" is not here:
+// the certification band directly above this section already answers it.
 const FAQS = [
   {
-    q: "Do I need to be certified to list?",
-    a: "No. Verify your identity, pick a plan and publish. Certification is a separate one-time program we are still building, and when it opens it will be an optional credential on your profile rather than a gate on listing. What every listing goes through today is document review, and that is what puts the verified status on it.",
-  },
-  {
     q: "Can I really start for free?",
-    a: "Yes. The Starter plan lets you publish up to three verified listings at no cost, with a verified public profile you can share anywhere. Starter shows you when a lead arrives; replying to buyers and seeing their contact details is what a paid plan adds.",
+    a: "Yes. Starter publishes up to three verified listings with a public profile you can share anywhere. Replying to buyers and seeing their contact details is what a paid plan adds.",
   },
   {
     q: "How do monthly, quarterly and annual compare?",
-    a: "Same features on all three, so it is purely how far ahead you pay. Quarterly takes 10% off the three months, and annual takes 20% off the year. On the Professional plan that is ₦13,500 a month paid quarterly, or ₦12,000 a month paid annually, against ₦15,000 month to month.",
+    a: "Same features on all three, so it is purely how far ahead you pay. Quarterly takes 10% off, annual takes 20%.",
   },
   {
     q: "What is a listing refresh?",
-    a: "A refresh is you re-confirming that a listing is still available, which lifts it back to the top of the newest-first results. Professional gets one every two weeks, Business every week, Elite twice a week. Refreshes belong to your account rather than to each listing, so you choose which home to put back in front of buyers.",
+    a: "Re-confirming that a listing is still available, which lifts it back to the top of newest-first results. Refreshes belong to your account, so you choose which home to put back in front of buyers.",
   },
   {
     q: "Can I pay to rank higher in search?",
-    a: "No, and you never will be able to. Default search ranking is earned through verification and your record, so no amount of spending moves you up it. A refresh only affects the newest-first sort, and only because the listing genuinely was re-confirmed that day.",
+    a: "No, and you never will be able to. Ranking is earned through verification and your record, and a refresh only moves you in the newest-first sort.",
   },
   {
     q: "What happens if my subscription lapses?",
-    a: "You keep your account, your profile and every conversation already in progress. After a short grace period you drop to Starter limits: listings beyond the free three are hidden rather than deleted, and new leads are held until you renew. Nothing is lost, and your verified listings come back the moment you are active again.",
+    a: "You keep your account, your profile and every conversation in progress. After a short grace period you drop to Starter limits: extra listings are hidden rather than deleted, and come back the moment you renew.",
   },
   {
     q: "Can I change plans later?",
-    a: "Anytime. Upgrade the moment you outgrow your listing limit and the new features apply straight away. You can move down at the end of a billing cycle with no penalty.",
+    a: "Anytime. Upgrades apply straight away, and you can move down at the end of a billing cycle with no penalty.",
   },
   {
     q: "Do buyers pay to use INSPECTRA?",
-    a: "No. Browsing, searching, saving homes, booking a viewing, and contacting realtors is always free for buyers. Only realtors pay, through a subscription.",
+    a: "No. Browsing, saving homes, booking a viewing and contacting realtors is always free for buyers. Only realtors pay.",
   },
 ];
 

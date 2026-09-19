@@ -36,7 +36,7 @@ export function Hero() {
       <div className="absolute inset-0 bg-[#06121b]/72" />
       <div className="absolute inset-0 bg-linear-to-t from-[#06121b] via-transparent to-[#06121b]/60" />
 
-      <Container className="relative z-10 pb-24 pt-28 max-sm:pb-16">
+      <Container className="relative z-10 pb-24 pt-28 max-sm:pb-20 max-sm:pt-16">
         <motion.div
           className="mx-auto max-w-4xl"
           variants={container}
@@ -52,17 +52,17 @@ export function Hero() {
 
           <motion.h1
             variants={item}
-            className="display mt-5 text-[4.25rem] leading-[1.02] text-white text-balance max-xl:text-7xl max-lg:text-6xl max-sm:text-[3rem]"
+            className="display mt-5 text-[4.25rem] leading-[1.02] text-white text-balance max-xl:text-7xl max-lg:text-6xl max-sm:mt-4 max-sm:text-[3.4rem]"
           >
             Verified homes to
-            <span className="mt-1 block text-[#38c0ff]">
+            <span className="mt-1 block text-[#38c0ff] max-sm:mt-2 max-sm:text-[4.15rem] max-sm:leading-[1]">
               <Typewriter words={["Rent", "Buy", "Lease", "Shortlet"]} />
             </span>
           </motion.h1>
 
           <motion.p
             variants={item}
-            className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base"
+            className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/75 max-sm:mt-5 max-sm:text-[1.06rem]"
           >
             INSPECTRA checks the documents, the title and the fees on every
             listing, and certifies every realtor. The only properties you find
@@ -72,7 +72,7 @@ export function Hero() {
           {/* CTAs */}
           <motion.div
             variants={item}
-            className="mt-9 flex items-center justify-center gap-3 max-sm:flex-col max-sm:items-stretch"
+            className="mt-9 flex items-center justify-center gap-3 max-sm:mt-8 max-sm:flex-col max-sm:items-center"
           >
             <Link
               to="/listings"
@@ -102,7 +102,7 @@ function ScrollCue({ className }: { className?: string }) {
     <div
       aria-hidden
       className={cn(
-        "absolute inset-x-0 bottom-6 mx-auto flex w-full justify-center max-lg:hidden",
+        "absolute inset-x-0 bottom-6 mx-auto flex w-full justify-center",
         className,
       )}
     >

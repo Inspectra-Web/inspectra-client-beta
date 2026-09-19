@@ -5,38 +5,32 @@ import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { cn } from "@/lib/cn";
 
+// Answers stay to two sentences. Questions the page already answers in full (the
+// syllabus, the fees) are not repeated here.
 const FAQS = [
   {
     q: "Who runs the certification?",
-    a: "INSPECTRA. We built the curriculum with industry experts and review it against how the market is actually moving, we teach it, and we certify you at the end. The credential then sits on your INSPECTRA profile, qualifying you as a Certified Real Estate Practitioner of Nigeria.",
+    a: "INSPECTRA. We build the curriculum with industry experts, teach it, and certify you at the end as a Certified Real Estate Practitioner of Nigeria.",
   },
   {
     q: "What's the difference between Full-time and Executive?",
-    a: "Only the schedule, and so the duration. Full-time runs through the week; Executive runs at weekends for practitioners who already have a full desk. There is one level of certification, and both routes lead to the same one.",
+    a: "Only the schedule, and so the duration. Full-time runs through the week, Executive at weekends, and both lead to the same certification.",
   },
   {
     q: "Do I need to be certified to list on INSPECTRA?",
-    a: "Not today. You can verify your identity, pick a plan and publish without it. Certification is what lifts you above everyone who did the minimum: it shows on your profile and every listing, and certified realtors rank ahead of uncertified ones in buyer search.",
-  },
-  {
-    q: "What does the syllabus cover?",
-    a: "Thirteen subjects, from the legal framework of real estate, ethics and valuation through to digital marketing, financing, facility management, project management, reading technical drawings and HSSE. The full list is in the syllabus section above.",
+    a: "Not today. You can verify your identity, pick a plan and publish without it, but certified realtors rank ahead of uncertified ones in buyer search.",
   },
   {
     q: "How am I assessed?",
-    a: "Weekly assessments while you study, then a one month internship, then a final exam written around real-life scenarios rather than recall. The grading system is published and applied the same way for everyone, and study materials are issued when you register.",
+    a: "Weekly assessments while you study, a one month internship, then a final exam built on real scenarios. The grading system is published and applied the same way for everyone.",
   },
   {
     q: "Do I have to travel for any of it?",
-    a: "No. The program is fully online, start to finish: the teaching, the weekly assessments, the internship supervision and the final exam. Wherever you are in the country, you take the same program on the same terms.",
-  },
-  {
-    q: "What does it cost, and are there discounts?",
-    a: "The fee depends on the schedule you pick, with both shown in the enrollment section above. Registering early takes 15% off, and organizations enrolling their team in bulk take 30% off.",
+    a: "No. The teaching, the assessments, the internship supervision and the exam are all online, wherever you are in the country.",
   },
   {
     q: "What happens after I'm certified?",
-    a: "You're held to our code of ethics and standards of practice, and you keep access to ongoing professional development: workshops, webinars and seminars. There's also an annual awards program for practitioners who have made a real contribution to the industry.",
+    a: "You're held to our code of ethics, and you keep access to workshops, webinars and seminars. There's also an annual awards program.",
   },
 ];
 

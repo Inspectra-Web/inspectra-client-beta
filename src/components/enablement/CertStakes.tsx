@@ -8,22 +8,22 @@ const STAKES: { Icon: LucideIcon; title: string; body: string }[] = [
   {
     Icon: BadgeCheck,
     title: "Trusted on sight",
-    body: "The Certified badge sits on your profile and every listing you publish. Serious buyers look for it before they look at anything else.",
+    body: "The badge sits on your profile and every listing you publish. Buyers look for it first.",
   },
   {
     Icon: TrendingUp,
     title: "Ranked above the noise",
-    body: "Certified realtors and their verified listings surface first. Standing earned through your work decides your place, not who paid to appear.",
+    body: "Certified realtors and their listings surface first. Your place is earned, never bought.",
   },
   {
     Icon: ShieldCheck,
     title: "Held to a published standard",
-    body: "Certified practitioners sign a code of ethics and standards of practice, so a client knows the conduct they can expect before you meet.",
+    body: "Certified practitioners sign a code of ethics, so a client knows the conduct to expect.",
   },
   {
     Icon: Globe,
     title: "It keeps going after the exam",
-    body: "Workshops, webinars and seminars keep certified practitioners current, and an annual awards program recognizes the ones setting the pace.",
+    body: "Workshops, webinars and seminars keep you current, plus an annual awards program.",
   },
 ];
 
@@ -34,7 +34,6 @@ export function CertStakes() {
         <SectionHeading
           eyebrow="Why it's worth it"
           title="What certification does for you"
-          intro="Certification is the standard the serious end of this market runs on. It is also the fastest way to be taken seriously by the buyers who used to walk away."
         />
 
         <div className="mt-16 grid grid-cols-2 gap-5 max-sm:mt-12 max-sm:grid-cols-1">

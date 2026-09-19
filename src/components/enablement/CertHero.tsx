@@ -68,10 +68,9 @@ export function CertHero() {
             variants={item}
             className="mt-6 max-w-lg text-lg leading-relaxed text-white/70 max-sm:text-base"
           >
-            Train with INSPECTRA and qualify as a Certified Real Estate
-            Practitioner of Nigeria: thirteen subjects, a supervised internship and
-            one scenario-based exam, all of it online. Come out with a credential
-            buyers recognize on your profile, on your listings, in every deal.
+            Qualify as a Certified Real Estate Practitioner of Nigeria. Thirteen
+            subjects, an internship and a final exam, all online. The credential
+            then sits on your profile and every listing you publish.
           </motion.p>
 
           <motion.div

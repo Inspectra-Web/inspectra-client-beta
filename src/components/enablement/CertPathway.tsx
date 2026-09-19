@@ -12,25 +12,25 @@ const STAGES = [
   {
     n: "01",
     title: "Enroll",
-    body: "Register online and pick the schedule you can actually keep: Full-time through the week, or Executive on weekends. Same certification either way, and your study materials are issued upfront.",
+    body: "Register online and pick your schedule: Full-time through the week, or Executive at weekends. Study materials are issued upfront.",
     meta: "Weekdays or weekends",
   },
   {
     n: "02",
     title: "Train",
-    body: "Thirteen subjects taught by practising professionals, from the legal framework and valuation through to project management, HSSE and the business of running your own practice.",
+    body: "Thirteen subjects taught by practising professionals, from the legal framework and valuation to running your own practice.",
     meta: "13 subjects",
   },
   {
     n: "03",
     title: "Practise",
-    body: "Weekly assessments track you as you go, then a one month internship puts the curriculum on real transactions before anyone calls you certified.",
+    body: "Weekly assessments track you as you go, then a one month internship puts the curriculum on real transactions.",
     meta: "Weekly, plus internship",
   },
   {
     n: "04",
     title: "Get certified",
-    body: "The final exam is built on real-life scenarios rather than recall. Pass it and your Certified status shows on your profile and every listing you publish.",
+    body: "A final exam built on real scenarios, not recall. Pass it and Certified shows on your profile and every listing.",
     meta: "Online exam",
     last: true,
   },
@@ -45,7 +45,7 @@ export function CertPathway() {
         <SectionHeading
           eyebrow="The pathway"
           title="From enrolled to certified"
-          intro="One level of certification, one honest route to it, and all of it online. Here's every stage between registering and carrying the credential."
+          intro="One level of certification, one route to it, all of it online."
         />
 
         <div className="mt-16 grid grid-cols-[1.25fr_0.75fr] items-stretch gap-14 max-xl:gap-10 max-lg:grid-cols-1 max-sm:mt-12">

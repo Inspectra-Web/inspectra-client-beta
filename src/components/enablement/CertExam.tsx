@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Reveal } from "@/components/ui/Reveal";
 import { Container } from "@/components/ui/Container";
 import { ASSESSMENT } from "@/data/certification";
@@ -16,31 +17,38 @@ export function CertExam() {
               Earned, never bought.
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-white/70">
-              Anyone can pay for a badge. INSPECTRA grades you every week, puts you
-              through a month of supervised practice, then sits you in front of an
-              exam written from real transactions. By the time you are certified,
-              you have proven you can do the work, not just describe it.
+              Anyone can pay for a badge. Here you are graded every week, put through
+              a month of supervised practice, then examined on real transactions.
             </p>
           </Reveal>
 
           <Reveal delay={0.1}>
             {/* One column, not a 2x2 grid: at half the container width a two-up tile
                 is narrower than its own heading, so "One month internship" wrapped
-                to three cramped lines. */}
-            <dl className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a1a25]">
+                to three cramped lines.
+                The rows share ONE grid rather than each being its own: a per-row
+                grid sizes its `auto` track to that row's own term, so every
+                description started at a different x. */}
+            <dl className="grid grid-cols-[auto_1fr] items-baseline overflow-hidden rounded-2xl border border-white/10 bg-[#0a1a25] max-sm:grid-cols-1">
               {ASSESSMENT.map((a, i) => (
-                <div
-                  key={a.title}
-                  className={cn(
-                    "grid grid-cols-[auto_1fr] items-baseline gap-x-5 gap-y-1.5 p-6 max-sm:grid-cols-1 max-sm:gap-y-2",
-                    i > 0 && "border-t border-white/10",
-                  )}
-                >
-                  <dt className="display whitespace-nowrap text-lg text-foil">{a.title}</dt>
-                  <dd className="min-w-0 text-[0.9rem] leading-relaxed text-white/60">
+                <Fragment key={a.title}>
+                  <dt
+                    className={cn(
+                      "display whitespace-nowrap py-6 pl-6 pr-5 text-lg text-foil max-sm:pb-1.5 max-sm:pr-6",
+                      i > 0 && "border-t border-white/10 max-sm:pt-6",
+                    )}
+                  >
+                    {a.title}
+                  </dt>
+                  <dd
+                    className={cn(
+                      "min-w-0 py-6 pr-6 text-[0.9rem] leading-relaxed text-white/60 max-sm:pl-6 max-sm:pt-0",
+                      i > 0 && "border-t border-white/10 max-sm:border-t-0",
+                    )}
+                  >
                     {a.body}
                   </dd>
-                </div>
+                </Fragment>
               ))}
             </dl>
           </Reveal>

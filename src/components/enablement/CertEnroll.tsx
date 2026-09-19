@@ -6,11 +6,11 @@ import { formatPriceFull } from "@/lib/format";
 
 const INCLUDED = [
   "All thirteen subjects, taught by practitioners",
-  "Study materials issued on registration",
+  "Study materials on registration",
   "Weekly assessments and a one month internship",
-  "The scenario-based certification exam",
-  "Certified badge on your profile and every listing",
-  "Workshops, webinars and seminars after you qualify",
+  "The certification exam",
+  "Certified badge on your profile and listings",
+  "Workshops and webinars after you qualify",
 ];
 
 export function CertEnroll() {
@@ -25,14 +25,12 @@ export function CertEnroll() {
               One certification. Two ways to earn it.
             </h2>
             <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-muted">
-              There is one level of certification, and the schedule you pick only
-              changes how long it takes. Full-time runs through the week; Executive
-              runs at weekends for practitioners who cannot leave a desk. Same
-              curriculum, same exam, same credential at the end.
+              Full-time runs through the week, Executive at weekends. Same curriculum,
+              same exam, same credential.
             </p>
             <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
-              Register early and {CERT_DISCOUNTS.early}% comes off your fee.
-              Organizations enrolling their team in bulk take {CERT_DISCOUNTS.bulk}% off.
+              Register early for {CERT_DISCOUNTS.early}% off, or {CERT_DISCOUNTS.bulk}%
+              for organizations enrolling a team.
             </p>
           </Reveal>
 

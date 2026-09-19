@@ -10,7 +10,7 @@ export function CertSyllabus() {
         <SectionHeading
           eyebrow="The syllabus"
           title="Thirteen subjects, built for this market"
-          intro="Not generic sales theory. It's the exact ground a Nigerian realtor has to hold to sell property buyers can trust, set by practitioners and reviewed against how the industry actually moves."
+          intro="Not generic sales theory. The ground a Nigerian realtor has to hold, set by practitioners."
         />
 
         <div className="mt-16 grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:mt-12 max-sm:grid-cols-1">

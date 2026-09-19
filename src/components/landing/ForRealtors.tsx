@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { BadgeCheck, Check, Tag } from "lucide-react";
+import { BadgeCheck, Check, Clock, Tag } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -21,7 +21,13 @@ export function ForRealtors() {
           <div className="grid grid-cols-2 items-stretch max-lg:grid-cols-1">
             {/* content */}
             <div className="flex flex-col justify-center p-12 max-lg:p-10 max-sm:p-7">
-              <span className="eyebrow">For realtors</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="eyebrow">For realtors</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-brand-ink">
+                  <Clock className="size-3" strokeWidth={2.5} aria-hidden />
+                  Coming soon
+                </span>
+              </div>
               <h2 className="display mt-4 text-[2.6rem] text-balance max-lg:text-4xl max-sm:text-3xl">
                 Get certified. Win the clients who used to walk away.
               </h2>

@@ -11,7 +11,7 @@ const REALTOR_IMAGE =
 export function VerifiedProof() {
   return (
     <figure className="max-w-sm overflow-hidden rounded-[1.4rem] border border-white/10 bg-[#0c1e2b] shadow-[0_40px_80px_-30px_rgba(0,0,0,0.7)]">
-      <div className="relative aspect-[16/10]">
+      <div className="relative aspect-16/10">
         <img
           src={HOME_IMAGE}
           alt="A verified INSPECTRA listing"

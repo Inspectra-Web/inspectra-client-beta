@@ -2,6 +2,7 @@ import { Hero } from "@/components/landing/Hero";
 import { Solutions } from "@/components/landing/Solutions";
 import { TrustLayers } from "@/components/landing/TrustLayers";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Partners } from "@/components/landing/Partners";
 // import { FeaturedListings } from "@/components/landing/FeaturedListings";
 // import { Testimonial } from "@/components/landing/Testimonial";
 // import { CertifiedRealtors } from "@/components/landing/CertifiedRealtors";
@@ -24,6 +25,7 @@ export function Landing() {
       {/* Certified realtors. Commented out until realtors are certified: nothing
           writes Profile.certified yet, so there is no one to show. */}
       {/* <CertifiedRealtors /> */}
+      <Partners />
       <ForRealtors />
       <FinalCTA />
     </>

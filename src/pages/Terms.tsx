@@ -55,7 +55,7 @@ const SECTIONS: LegalSection[] = [
     heading: "Roles on the platform",
     body: (
       <>
-        <p>INSPECTRA supports three roles, each with different responsibilities:</p>
+        <p>INSPECTRA supports two account types, each with different responsibilities:</p>
         <ul>
           <li>
             <strong>Seekers</strong> browse listings, save properties, and request
@@ -65,11 +65,11 @@ const SECTIONS: LegalSection[] = [
             <strong>Realtors</strong> must complete certification before listing, and are
             responsible for the accuracy and legality of what they publish.
           </li>
-          <li>
-            <strong>Administrators</strong> review submissions, manage verification status,
-            and moderate the platform.
-          </li>
         </ul>
+        <p>
+          INSPECTRA reviews submissions, sets verification status, and moderates the
+          platform.
+        </p>
       </>
     ),
   },

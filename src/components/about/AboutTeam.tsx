@@ -3,6 +3,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { initials } from "@/lib/format";
 import franklinOkoro from "@/assets/team/devfranklin.jpg";
+import ugoPeters from "@/assets/team/ugopeters.jpg";
 
 type Member = {
   name: string;
@@ -26,6 +27,7 @@ const TEAM: Member[] = [
     name: "Ugo Peters",
     role: "Chief Executive Officer",
     bio: "Sets company direction and owns the partnerships, investor relationships and market strategy behind INSPECTRA.",
+    photo: ugoPeters,
     linkedin: "https://www.linkedin.com/in/ugo-peters",
   },
   {
@@ -37,7 +39,7 @@ const TEAM: Member[] = [
   },
   {
     name: "Eze Uchechi",
-    role: "Administrator",
+    role: "Project Manager",
     bio: "Runs day-to-day administration and internal project coordination, keeping verification and realtor onboarding moving.",
   },
 ];

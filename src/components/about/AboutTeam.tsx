@@ -4,6 +4,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { initials } from "@/lib/format";
 import franklinOkoro from "@/assets/team/devfranklin.jpg";
 import ugoPeters from "@/assets/team/ugopeters.jpg";
+import uchechiEze from '@/assets/team/uchechi.jpeg'
 
 type Member = {
   name: string;
@@ -41,6 +42,8 @@ const TEAM: Member[] = [
     name: "Eze Uchechi",
     role: "Project Manager",
     bio: "Runs day-to-day administration and internal project coordination, keeping verification and realtor onboarding moving.",
+    photo: uchechiEze,
+    linkedin: "https://www.linkedin.com/in/eze-uchechi-hope-4b0554244"
   },
 ];
 

@@ -65,7 +65,7 @@ export function AboutTeam() {
               className="group overflow-hidden rounded-2xl border border-line bg-surface transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_16px_36px_-22px_rgba(10,30,45,0.2)]"
             >
               {/* 3:4 matches the source photo exactly, so nothing is cropped. */}
-              <div className="relative aspect-[3/4] overflow-hidden">
+              <div className="relative aspect-3/4 overflow-hidden">
                 {m.photo ? (
                   <img
                     src={m.photo}

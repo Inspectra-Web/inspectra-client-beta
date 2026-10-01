@@ -1,43 +1,73 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Camera, CameraOff, Loader2, RotateCcw, ScanFace, X } from "lucide-react";
+import {
+  Camera,
+  CameraOff,
+  Glasses,
+  Loader2,
+  MonitorX,
+  RotateCcw,
+  ScanFace,
+  Sun,
+  X,
+} from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
 /**
- * Takes the selfie the server sends on for face matching. The camera has to be
- * ours because the server calls the provider's REST endpoint with an image we
- * supply, rather than handing the whole capture to a hosted widget.
+ * The liveness check. The server sends the selfie to the provider's liveness and face-match
+ * endpoints, so the camera has to be ours rather than a hosted widget's.
  */
 
-type Stage = "camera" | "review" | "denied" | "unavailable";
+type Stage = "intro" | "camera" | "review" | "denied" | "unavailable";
 
-const FRAME = 224;
+const FRAME = 232;
+
+const STEPS = [
+  { Icon: Sun, title: "Face the light", text: "Light in front of you, not behind." },
+  { Icon: Glasses, title: "Uncover your face", text: "No glasses, cap or face mask." },
+  { Icon: ScanFace, title: "Fill the oval", text: "Look straight at the camera, eyes open." },
+  { Icon: MonitorX, title: "Be there in person", text: "A photo or a screen will fail." },
+];
+
+const TITLES: Record<Stage, string> = {
+  intro: "Liveness check",
+  camera: "Fit your face in the oval",
+  review: "Check your photo",
+  denied: "Liveness check",
+  unavailable: "Liveness check",
+};
 
 export function IdentityCheckDialog({
   open,
   pending,
+  attemptsLeft,
   onClose,
   onCapture,
 }: {
   open: boolean;
   pending: boolean;
+  attemptsLeft: number;
   onClose: () => void;
   onCapture: (selfie: File) => void;
 }) {
   return (
     <AnimatePresence>
-      {open && <Run pending={pending} onClose={onClose} onCapture={onCapture} />}
+      {open && (
+        <Run pending={pending} attemptsLeft={attemptsLeft} onClose={onClose} onCapture={onCapture} />
+      )}
     </AnimatePresence>
   );
 }
 
 function Run({
   pending,
+  attemptsLeft,
   onClose,
   onCapture,
 }: {
   pending: boolean;
+  attemptsLeft: number;
   onClose: () => void;
   onCapture: (selfie: File) => void;
 }) {
@@ -45,7 +75,7 @@ function Run({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [stage, setStage] = useState<Stage>("camera");
+  const [stage, setStage] = useState<Stage>("intro");
   const [shot, setShot] = useState<{ url: string; file: File } | null>(null);
 
   const stopCamera = useCallback(() => {
@@ -124,6 +154,12 @@ function Run({
     }, "image/jpeg", 0.9);
   }
 
+  function retake() {
+    if (shot) URL.revokeObjectURL(shot.url);
+    setShot(null);
+    setStage("camera");
+  }
+
   const blocked = stage === "denied" || stage === "unavailable";
 
   return (
@@ -134,7 +170,7 @@ function Run({
       exit={{ opacity: 0 }}
       role="dialog"
       aria-modal="true"
-      aria-label="Take your selfie"
+      aria-label="Liveness check"
     >
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 12, scale: 0.98 }}
@@ -147,7 +183,12 @@ function Run({
           <span className="grid size-9 place-items-center rounded-xl bg-brand/10 text-brand-ink">
             <ScanFace className="size-5" aria-hidden />
           </span>
-          <p className="min-w-0 flex-1 font-semibold text-ink">Take your selfie</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-ink">{pending ? "Checking" : TITLES[stage]}</p>
+            <p className="text-xs text-faint">
+              {attemptsLeft === 1 ? "Last attempt" : `${attemptsLeft} attempts left`}
+            </p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -160,7 +201,29 @@ function Run({
         </div>
 
         <div className="px-5 py-5">
-          {blocked ? (
+          {stage === "intro" && (
+            <>
+              <p className="text-sm leading-relaxed text-muted">
+                We take one photo to confirm a real person is present and that it is the face
+                on your NIN. Before you start:
+              </p>
+              <ul className="mt-4 space-y-3">
+                {STEPS.map(({ Icon, title, text }) => (
+                  <li key={title} className="flex items-center gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-brand-ink">
+                      <Icon className="size-4.5" aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink">{title}</p>
+                      <p className="text-xs text-muted">{text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {blocked && (
             <div className="flex flex-col items-center text-center">
               <span className="grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint">
                 <CameraOff className="size-7" aria-hidden />
@@ -174,10 +237,12 @@ function Run({
                   : "Connect a camera, or try again on your phone."}
               </p>
             </div>
-          ) : (
+          )}
+
+          {(stage === "camera" || stage === "review") && (
             <>
               <div
-                className="relative mx-auto overflow-hidden rounded-full bg-surface-2 ring-1 ring-line"
+                className="relative mx-auto overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-line"
                 style={{ width: FRAME, height: FRAME }}
               >
                 {stage === "camera" ? (
@@ -189,8 +254,19 @@ function Run({
                     className="size-full -scale-x-100 object-cover"
                   />
                 ) : (
-                  shot && <img src={shot.url} alt="Your selfie" className="size-full -scale-x-100 object-cover" />
+                  shot && (
+                    <img src={shot.url} alt="Your selfie" className="size-full -scale-x-100 object-cover" />
+                  )
                 )}
+
+                {/* The oval guide: everything outside it is dimmed. */}
+                <div
+                  aria-hidden
+                  className={cn(
+                    "pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 shadow-[0_0_0_999px_rgba(10,20,30,0.45)]",
+                    stage === "camera" ? "border-dashed border-white/85" : "border-brand",
+                  )}
+                />
 
                 {pending && (
                   <div className="absolute inset-0 grid place-items-center bg-ink/40">
@@ -201,20 +277,29 @@ function Run({
 
               <p className="mt-4 text-center text-sm leading-relaxed text-muted" aria-live="polite">
                 {pending
-                  ? "Checking your ID and your face."
+                  ? "Matching your face to your NIN, then checking you are live."
                   : stage === "camera"
-                    ? "Centre your face, look straight ahead, and keep the light in front of you."
-                    : "Clear and sharp? Use it, or take another."}
+                    ? "Hold still, face the light and look straight at the camera."
+                    : attemptsLeft === 1
+                      ? "Face sharp and inside the oval? This is your last attempt, so retake if in doubt."
+                      : "Face sharp and inside the oval? Sending it uses one attempt."}
               </p>
             </>
           )}
         </div>
 
         <div className="border-t border-line bg-surface-2/40 px-5 py-4">
+          {stage === "intro" && (
+            <Button variant="brand" onClick={() => setStage("camera")} className="w-full">
+              <Camera className="size-4" aria-hidden />
+              Start liveness check
+            </Button>
+          )}
+
           {stage === "camera" && (
             <Button variant="brand" onClick={capture} className="w-full">
               <Camera className="size-4" aria-hidden />
-              Take selfie
+              Take photo
             </Button>
           )}
 
@@ -223,11 +308,7 @@ function Run({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => {
-                  URL.revokeObjectURL(shot.url);
-                  setShot(null);
-                  setStage("camera");
-                }}
+                onClick={retake}
                 className={cn(buttonClasses("outline", "md"), "flex-1 disabled:opacity-60")}
               >
                 <RotateCcw className="size-4" aria-hidden />
@@ -239,7 +320,7 @@ function Run({
                 onClick={() => onCapture(shot.file)}
                 className="flex-1 disabled:opacity-60"
               >
-                {pending ? "Checking…" : "Use this photo"}
+                {pending ? "Checking…" : "Submit"}
               </Button>
             </div>
           )}

@@ -2,28 +2,26 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
 
-export type IdDocument = "nin" | "bvn";
-
-export const ID_DOCUMENTS: { key: IdDocument; label: string; full: string }[] = [
-  { key: "nin", label: "NIN", full: "National Identity Number" },
-  { key: "bvn", label: "BVN", full: "Bank Verification Number" },
-];
-
 // Mirrors the length checked in server/src/validators/identity.validator.ts.
 export const ID_LENGTH = 11;
 
-export const documentLabel = (doc: IdDocument) =>
-  ID_DOCUMENTS.find((d) => d.key === doc)?.full ?? "";
-
 export interface Identity {
   verified: boolean;
-  document?: IdDocument;
-  /** The name on the record we matched against. */
+  /** Step one passed: liveness, face match and names. The BVN is still to come. */
+  ninVerified: boolean;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  /** The name matched against the NIN, then the BVN. */
   legalName: string;
-  last4: string;
+  ninLast4: string;
+  bvnLast4: string;
   /** The face that matched the ID. Never the profile avatar. */
   verifiedPhoto: string;
   verifiedOn?: string;
+  /** One budget shared by both steps. */
+  attemptsLeft: number;
+  maxAttempts: number;
 }
 
 interface IdentityResponse {
@@ -34,12 +32,21 @@ interface IdentityResponse {
 
 export const IDENTITY_KEY = ["identity"];
 
-export function idError(value: string, doc: IdDocument): string | null {
+/** "NIN ending 1234 and BVN ending 5678". Checks from before both were required carry one. */
+export const idEndings = (identity: Pick<Identity, "ninLast4" | "bvnLast4">): string =>
+  [
+    identity.ninLast4 && `NIN ending ${identity.ninLast4}`,
+    identity.bvnLast4 && `BVN ending ${identity.bvnLast4}`,
+  ]
+    .filter(Boolean)
+    .join(" and ");
+
+export function idError(value: string, label: "NIN" | "BVN"): string | null {
   const digits = value.trim();
 
-  if (!digits) return `Enter your ${doc.toUpperCase()}`;
+  if (!digits) return `Enter your ${label}`;
   if (!/^\d+$/.test(digits)) return "Numbers only";
-  if (digits.length !== ID_LENGTH) return `A ${doc.toUpperCase()} is ${ID_LENGTH} digits`;
+  if (digits.length !== ID_LENGTH) return `A ${label} is ${ID_LENGTH} digits`;
 
   return null;
 }
@@ -54,19 +61,33 @@ export function useIdentity() {
   });
 }
 
-export function useVerifyIdentity() {
+// A failed step spends an attempt, so either mutation re-reads the count on error.
+export function useVerifyNin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { document: IdDocument; number: string; selfie: File }) => {
+    mutationFn: async (input: { nin: string; selfie: File }) => {
       const body = new FormData();
-      body.append("document", input.document);
-      body.append("number", input.number);
+      body.append("nin", input.nin);
       body.append("selfie", input.selfie);
 
-      const res = await api.post<IdentityResponse>("/identity/me", body);
+      const res = await api.post<IdentityResponse>("/identity/me/nin", body);
       return res.data.data.identity;
     },
     onSuccess: (identity) => queryClient.setQueryData(IDENTITY_KEY, identity),
+    onError: () => queryClient.invalidateQueries({ queryKey: IDENTITY_KEY }),
+  });
+}
+
+export function useVerifyBvn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (bvn: string) => {
+      const res = await api.post<IdentityResponse>("/identity/me/bvn", { bvn });
+      return res.data.data.identity;
+    },
+    onSuccess: (identity) => queryClient.setQueryData(IDENTITY_KEY, identity),
+    onError: () => queryClient.invalidateQueries({ queryKey: IDENTITY_KEY }),
   });
 }

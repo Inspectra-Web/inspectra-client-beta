@@ -37,7 +37,7 @@ import {
   useUpdateUserStatus,
   type UserDetail,
 } from "@/lib/adminUsers";
-import { documentLabel } from "@/lib/identity";
+import { idEndings } from "@/lib/identity";
 import { companyTypeLabel, type Agency, type AddressState } from "@/lib/agency";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -272,7 +272,7 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
               </p>
               <p className="text-xs text-muted">
                 {identity?.verified
-                  ? `${documentLabel(identity.document!)} ending ${identity.last4}, face matched against the record.`
+                  ? `${idEndings(identity)}, face matched against the record.`
                   : "This realtor has not completed a NIN or BVN check."}
               </p>
             </div>

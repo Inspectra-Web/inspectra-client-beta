@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { Loader2, Check, ImagePlus } from "lucide-react";
+import { Loader2, Check, ImagePlus, Lock } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { AuthField } from "@/components/auth/AuthField";
 import {
@@ -15,6 +15,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { realtorSettingsSchema, type RealtorSettingsValues } from "@/lib/accountSchema";
 import { apiMessage } from "@/lib/api";
 import { useAuthUser } from "@/lib/auth";
+import { useIdentity } from "@/lib/identity";
 import {
   AVATAR_MAX_MB,
   avatarError,
@@ -41,6 +42,7 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
   const user = useAuthUser();
   const { data: profile, isPending } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { data: identity } = useIdentity();
 
   const {
     register, handleSubmit, watch, setValue,
@@ -77,6 +79,9 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
       },
     },
   });
+
+  const nameLocked = identity?.ninVerified === true;
+  const lockedField = cn(nameLocked && "cursor-not-allowed bg-surface-2/60 text-muted");
 
   const desc = watch("bio") ?? "";
   const [openSelect, setOpenSelect] = useState<string | null>(null);
@@ -116,10 +121,18 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
       {/* self summary */}
       <Panel title="Self summary">
         <div className="space-y-5">
-          <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
-            <AuthField label="First name" error={errors.firstName?.message} {...register("firstName")} />
-            <AuthField label="Last name" error={errors.lastName?.message} {...register("lastName")} />
-            <AuthField label="Middle name" {...register("middleName")} />
+          <div>
+            <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
+              <AuthField label="First name" readOnly={nameLocked} className={lockedField} error={errors.firstName?.message} {...register("firstName")} />
+              <AuthField label="Last name" readOnly={nameLocked} className={lockedField} error={errors.lastName?.message} {...register("lastName")} />
+              <AuthField label="Middle name" readOnly={nameLocked} className={lockedField} {...register("middleName")} />
+            </div>
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
+              {nameLocked && <Lock className="size-3 shrink-0" aria-hidden />}
+              {nameLocked
+                ? "Locked to your verified NIN."
+                : "Must match your NIN exactly, including your middle name, before you verify your identity."}
+            </p>
           </div>
 
           <div>

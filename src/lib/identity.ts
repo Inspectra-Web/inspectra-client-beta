@@ -22,12 +22,14 @@ export interface Identity {
   /** One budget shared by both steps. */
   attemptsLeft: number;
   maxAttempts: number;
+  /** What the profile still lacks. Verification cannot start until this is empty. */
+  profileMissing: string[];
 }
 
 interface IdentityResponse {
   status: string;
   message?: string;
-  data: { identity: Identity };
+  data: { identity: Omit<Identity, "profileMissing">; profileMissing?: string[] };
 }
 
 export const IDENTITY_KEY = ["identity"];
@@ -56,7 +58,8 @@ export function useIdentity() {
     queryKey: IDENTITY_KEY,
     queryFn: async () => {
       const res = await api.get<IdentityResponse>("/identity/me");
-      return res.data.data.identity;
+      const { identity, profileMissing = [] } = res.data.data;
+      return { ...identity, profileMissing };
     },
   });
 }
@@ -74,7 +77,11 @@ export function useVerifyNin() {
       const res = await api.post<IdentityResponse>("/identity/me/nin", body);
       return res.data.data.identity;
     },
-    onSuccess: (identity) => queryClient.setQueryData(IDENTITY_KEY, identity),
+    onSuccess: (identity) =>
+      queryClient.setQueryData<Identity>(IDENTITY_KEY, (prev) => ({
+        ...identity,
+        profileMissing: prev?.profileMissing ?? [],
+      })),
     onError: () => queryClient.invalidateQueries({ queryKey: IDENTITY_KEY }),
   });
 }
@@ -87,7 +94,11 @@ export function useVerifyBvn() {
       const res = await api.post<IdentityResponse>("/identity/me/bvn", { bvn });
       return res.data.data.identity;
     },
-    onSuccess: (identity) => queryClient.setQueryData(IDENTITY_KEY, identity),
+    onSuccess: (identity) =>
+      queryClient.setQueryData<Identity>(IDENTITY_KEY, (prev) => ({
+        ...identity,
+        profileMissing: prev?.profileMissing ?? [],
+      })),
     onError: () => queryClient.invalidateQueries({ queryKey: IDENTITY_KEY }),
   });
 }

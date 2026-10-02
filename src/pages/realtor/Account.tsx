@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { Building2, Loader2, ScanFace, ShieldCheck, UserRound, Settings2 } from "lucide-react";
+import { Loader2, ScanFace, ShieldCheck, UserRound, Settings2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { PasswordField } from "@/components/auth/AuthField";
@@ -11,7 +11,6 @@ import { buttonClasses } from "@/components/ui/Button";
 import { AccountProfile } from "@/components/realtor/AccountProfile";
 import { AccountSettings } from "@/components/realtor/AccountSettings";
 import { IdentityVerification } from "@/components/realtor/IdentityVerification";
-import { AgencyVerification } from "@/components/realtor/AgencyVerification";
 import { securitySchema, type SecurityValues } from "@/lib/accountSchema";
 import { apiMessage } from "@/lib/api";
 import { useUpdatePassword } from "@/lib/auth";
@@ -24,7 +23,6 @@ const TABS = [
   { id: "profile", label: "Profile", Icon: UserRound },
   { id: "settings", label: "Settings", Icon: Settings2 },
   { id: "identity", label: "Identity", Icon: ScanFace },
-  { id: "agency", label: "Agency", Icon: Building2 },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -46,7 +44,7 @@ export function RealtorAccount() {
 
       {/* tab switch */}
       <Reveal y={12}>
-        {/* Scrolls rather than wraps when four pills do not fit: a wrapped second row
+        {/* Scrolls rather than wraps when the pills do not fit: a wrapped second row
             reads as a separate control. inline-flex keeps the pill hugging its tabs
             instead of stretching, and no-scrollbar keeps the bar from growing a rail. */}
         <div
@@ -78,7 +76,7 @@ export function RealtorAccount() {
       {tab === "profile" && (
         <AccountProfile
           onEdit={() => setTab("settings")}
-          onVerify={(next) => setTab(next)}
+          onVerify={() => setTab("identity")}
         />
       )}
 
@@ -97,11 +95,6 @@ export function RealtorAccount() {
         </Reveal>
       )}
 
-      {tab === "agency" && (
-        <Reveal y={16}>
-          <AgencyVerification />
-        </Reveal>
-      )}
     </div>
   );
 }

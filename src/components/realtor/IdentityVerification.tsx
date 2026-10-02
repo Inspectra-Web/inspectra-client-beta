@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { BadgeCheck, Check, Link2, Lock, RotateCcw, ScanFace, ShieldAlert, UserCheck } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { IdentityCheckDialog } from "@/components/realtor/IdentityCheckDialog";
 import { apiMessage } from "@/lib/api";
 import {
@@ -125,6 +125,34 @@ export function IdentityVerification() {
               will review your identity with you.
             </p>
             {failure && <p className="mt-2 text-[13px] text-rose-500">{failure}</p>}
+          </div>
+        </div>
+      </Panel>
+    );
+
+  // The server refuses both steps until the profile is complete, so the form waits too.
+  if (identity.profileMissing.length)
+    return (
+      <Panel title="Identity">
+        <div className="flex items-start gap-4 max-sm:flex-col">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-2 text-faint">
+            <UserCheck className="size-6" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-ink">Complete your profile first</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              Identity verification opens once your profile is complete. Still to add:
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
+              {identity.profileMissing.map((item) => (
+                <li key={item} className={chip}>
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </li>
+              ))}
+            </ul>
+            <Link to="?tab=settings" className={cn(buttonClasses("brand", "md"), "mt-4 max-sm:w-full")}>
+              Complete your profile
+            </Link>
           </div>
         </div>
       </Panel>

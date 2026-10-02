@@ -22,12 +22,8 @@ export interface PublicRealtor {
   specialization: string[];
   /** Passed the enablement programme. */
   certified: boolean;
-  /** NIN or BVN face-matched against the person. */
+  /** NIN with a live face match, then the BVN, both under the same name. */
   identityVerified: boolean;
-  /** The agency found on the CAC register, with this realtor named on it. */
-  agencyVerified: boolean;
-  /** A recent utility bill read for the trading address. */
-  addressVerified: boolean;
   createdAt: string;
 }
 

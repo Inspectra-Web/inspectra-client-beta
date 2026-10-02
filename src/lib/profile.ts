@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
 import { ME_KEY, type AuthUser } from "./auth";
+import { IDENTITY_KEY } from "./identity";
 
 export type Gender = "Female" | "Male" | "Other" | "Prefer not to say";
 export type AvailabilityStatus = "Available" | "Busy" | "Away";
@@ -129,6 +130,8 @@ export function useUpdateProfile() {
     onSuccess: (data) => {
       queryClient.setQueryData(ME_KEY, data.user);
       queryClient.setQueryData(PROFILE_KEY, data);
+      // Completing the profile is what opens identity verification.
+      void queryClient.invalidateQueries({ queryKey: IDENTITY_KEY });
     },
   });
 }

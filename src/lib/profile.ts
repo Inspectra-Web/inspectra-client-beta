@@ -2,6 +2,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
 import { ME_KEY, type AuthUser } from "./auth";
+
+/** Every realtor carries one title; there is no job title field to edit. */
+export const REALTOR_TITLE = "Realtor";
+
+// Mirrors REGIONS in server/src/models/profile.model.ts.
+export const REGIONS: { value: string; label: string }[] = [
+  { value: "Nationwide", label: "Anywhere in Nigeria" },
+  { value: "North Central", label: "North Central" },
+  { value: "North East", label: "North East" },
+  { value: "North West", label: "North West" },
+  { value: "South East", label: "South East" },
+  { value: "South South", label: "South South" },
+  { value: "South West", label: "South West" },
+];
+
+/** A zone shown by its label. A free-text region saved before the zones were fixed shows as is. */
+export const regionLabel = (region: string): string =>
+  REGIONS.find((r) => r.value === region)?.label ?? region;
 import { IDENTITY_KEY } from "./identity";
 
 export type Gender = "Female" | "Male" | "Other" | "Prefer not to say";
@@ -15,17 +33,16 @@ export interface Profile {
   middleName: string;
   bio: string;
   gender?: Gender;
+  // ISO from the server; sent back as "YYYY-MM-DD".
+  dateOfBirth?: string;
   address: string;
   city: string;
   state: string;
   country: string;
   whatsapp: string;
-  language: string;
-  jobTitle: string;
   agencyName: string;
   agencyAddress: string;
   region: string;
-  experience: string;
   specialization: string[];
   availabilityStatus: AvailabilityStatus;
   contactMeans: ContactMeans;

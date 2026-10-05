@@ -25,6 +25,7 @@ import { useMe } from "@/lib/auth";
 import { usePublicRealtor, realtorTagline } from "@/lib/realtors";
 import { usePublicListings, toCardListing, EMPTY_QUERY } from "@/lib/marketplace";
 import { displayName, formatDate, initials, whatsappDigits } from "@/lib/format";
+import { regionLabel } from "@/lib/profile";
 import { cn } from "@/lib/cn";
 
 export function RealtorDetail() {
@@ -89,7 +90,7 @@ export function RealtorDetail() {
 
               <dl className="mt-5 space-y-3 rounded-2xl border border-line p-5 text-sm">
                 {realtor.city && <Fact icon={MapPin} label="Based in" value={realtor.city} />}
-                {realtor.region && <Fact icon={Map} label="Covers" value={realtor.region} />}
+                {realtor.region && <Fact icon={Map} label="Covers" value={regionLabel(realtor.region)} />}
                 {realtor.state && <Fact icon={MapPin} label="State" value={realtor.state} />}
                 {realtor.availabilityStatus && (
                   <Fact icon={Clock} label="Availability" value={realtor.availabilityStatus} />

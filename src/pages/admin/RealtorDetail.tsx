@@ -5,13 +5,11 @@ import {
   ArrowLeft,
   Ban,
   BadgeCheck,
-  Briefcase,
   Building2,
   CalendarCheck,
   CircleCheck,
   CircleDot,
   ExternalLink,
-  Languages,
   Layers,
   Loader2,
   Mail,
@@ -36,6 +34,7 @@ import {
 } from "@/lib/adminUsers";
 import { idEndings } from "@/lib/identity";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
+import { REALTOR_TITLE, regionLabel } from "@/lib/profile";
 import { cn } from "@/lib/cn";
 
 export function AdminRealtorDetail() {
@@ -135,8 +134,7 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
                     )}
                   </div>
                   <p className="mt-1 text-sm text-muted">
-                    {[profile?.jobTitle, profile?.agencyName].filter(Boolean).join(" · ") ||
-                      "No agency on file"}
+                    {[REALTOR_TITLE, profile?.agencyName].filter(Boolean).join(" · ")}
                   </p>
                 </div>
               </div>
@@ -201,11 +199,10 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
         <Panel title="Professional details">
           {profile ? (
             <dl>
-              <Detail icon={Briefcase} label="Experience" value={profile.experience} />
               <Chips icon={Layers} label="Specialization" values={profile.specialization} />
               <Detail icon={Building2} label="Agency" value={profile.agencyName} />
               <Detail icon={MapPinned} label="Agency address" value={profile.agencyAddress} />
-              <Detail icon={MapPin} label="Region" value={profile.region} />
+              <Detail icon={MapPin} label="Region" value={regionLabel(profile.region)} />
             </dl>
           ) : (
             <EmptyProfile />
@@ -217,7 +214,6 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
       <Reveal y={16}>
         <Panel title="Additional details">
           <dl>
-            <Detail icon={Languages} label="Language" value={profile?.language ?? ""} />
             <Detail icon={CircleDot} label="Availability" value={profile?.availabilityStatus ?? ""} />
             <Detail icon={MessageSquare} label="Contact means" value={profile?.contactMeans ?? ""} />
             <Detail icon={User} label="Gender" value={profile?.gender ?? ""} />
@@ -268,7 +264,7 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
               </p>
               <p className="text-xs text-muted">
                 {identity?.verified
-                  ? `${idEndings(identity)}, face matched against the record.`
+                  ? `${idEndings(identity)}, with a live selfie.`
                   : "This realtor has not completed a NIN or BVN check."}
               </p>
             </div>

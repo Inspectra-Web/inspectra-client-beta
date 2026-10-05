@@ -22,7 +22,7 @@ export interface AdminRealtor {
 
 /** Counted before the status, certified and identity filters, so choosing a segment
  *  cannot zero the others. The two trust axes are separate on purpose: `certified` is
- *  the paid exam, `identityVerified` is the NIN or BVN face match. */
+ *  the paid exam, `identityVerified` is the NIN and BVN check. */
 export interface RealtorCounts {
   all: number;
   certified: number;

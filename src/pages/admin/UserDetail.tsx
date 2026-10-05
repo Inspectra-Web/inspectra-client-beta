@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   BadgeCheck,
   Ban,
-  Briefcase,
   Building2,
   CalendarCheck,
   CircleCheck,
@@ -28,7 +27,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { apiMessage } from "@/lib/api";
 import type { AuthRole, AuthStatus } from "@/lib/auth";
 import { useAdminUser, useUpdateUserStatus, type UserDetail } from "@/lib/adminUsers";
-import type { Profile } from "@/lib/profile";
+import { regionLabel, type Profile } from "@/lib/profile";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -203,9 +202,7 @@ function RealtorSection({ profile }: { profile: Profile | null }) {
             />
             <Detail icon={Building2} label="Agency" value={profile.agencyName} />
             <Detail icon={MapPinned} label="Agency address" value={profile.agencyAddress} />
-            <Detail icon={UserRound} label="Job title" value={profile.jobTitle} />
-            <Detail icon={Briefcase} label="Experience" value={profile.experience} />
-            <Detail icon={MapPin} label="Region" value={profile.region} />
+            <Detail icon={MapPin} label="Region" value={regionLabel(profile.region)} />
             <Chips icon={Layers} label="Specialization" values={profile.specialization} />
           </dl>
         ) : (

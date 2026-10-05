@@ -26,12 +26,10 @@ export interface RealtorProfile {
   certified: boolean;
   memberSince: string;
   selfDescription: string;
-  experience: string;
   specialization: string[];
   agencyAddress: string;
   region: string;
   propertiesListed: number;
-  languages: string;
   availabilityStatus: string;
   contactMeans: string;
   gender: string;
@@ -60,12 +58,10 @@ export const realtor: RealtorProfile = {
   memberSince: "January 2025",
   selfDescription:
     "Lagos-based realtor specializing in verified waterfront and serviced homes across Ikoyi and Lekki. I put trust first: every listing I bring is document-checked before it reaches you, so you can move with confidence.",
-  experience: "8 years in luxury real estate",
   specialization: ["Waterfront homes", "Serviced apartments"],
   agencyAddress: "7 Admiralty Crescent, Lekki Phase 1, Lagos",
   region: "Lagos Island & Mainland",
   propertiesListed: 6,
-  languages: "English, Yoruba",
   availabilityStatus: "Available",
   contactMeans: "Phone & WhatsApp",
   gender: "Female",

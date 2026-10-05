@@ -1,15 +1,15 @@
 import type { ComponentType } from "react";
 import { toast } from "react-toastify";
 import {
-  MapPin, Phone, Mail, Pencil, Share2, BadgeCheck, ShieldCheck, Briefcase,
-  Building2, Layers, MapPinned, Languages, CircleDot, MessageSquare, User, ExternalLink,
+  MapPin, Phone, Mail, Pencil, Share2, BadgeCheck, ShieldCheck,
+  Building2, Layers, MapPinned, CircleDot, MessageSquare, User, ExternalLink,
 } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { buttonClasses } from "@/components/ui/Button";
 import { useAuthUser } from "@/lib/auth";
-import { useProfile } from "@/lib/profile";
+import { REALTOR_TITLE, regionLabel, useProfile } from "@/lib/profile";
 import { useIdentity } from "@/lib/identity";
 import { displayName, formatPhone } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -86,8 +86,7 @@ export function AccountProfile({
                     )}
                   </div>
                   <p className="mt-1 text-sm text-muted">
-                    {[profile.jobTitle, profile.agencyName].filter(Boolean).join(" · ") ||
-                      "Add your job title and agency"}
+                    {[REALTOR_TITLE, profile.agencyName].filter(Boolean).join(" · ")}
                   </p>
                 </div>
               </div>
@@ -164,7 +163,6 @@ export function AccountProfile({
         <Reveal y={16}>
           <Panel title="Professional details">
             <dl>
-              <Detail icon={Briefcase} label="Experience" value={profile.experience} />
               <div className="flex items-start justify-between gap-4 border-b border-line/70 py-2.5">
                 <dt className="flex items-center gap-2.5 text-sm text-muted">
                   <Layers className="size-4 shrink-0 text-faint" aria-hidden />
@@ -182,7 +180,7 @@ export function AccountProfile({
               </div>
               <Detail icon={Building2} label="Agency" value={profile.agencyName} />
               <Detail icon={MapPinned} label="Agency address" value={profile.agencyAddress} />
-              <Detail icon={MapPin} label="Region" value={profile.region} />
+              <Detail icon={MapPin} label="Region" value={regionLabel(profile.region)} />
             </dl>
           </Panel>
         </Reveal>
@@ -190,7 +188,6 @@ export function AccountProfile({
         <Reveal y={16}>
           <Panel title="Additional details">
             <dl>
-              <Detail icon={Languages} label="Languages spoken" value={profile.language} />
               <Detail icon={CircleDot} label="Availability" value={profile.availabilityStatus} />
               <Detail icon={MessageSquare} label="Contact means" value={profile.contactMeans} />
               <Detail icon={User} label="Gender" value={profile.gender ?? ""} />

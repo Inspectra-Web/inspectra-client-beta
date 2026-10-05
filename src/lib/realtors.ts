@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { api } from "./api";
+import { REALTOR_TITLE } from "./profile";
 
 /**
  * A realtor as the public site sees them. No email and no personal address, and no
@@ -15,14 +16,12 @@ export interface PublicRealtor {
   city: string;
   state: string;
   agencyName: string;
-  jobTitle: string;
-  experience: string;
   region: string;
   bio: string;
   specialization: string[];
   /** Passed the enablement programme. */
   certified: boolean;
-  /** NIN with a live face match, then the BVN, both under the same name. */
+  /** NIN with a liveness check, then the BVN, both under the same name and date of birth. */
   identityVerified: boolean;
   createdAt: string;
 }
@@ -72,10 +71,9 @@ export function usePublicRealtors(query: PublicRealtorQuery) {
 
 /** The line under the name on a card: what they do, and where. */
 export function realtorTagline(realtor: PublicRealtor): string {
-  const role = realtor.jobTitle || "Realtor";
-  const patch = realtor.region || realtor.city;
+  const patch = realtor.region === "Nationwide" ? "Nigeria" : realtor.region || realtor.city;
 
-  return patch ? `${role} across ${patch}` : role;
+  return patch ? `${REALTOR_TITLE} across ${patch}` : REALTOR_TITLE;
 }
 
 /** One realtor's public profile: the directory row plus what only the page needs. */

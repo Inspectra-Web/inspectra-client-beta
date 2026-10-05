@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { Loader2, Check, ImagePlus, Lock } from "lucide-react";
+import dayjs from "dayjs";
+import { Loader2, Check, ImagePlus, Lock, CalendarDays } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { AuthField } from "@/components/auth/AuthField";
+import { Calendar } from "@/components/ui/Calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/Select";
@@ -19,13 +22,14 @@ import { useIdentity } from "@/lib/identity";
 import {
   AVATAR_MAX_MB,
   avatarError,
+  REGIONS,
   useProfile,
   useRemoveAvatar,
   useUpdateProfile,
   useUploadAvatar,
   type ProfileUpdate,
 } from "@/lib/profile";
-import { displayName } from "@/lib/format";
+import { displayName, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const GENDERS = ["Female", "Male", "Other", "Prefer not to say"];
@@ -61,13 +65,13 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
       country: profile?.country ?? "",
       phone: user.phone ?? "",
       whatsapp: profile?.whatsapp ?? "",
-      language: profile?.language ?? "",
       gender: profile?.gender ?? "",
-      jobTitle: profile?.jobTitle ?? "",
-      experience: profile?.experience ?? "",
+      dateOfBirth: profile?.dateOfBirth?.slice(0, 10) ?? "",
       specialization: profile?.specialization ?? [],
       agencyName: profile?.agencyName ?? "",
-      region: profile?.region ?? "",
+      // A free-text region from before the zones were fixed reads as unset, so saving the
+      // form does not send back a value the server now refuses.
+      region: REGIONS.some((r) => r.value === profile?.region) ? profile!.region : "",
       agencyAddress: profile?.agencyAddress ?? "",
       availabilityStatus: profile?.availabilityStatus ?? "Available",
       contactMeans: profile?.contactMeans ?? "Email",
@@ -82,6 +86,8 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
 
   const nameLocked = identity?.ninVerified === true;
   const lockedField = cn(nameLocked && "cursor-not-allowed bg-surface-2/60 text-muted");
+  // A NIN verified before the date was asked for leaves it open once, as the server does.
+  const dobLocked = nameLocked && !!profile?.dateOfBirth;
 
   const desc = watch("bio") ?? "";
   const [openSelect, setOpenSelect] = useState<string | null>(null);
@@ -92,10 +98,14 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
 
   async function onSubmit(input: RealtorSettingsValues) {
     // The Selects are bound to fixed option lists, so the widened strings are
-    // safe to narrow here. gender has no default on the server, so an
-    // unanswered one is omitted rather than sent as "" which fails the enum.
-    const { gender, ...rest } = input;
-    const payload = (gender ? input : rest) as ProfileUpdate;
+    // safe to narrow here. gender and dateOfBirth have no default on the server,
+    // so an unanswered one is omitted rather than sent as "" which fails validation.
+    const { gender, dateOfBirth, ...rest } = input;
+    const payload = {
+      ...rest,
+      ...(gender && { gender }),
+      ...(dateOfBirth && { dateOfBirth }),
+    } as ProfileUpdate;
 
     try {
       await updateProfile.mutateAsync(payload);
@@ -171,15 +181,21 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
             <AuthField label="State / Province" {...register("state")} />
             <AuthField label="Country" {...register("country")} />
           </div>
-          <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <AuthField label="Telephone" type="tel" error={errors.phone?.message} {...register("phone")} />
             <AuthField label="WhatsApp" type="tel" error={errors.whatsapp?.message} {...register("whatsapp")} />
-            <AuthField label="Language" {...register("language")} />
           </div>
           <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <LabeledSelect label="Gender" value={watch("gender") ?? ""} placeholder="Select gender" onValueChange={(val) => setValue("gender", val, { shouldDirty: true })} {...selectProps("gender")}>
               {GENDERS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
             </LabeledSelect>
+            <BirthDateField
+              value={watch("dateOfBirth") ?? ""}
+              onChange={(val) => setValue("dateOfBirth", val, { shouldDirty: true, shouldValidate: true })}
+              locked={dobLocked}
+              error={errors.dateOfBirth?.message}
+              {...selectProps("dateOfBirth")}
+            />
           </div>
         </div>
       </Panel>
@@ -187,10 +203,6 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
       {/* professional details */}
       <Panel title="Professional details">
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-            <AuthField label="Job title" placeholder="e.g. Senior Realtor" {...register("jobTitle")} />
-            <AuthField label="Experience" placeholder="e.g. 8 years in luxury real estate" {...register("experience")} />
-          </div>
           <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <AuthField label="Agency name" {...register("agencyName")} />
             <AuthField label="Agency address" {...register("agencyAddress")} />
@@ -206,7 +218,9 @@ export function AccountSettings({ onSaved }: { onSaved: () => void }) {
             <p className="mt-2 text-xs text-muted">Start typing and pick a suggestion to keep wording consistent, or add your own.</p>
           </div>
           <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
-            <AuthField label="Region" {...register("region")} />
+            <LabeledSelect label="Region" value={watch("region") ?? ""} placeholder="Where you operate" onValueChange={(val) => setValue("region", val, { shouldDirty: true })} {...selectProps("region")}>
+              {REGIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
+            </LabeledSelect>
             <LabeledSelect label="Availability status" value={watch("availabilityStatus") ?? ""} placeholder="Select availability" onValueChange={(val) => setValue("availabilityStatus", val, { shouldDirty: true })} {...selectProps("availability")}>
               {AVAILABILITY.map((a) => (<SelectItem key={a} value={a}>{a}</SelectItem>))}
             </LabeledSelect>
@@ -353,6 +367,65 @@ function LabeledSelect({
         <SelectTrigger aria-label={label} className="h-11 w-full"><SelectValue placeholder={placeholder} /></SelectTrigger>
         <SelectContent>{children}</SelectContent>
       </Select>
+    </div>
+  );
+}
+
+/** "YYYY-MM-DD" in and out, read back as "14th May 1990". */
+function BirthDateField({
+  value, onChange, locked, error, open, onOpenChange,
+}: {
+  value: string; onChange: (v: string) => void; locked: boolean; error?: string;
+  open?: boolean; onOpenChange?: (open: boolean) => void;
+}) {
+  // The calendar cannot offer a day the API would refuse: 18 at the youngest, 120 at the oldest.
+  const latest = dayjs().subtract(18, "year").toDate();
+  const earliest = dayjs().subtract(120, "year").toDate();
+  const selected = value ? dayjs(value).toDate() : undefined;
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-ink">Date of birth</label>
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverTrigger
+          type="button"
+          aria-label="Date of birth"
+          aria-invalid={!!error}
+          disabled={locked}
+          className={cn(
+            "flex h-11 w-full items-center gap-2 rounded-xl border border-line bg-surface px-4 text-sm transition-colors hover:bg-surface-2 focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30",
+            value ? "text-ink" : "text-faint",
+            locked && "cursor-not-allowed bg-surface-2/60 text-muted hover:bg-surface-2/60",
+            error && "border-rose-400 focus-visible:ring-rose-400/25",
+          )}
+        >
+          <CalendarDays className="size-4 shrink-0 text-faint" aria-hidden />
+          <span className="truncate">{value ? formatDate(value) : "Select your date of birth"}</span>
+        </PopoverTrigger>
+        <PopoverContent>
+          <Calendar
+            mode="single"
+            autoFocus
+            captionLayout="dropdown"
+            hideNavigation
+            selected={selected}
+            defaultMonth={selected ?? latest}
+            startMonth={earliest}
+            endMonth={latest}
+            disabled={{ after: latest }}
+            onSelect={(day) => {
+              if (!day) return;
+              onChange(dayjs(day).format("YYYY-MM-DD"));
+              onOpenChange?.(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      {error && <p className="text-[13px] text-rose-500">{error}</p>}
+      <p className="flex items-center gap-1.5 text-xs text-faint">
+        {locked && <Lock className="size-3 shrink-0" aria-hidden />}
+        {locked ? "Locked to your verified NIN." : "Must match your NIN and BVN."}
+      </p>
     </div>
   );
 }

@@ -18,6 +18,25 @@ const phoneField = z
   .refine((v) => v === '' || v.length >= 7, 'Enter a valid phone number');
 
 
+// Mirrors the server: at least 18, under 120. Empty means not given yet, and is not sent.
+const MIN_AGE = 18;
+const MAX_AGE = 120;
+
+const yearsAgo = (years: number): string => {
+  const today = new Date();
+  return new Date(
+    Date.UTC(today.getFullYear() - years, today.getMonth(), today.getDate()),
+  )
+    .toISOString()
+    .slice(0, 10);
+};
+
+const dateOfBirthField = z
+  .string()
+  .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), "Enter a valid date of birth")
+  .refine((v) => v === "" || v <= yearsAgo(MIN_AGE), `You must be at least ${MIN_AGE} years old`)
+  .refine((v) => v === "" || v > yearsAgo(MAX_AGE), "Enter a valid date of birth");
+
 export const identityProfileSchema = z.object({
   firstName: z.string().trim().min(1, "Enter your first name"),
   lastName: z.string().trim().min(1, "Enter your last name"),
@@ -48,10 +67,8 @@ export const realtorSettingsSchema = z.object({
   country: z.string().trim(),
   phone: phoneField,
   whatsapp: phoneField,
-  language: z.string().trim(),
   gender: z.string(),
-  jobTitle: z.string().trim(),
-  experience: z.string().trim(),
+  dateOfBirth: dateOfBirthField,
   specialization: z.array(z.string()),
   agencyName: z.string().trim(),
   region: z.string().trim(),

@@ -7,7 +7,7 @@ export const ID_LENGTH = 11;
 
 export interface Identity {
   verified: boolean;
-  /** Step one passed: liveness, face match and names. The BVN is still to come. */
+  /** Step one passed: names, date of birth and liveness. The BVN is still to come. */
   ninVerified: boolean;
   firstName: string;
   middleName: string;

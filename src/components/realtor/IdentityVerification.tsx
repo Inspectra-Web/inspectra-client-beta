@@ -93,7 +93,7 @@ export function IdentityVerification() {
           <div className="mt-4 flex items-start gap-4 max-sm:flex-col">
             <img
               src={identity.verifiedPhoto}
-              alt="The face matched to your ID"
+              alt="Your verified photo"
               className="size-20 shrink-0 rounded-xl object-cover ring-1 ring-line"
             />
             <div className="min-w-0 flex-1">

@@ -39,6 +39,7 @@ import { RealtorVerification } from "@/pages/realtor/Verification";
 import { RealtorSubscription } from "@/pages/realtor/Subscription";
 import { RealtorSubscriptionCallback } from "@/pages/realtor/SubscriptionCallback";
 import { RealtorAccount } from "@/pages/realtor/Account";
+import { RealtorVirtualAccount } from "@/pages/realtor/VirtualAccount";
 import { RealtorNotFound } from "@/pages/realtor/RealtorNotFound";
 import { AdminDashboardLayout } from "@/layouts/AdminDashboardLayout";
 import { AdminOverview } from "@/pages/admin/Overview";
@@ -131,6 +132,7 @@ export const router = createBrowserRouter([
             path: "subscription/callback",
             element: <RealtorSubscriptionCallback />,
           },
+          { path: "virtual-account", element: <RealtorVirtualAccount /> },
           { path: "account", element: <RealtorAccount /> },
           { path: "*", element: <RealtorNotFound /> },
         ],

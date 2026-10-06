@@ -14,6 +14,7 @@ import {
   CalendarCheck,
   CreditCard,
   Inbox,
+  Landmark,
   LayoutDashboard,
   type LucideIcon,
   Plus,
@@ -54,6 +55,7 @@ const navGroups = (newLeads: number, requested: number): NavGroup[] => [
     label: "Business",
     items: [
       { label: "Subscription", to: "/realtor/subscription", Icon: CreditCard },
+      { label: "Virtual account", to: "/realtor/virtual-account", Icon: Landmark },
       { label: "Account", to: "/realtor/account", Icon: UserCircle },
     ],
   },

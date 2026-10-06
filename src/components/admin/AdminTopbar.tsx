@@ -11,6 +11,7 @@ const TITLES: Record<string, string> = {
   "/admin/listings": "Listings",
   "/admin/users": "Users",
   "/admin/payments": "Payments",
+  "/admin/virtual-accounts": "Virtual accounts",
   "/admin/account": "Account",
 };
 

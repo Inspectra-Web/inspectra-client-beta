@@ -52,6 +52,7 @@ import { AdminRealtorDetail } from "@/pages/admin/RealtorDetail";
 import { AdminUsers } from "@/pages/admin/Users";
 import { AdminUserDetail } from "@/pages/admin/UserDetail";
 import { AdminPayments } from "@/pages/admin/Payments";
+import { AdminVirtualAccounts } from "@/pages/admin/VirtualAccounts";
 import { AdminAccount } from "@/pages/admin/Account";
 import { AdminNotFound } from "@/pages/admin/AdminNotFound";
 import { AdminSignIn } from "@/pages/AdminSignIn";
@@ -160,6 +161,7 @@ export const router = createBrowserRouter([
           { path: "users", element: <AdminUsers /> },
           { path: "users/:id", element: <AdminUserDetail /> },
           { path: "payments", element: <AdminPayments /> },
+          { path: "virtual-accounts", element: <AdminVirtualAccounts /> },
           { path: "account", element: <AdminAccount /> },
           { path: "*", element: <AdminNotFound /> },
         ],

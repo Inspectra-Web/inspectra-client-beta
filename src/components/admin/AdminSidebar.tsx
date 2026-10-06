@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import {
   BadgeCheck,
   Building2,
+  Landmark,
   LayoutDashboard,
   type LucideIcon,
   ShieldCheck,
@@ -40,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Listings", to: "/admin/listings", Icon: Building2 },
       { label: "Users", to: "/admin/users", Icon: UsersRound },
       { label: "Payments", to: "/admin/payments", Icon: Wallet },
+      { label: "Virtual accounts", to: "/admin/virtual-accounts", Icon: Landmark },
     ],
   },
   {

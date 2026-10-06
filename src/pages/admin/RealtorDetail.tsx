@@ -9,7 +9,10 @@ import {
   CalendarCheck,
   CircleCheck,
   CircleDot,
+  Coins,
   ExternalLink,
+  FileCheck,
+  Landmark,
   Layers,
   Loader2,
   Mail,
@@ -32,7 +35,9 @@ import {
   useUpdateUserStatus,
   type UserDetail,
 } from "@/lib/adminUsers";
+import { useAdminRealtorVirtualAccount } from "@/lib/adminVirtualAccounts";
 import { idEndings } from "@/lib/identity";
+import { formatKobo } from "@/lib/virtualAccount";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
 import { REALTOR_TITLE, regionLabel } from "@/lib/profile";
 import { cn } from "@/lib/cn";
@@ -283,6 +288,10 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
         </Panel>
       </Reveal>
 
+      <Reveal y={16}>
+        <VirtualAccountPanel realtorId={user.id} />
+      </Reveal>
+
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
@@ -302,6 +311,83 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
 }
 
 /* ------------------------------------------------------------------ */
+
+function VirtualAccountPanel({ realtorId }: { realtorId: string }) {
+  const { data, isPending, isError, error } = useAdminRealtorVirtualAccount(realtorId);
+
+  if (isPending)
+    return (
+      <Panel title="Virtual account">
+        <div className="h-32 animate-pulse rounded-xl bg-surface-2" />
+      </Panel>
+    );
+
+  if (isError)
+    return (
+      <Panel title="Virtual account">
+        <p className="text-sm text-muted">{apiMessage(error, "The virtual account could not be loaded.")}</p>
+      </Panel>
+    );
+
+  const { account, balance } = data;
+  const active = account?.status === "active";
+
+  return (
+    <Panel title="Virtual account">
+      <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
+        <span
+          className={cn(
+            "grid size-10 shrink-0 place-items-center rounded-lg",
+            active ? "bg-verified/12 text-verified" : "bg-surface-2 text-faint",
+          )}
+        >
+          <Landmark className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ink">
+            {!account ? "No virtual account" : active ? account.accountNumber : "Opening"}
+          </p>
+          <p className="text-xs text-muted">
+            {!account
+              ? "This realtor has not opened a virtual account."
+              : active
+                ? `${account.bankName}, ${account.currency}`
+                : "Planbok has not returned an account number yet."}
+          </p>
+        </div>
+        {active && (
+          <div className="text-right">
+            <p className="text-xs text-muted">Available</p>
+            <p className="display text-xl tabular-nums text-ink">
+              {balance ? formatKobo(balance.available) : "—"}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {active && (
+        <dl className="mt-4">
+          <Detail icon={User} label="Account name" value={account.accountName} />
+          <Detail
+            icon={Coins}
+            label="Booked balance"
+            value={balance ? formatKobo(balance.booked) : "Not available right now"}
+          />
+          <Detail
+            icon={CalendarCheck}
+            label="Opened on"
+            value={account.activatedAt ? formatDate(account.activatedAt) : ""}
+          />
+          <Detail
+            icon={FileCheck}
+            label="Consent given"
+            value={account.consentedAt ? formatDate(account.consentedAt) : ""}
+          />
+        </dl>
+      )}
+    </Panel>
+  );
+}
 
 function EmptyProfile() {
   return (

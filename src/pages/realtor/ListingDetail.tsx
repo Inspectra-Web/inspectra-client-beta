@@ -354,7 +354,7 @@ export function RealtorListingDetail() {
         open={confirming}
         onOpenChange={setConfirming}
         title="Delete this listing?"
-        description="It is removed from your portfolio and from the marketplace. This cannot be undone."
+        description="It is removed from your portfolio and from the marketplace. Open viewings on it are cancelled, its conversations are closed, and the buyers are emailed. This cannot be undone."
         confirmLabel="Delete"
         destructive
         pending={remove.isPending}

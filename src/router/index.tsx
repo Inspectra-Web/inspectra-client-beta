@@ -40,6 +40,7 @@ import { RealtorSubscription } from "@/pages/realtor/Subscription";
 import { RealtorSubscriptionCallback } from "@/pages/realtor/SubscriptionCallback";
 import { RealtorAccount } from "@/pages/realtor/Account";
 import { RealtorVirtualAccount } from "@/pages/realtor/VirtualAccount";
+import { RealtorWallet } from "@/pages/realtor/Wallet";
 import { RealtorNotFound } from "@/pages/realtor/RealtorNotFound";
 import { AdminDashboardLayout } from "@/layouts/AdminDashboardLayout";
 import { AdminOverview } from "@/pages/admin/Overview";
@@ -53,6 +54,7 @@ import { AdminUsers } from "@/pages/admin/Users";
 import { AdminUserDetail } from "@/pages/admin/UserDetail";
 import { AdminPayments } from "@/pages/admin/Payments";
 import { AdminVirtualAccounts } from "@/pages/admin/VirtualAccounts";
+import { AdminWallets } from "@/pages/admin/Wallets";
 import { AdminAccount } from "@/pages/admin/Account";
 import { AdminNotFound } from "@/pages/admin/AdminNotFound";
 import { AdminSignIn } from "@/pages/AdminSignIn";
@@ -134,6 +136,7 @@ export const router = createBrowserRouter([
             element: <RealtorSubscriptionCallback />,
           },
           { path: "virtual-account", element: <RealtorVirtualAccount /> },
+          { path: "wallet", element: <RealtorWallet /> },
           { path: "account", element: <RealtorAccount /> },
           { path: "*", element: <RealtorNotFound /> },
         ],
@@ -162,6 +165,7 @@ export const router = createBrowserRouter([
           { path: "users/:id", element: <AdminUserDetail /> },
           { path: "payments", element: <AdminPayments /> },
           { path: "virtual-accounts", element: <AdminVirtualAccounts /> },
+          { path: "wallets", element: <AdminWallets /> },
           { path: "account", element: <AdminAccount /> },
           { path: "*", element: <AdminNotFound /> },
         ],

@@ -16,6 +16,7 @@ import {
   UserCircle,
   UsersRound,
   Wallet,
+  WalletMinimal,
 } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
@@ -42,6 +43,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Users", to: "/admin/users", Icon: UsersRound },
       { label: "Payments", to: "/admin/payments", Icon: Wallet },
       { label: "Virtual accounts", to: "/admin/virtual-accounts", Icon: Landmark },
+      { label: "Wallets", to: "/admin/wallets", Icon: WalletMinimal },
     ],
   },
   {

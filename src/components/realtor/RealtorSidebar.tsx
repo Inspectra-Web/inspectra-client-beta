@@ -20,6 +20,7 @@ import {
   Plus,
   ShieldCheck,
   UserCircle,
+  WalletMinimal,
 } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
@@ -56,6 +57,7 @@ const navGroups = (newLeads: number, requested: number): NavGroup[] => [
     items: [
       { label: "Subscription", to: "/realtor/subscription", Icon: CreditCard },
       { label: "Virtual account", to: "/realtor/virtual-account", Icon: Landmark },
+      { label: "Wallet", to: "/realtor/wallet", Icon: WalletMinimal },
       { label: "Account", to: "/realtor/account", Icon: UserCircle },
     ],
   },

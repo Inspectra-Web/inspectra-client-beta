@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   User,
   UsersRound,
+  WalletMinimal,
 } from "lucide-react";
 import { Panel } from "@/components/dashboard/Panel";
 import { Reveal } from "@/components/ui/Reveal";
@@ -36,6 +37,8 @@ import {
   type UserDetail,
 } from "@/lib/adminUsers";
 import { useAdminRealtorVirtualAccount } from "@/lib/adminVirtualAccounts";
+import { useAdminRealtorWallet } from "@/lib/adminWallets";
+import { CHAIN_NAMES } from "@/lib/wallet";
 import { idEndings } from "@/lib/identity";
 import { formatKobo } from "@/lib/virtualAccount";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
@@ -292,6 +295,10 @@ function RealtorDetailView({ detail }: { detail: UserDetail }) {
         <VirtualAccountPanel realtorId={user.id} />
       </Reveal>
 
+      <Reveal y={16}>
+        <WalletPanel realtorId={user.id} />
+      </Reveal>
+
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
@@ -382,6 +389,63 @@ function VirtualAccountPanel({ realtorId }: { realtorId: string }) {
             icon={FileCheck}
             label="Consent given"
             value={account.consentedAt ? formatDate(account.consentedAt) : ""}
+          />
+        </dl>
+      )}
+    </Panel>
+  );
+}
+
+function WalletPanel({ realtorId }: { realtorId: string }) {
+  const { data: wallet, isPending, isError, error } = useAdminRealtorWallet(realtorId);
+
+  if (isPending)
+    return (
+      <Panel title="Wallet">
+        <div className="h-24 animate-pulse rounded-xl bg-surface-2" />
+      </Panel>
+    );
+
+  if (isError)
+    return (
+      <Panel title="Wallet">
+        <p className="text-sm text-muted">{apiMessage(error, "The wallet could not be loaded.")}</p>
+      </Panel>
+    );
+
+  const active = wallet?.status === "active";
+
+  return (
+    <Panel title="Wallet">
+      <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
+        <span
+          className={cn(
+            "grid size-10 shrink-0 place-items-center rounded-lg",
+            active ? "bg-verified/12 text-verified" : "bg-surface-2 text-faint",
+          )}
+        >
+          <WalletMinimal className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="break-all text-sm font-medium text-ink">
+            {!wallet ? "No wallet" : active ? wallet.address : "Creating"}
+          </p>
+          <p className="text-xs text-muted">
+            {!wallet
+              ? "This realtor has not created a wallet."
+              : active
+                ? CHAIN_NAMES[wallet.blockchain] ?? wallet.blockchain
+                : "Planbok has not returned an address yet."}
+          </p>
+        </div>
+      </div>
+
+      {active && (
+        <dl className="mt-4">
+          <Detail
+            icon={CalendarCheck}
+            label="Created on"
+            value={wallet.activatedAt ? formatDate(wallet.activatedAt) : ""}
           />
         </dl>
       )}

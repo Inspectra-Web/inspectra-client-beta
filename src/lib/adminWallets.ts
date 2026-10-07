@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { api } from "./api";
 import type { AuthStatus } from "./auth";
-import type { Wallet } from "./wallet";
+import type { BalancesResponse, Wallet } from "./wallet";
 
 /** A directory row: the wallet, plus the realtor it belongs to. */
 export interface AdminWalletRow extends Wallet {
@@ -83,5 +83,15 @@ export function useAdminRealtorWallet(realtorId: string) {
     queryKey: [...ADMIN_WALLETS_KEY, "realtor", realtorId],
     queryFn: async () =>
       (await api.get<RealtorWalletResponse>(`/admin/realtors/${realtorId}/wallet`)).data.data.wallet,
+  });
+}
+
+export function useAdminRealtorWalletBalances(realtorId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...ADMIN_WALLETS_KEY, "realtor", realtorId, "balances"],
+    queryFn: async () =>
+      (await api.get<BalancesResponse>(`/admin/realtors/${realtorId}/wallet/balances`)).data.data
+        .balances,
+    enabled,
   });
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
-import { Check, CircleAlert, Copy, WalletMinimal } from "lucide-react";
+import { Check, CircleAlert, Coins, Copy, Fuel, WalletMinimal } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { EmptyState } from "@/components/dashboard/EmptyState";
@@ -10,7 +10,14 @@ import { Reveal } from "@/components/ui/Reveal";
 import { apiMessage } from "@/lib/api";
 import { useIdentity } from "@/lib/identity";
 import { formatDate } from "@/lib/format";
-import { CHAIN_NAMES, useOpenWallet, useWallet, type Wallet } from "@/lib/wallet";
+import {
+  formatTokenAmount,
+  useOpenWallet,
+  useWallet,
+  useWalletBalances,
+  type TokenBalance,
+  type Wallet,
+} from "@/lib/wallet";
 import { cn } from "@/lib/cn";
 
 export function RealtorWallet() {
@@ -29,7 +36,10 @@ export function RealtorWallet() {
       ) : isPending ? (
         <div className="h-56 animate-pulse rounded-2xl border border-line bg-surface" />
       ) : wallet?.status === "active" ? (
-        <WalletDetails wallet={wallet} />
+        <>
+          <WalletBalances />
+          <WalletAddress wallet={wallet} />
+        </>
       ) : (
         <CreateWallet />
       )}
@@ -37,7 +47,74 @@ export function RealtorWallet() {
   );
 }
 
-function WalletDetails({ wallet }: { wallet: Wallet }) {
+// The native coin pays the network fee, so it reads as gas and sits after the tokens.
+const isGas = (balance: TokenBalance) => balance.standard === "native";
+
+const CARD_TINTS = [
+  "border-brand/25 from-brand/15 via-brand/5",
+  "border-brand-ink/25 from-brand-ink/15 via-brand-ink/5",
+];
+
+function WalletBalances() {
+  const { data: balances, isPending, isError } = useWalletBalances();
+
+  if (isPending)
+    return (
+      <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
+        <div className="h-40 animate-pulse rounded-2xl border border-line bg-surface" />
+        <div className="h-40 animate-pulse rounded-2xl border border-line bg-surface" />
+      </div>
+    );
+
+  if (isError || !balances || balances.length === 0)
+    return (
+      <Reveal y={16}>
+        <Panel>
+          <p className="text-sm text-muted">
+            {isError || !balances
+              ? "Your balance is not available right now."
+              : "No tokens in this wallet yet."}
+          </p>
+        </Panel>
+      </Reveal>
+    );
+
+  const ordered = [...balances].sort((a, b) => Number(isGas(a)) - Number(isGas(b)));
+
+  return (
+    <Reveal y={16}>
+      <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
+        {ordered.map((balance, index) => (
+          <BalanceCard key={balance.symbol} balance={balance} tint={CARD_TINTS[index % CARD_TINTS.length]} />
+        ))}
+      </div>
+    </Reveal>
+  );
+}
+
+function BalanceCard({ balance, tint }: { balance: TokenBalance; tint?: string }) {
+  const gas = isGas(balance);
+  const Icon = gas ? Fuel : Coins;
+
+  return (
+    <section className={cn("rounded-2xl border bg-surface bg-linear-to-br to-transparent p-7 max-sm:p-5", tint)}>
+      <p className="flex items-center gap-2 text-sm text-muted">
+        <Icon className="size-4 shrink-0" aria-hidden />
+        {gas ? `Gas balance (${balance.symbol})` : `${balance.name} balance`}
+      </p>
+      <p className="mt-4 flex min-w-0 items-baseline gap-2.5" title={`${balance.amount} ${balance.symbol}`}>
+        <span className="display truncate text-5xl tabular-nums text-ink max-sm:text-4xl">
+          {formatTokenAmount(balance.amount)}
+        </span>
+        <span className={cn("shrink-0 text-xl font-semibold", gas ? "text-brand-ink" : "text-ink")}>
+          {balance.symbol}
+        </span>
+      </p>
+    </section>
+  );
+}
+
+function WalletAddress({ wallet }: { wallet: Wallet }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -52,39 +129,29 @@ function WalletDetails({ wallet }: { wallet: Wallet }) {
 
   return (
     <Reveal y={16}>
-      <Panel title="Wallet details" className="max-w-3xl">
-        <div className="min-w-0">
-          <p className="text-sm text-muted">Address</p>
-          <div className="mt-1 flex items-center gap-3">
-            <p className="min-w-0 break-all text-xl font-medium text-ink tabular-nums max-sm:text-base">
-              {wallet.address}
+      <Panel>
+        <div className="flex items-center gap-5 max-sm:gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand max-sm:hidden">
+            <WalletMinimal className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-muted">
+              {wallet.blockchain} address
+              {wallet.activatedAt && <span className="text-faint"> · Created {formatDate(wallet.activatedAt)}</span>}
             </p>
-            <button
-              type="button"
-              onClick={copy}
-              aria-label="Copy wallet address"
-              className="grid size-9 shrink-0 place-items-center rounded-full border border-line text-muted transition-colors hover:text-ink"
-            >
-              {copied ? <Check className="size-4 text-verified" /> : <Copy className="size-4" />}
-            </button>
+            <p className="mt-1 break-all font-medium text-ink tabular-nums">{wallet.address}</p>
           </div>
+          <button
+            type="button"
+            onClick={copy}
+            aria-label="Copy wallet address"
+            className="grid size-11 shrink-0 place-items-center rounded-xl border border-line text-muted transition-colors hover:text-ink"
+          >
+            {copied ? <Check className="size-4 text-verified" /> : <Copy className="size-4" />}
+          </button>
         </div>
-
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-6 max-sm:grid-cols-1">
-          <Detail label="Network" value={CHAIN_NAMES[wallet.blockchain] ?? wallet.blockchain} />
-          {wallet.activatedAt && <Detail label="Created" value={formatDate(wallet.activatedAt)} />}
-        </dl>
       </Panel>
     </Reveal>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd className="mt-0.5 truncate font-medium text-ink">{value}</dd>
-    </div>
   );
 }
 

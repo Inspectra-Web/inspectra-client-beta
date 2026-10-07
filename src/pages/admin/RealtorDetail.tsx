@@ -37,8 +37,8 @@ import {
   type UserDetail,
 } from "@/lib/adminUsers";
 import { useAdminRealtorVirtualAccount } from "@/lib/adminVirtualAccounts";
-import { useAdminRealtorWallet } from "@/lib/adminWallets";
-import { CHAIN_NAMES } from "@/lib/wallet";
+import { useAdminRealtorWallet, useAdminRealtorWalletBalances } from "@/lib/adminWallets";
+import { CHAIN_NAMES, formatTokenAmount } from "@/lib/wallet";
 import { idEndings } from "@/lib/identity";
 import { formatKobo } from "@/lib/virtualAccount";
 import { displayName, formatDate, formatPhone } from "@/lib/format";
@@ -398,6 +398,7 @@ function VirtualAccountPanel({ realtorId }: { realtorId: string }) {
 
 function WalletPanel({ realtorId }: { realtorId: string }) {
   const { data: wallet, isPending, isError, error } = useAdminRealtorWallet(realtorId);
+  const balances = useAdminRealtorWalletBalances(realtorId, wallet?.status === "active");
 
   if (isPending)
     return (
@@ -442,6 +443,22 @@ function WalletPanel({ realtorId }: { realtorId: string }) {
 
       {active && (
         <dl className="mt-4">
+          {balances.isPending ? (
+            <Detail icon={Coins} label="Balance" value="Loading" />
+          ) : balances.isError || !balances.data ? (
+            <Detail icon={Coins} label="Balance" value="Not available right now" />
+          ) : balances.data.length === 0 ? (
+            <Detail icon={Coins} label="Balance" value="No tokens yet" />
+          ) : (
+            balances.data.map((balance) => (
+              <Detail
+                key={balance.symbol}
+                icon={Coins}
+                label={balance.name}
+                value={`${formatTokenAmount(balance.amount)} ${balance.symbol}`}
+              />
+            ))
+          )}
           <Detail
             icon={CalendarCheck}
             label="Created on"

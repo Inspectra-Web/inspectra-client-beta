@@ -41,6 +41,17 @@ export function Footer() {
             Verified homes and certified realtors, so every step of your search is one you
             can trust.
           </p>
+          <a
+            href="https://linkedin.com/company/inspectraproptech"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-brand/40 hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden>
+              <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm6.5 0h3.83v1.64h.06c.53-.95 1.84-1.96 3.78-1.96 4.04 0 4.79 2.54 4.79 5.85V21h-4v-5.66c0-1.35-.03-3.09-1.94-3.09-1.94 0-2.24 1.47-2.24 2.99V21h-4V9Z" />
+            </svg>
+            <span className="sr-only">INSPECTRA on LinkedIn</span>
+          </a>
         </div>
 
         {COLUMNS.map((col) => (

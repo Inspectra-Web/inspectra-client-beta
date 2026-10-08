@@ -306,8 +306,13 @@ function Loaded({ data }: { data: DiaryDetail }) {
                   <span className="font-semibold text-ink">
                     {formatPriceFull(inspection.escrow.fee)}
                   </span>{" "}
-                  to you. {FEE_LINE[inspection.escrow.status]}
-                  {inspection.escrow.status === "unpaid" && inspection.escrow.payBy
+                  to you.{" "}
+                  {inspection.escrow.status === "unpaid" && inspection.status === "cancelled"
+                    ? "Not paid in time, so the viewing was cancelled."
+                    : FEE_LINE[inspection.escrow.status]}
+                  {inspection.escrow.status === "unpaid" &&
+                  inspection.status === "confirmed" &&
+                  inspection.escrow.payBy
                     ? ` They have until ${formatTime(inspection.escrow.payBy)} on ${formatLongDate(inspection.escrow.payBy)}.`
                     : ""}
                 </p>

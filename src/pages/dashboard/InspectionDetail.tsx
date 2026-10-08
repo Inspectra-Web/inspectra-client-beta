@@ -447,7 +447,9 @@ function PaymentPanel({
           </>
         ) : (
           <p className="mt-4 text-sm text-muted">
-            The time to pay for this viewing has passed, so it can no longer be paid.
+            {inspection.status === "cancelled"
+              ? "The fee was not paid in time, so this viewing was cancelled."
+              : "The time to pay for this viewing has passed, so it can no longer be paid."}
           </p>
         )
       ) : escrow.status === "held" ? (

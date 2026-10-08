@@ -35,6 +35,48 @@ export const inspectionCharge = (fee: number) => {
  *  it is all the page needs, and neither party is handed the other's user id. */
 export type Party = "seeker" | "realtor";
 
+/** Where a paid viewing's money is. Mirrors the server's EscrowStatus; `none` is a
+ *  free viewing. */
+export type EscrowStatus =
+  | "none"
+  | "unpaid"
+  | "held"
+  | "releasing"
+  | "released"
+  | "refunding"
+  | "refunded"
+  | "forfeited"
+  | "disputed";
+
+/** A party's answer to the day-after email. `no_show` is the other side not turning up. */
+export type Attendance = "happened" | "no_show";
+
+export interface EscrowAnswer {
+  answer?: Attendance;
+  at?: string;
+}
+
+/** Naira throughout. `total` is what the seeker pays: fee plus commission. */
+export interface InspectionEscrow {
+  status: EscrowStatus;
+  fee: number;
+  commission: number;
+  total: number;
+  payBy?: string;
+  paidAt?: string;
+  releaseAt?: string;
+  realtorAnswer: EscrowAnswer;
+  seekerAnswer: EscrowAnswer;
+  dispute: {
+    reason: string;
+    openedAt?: string;
+    outcome?: "release" | "refund" | "split";
+    note: string;
+    decidedAt?: string;
+  };
+  settledAt?: string;
+}
+
 /** The booking itself, identical for both sides. */
 export interface InspectionRecord {
   id: string;
@@ -48,6 +90,7 @@ export interface InspectionRecord {
   response: string;
   cancelledBy?: Party;
   decidedAt?: string;
+  escrow: InspectionEscrow;
   createdAt: string;
 }
 

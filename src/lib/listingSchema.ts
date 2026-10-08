@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { DefaultValues } from "react-hook-form";
-import type { RealtorListing } from "@/lib/properties";
+import { INSPECTION_FEE_MAX, type RealtorListing } from "@/lib/properties";
 
 // Client-side validation for the realtor add/edit listing form. Field names and enums
 // mirror the API's own schema (server/src/validators/property.validator.ts), and the
@@ -177,6 +177,17 @@ const listingObject = z.object({
   ),
   paymentTerms: z.string().trim().max(300, "Keep it under 300 characters").optional(),
   refundPolicy: z.string().trim().max(300, "Keep it under 300 characters").optional(),
+
+  // Blank is a free inspection.
+  inspectionFee: z.preprocess(
+    toNumber,
+    z
+      .number()
+      .int("Enter whole naira")
+      .nonnegative("Cannot be negative")
+      .max(INSPECTION_FEE_MAX, "Keep the inspection fee at or under ₦50,000")
+      .optional(),
+  ),
 });
 
 export type ListingValues = z.infer<typeof listingObject>;
@@ -214,6 +225,7 @@ export const emptyListingValues: DefaultValues<ListingValues> = {
   additionalFees: [],
   paymentTerms: "",
   refundPolicy: "",
+  inspectionFee: undefined,
 };
 
 /** Values the API can send but this form does not offer; they fall back to "other". */
@@ -254,6 +266,7 @@ export function listingToFormValues(l: RealtorListing): DefaultValues<ListingVal
     additionalFees: l.fees.additional,
     paymentTerms: l.fees.paymentTerms,
     refundPolicy: l.fees.refundPolicy,
+    inspectionFee: some(l.inspectionFee ?? 0),
   };
 }
 
@@ -290,5 +303,6 @@ export function formValuesToBody(v: ListingValues) {
       refundPolicy: v.refundPolicy ?? "",
       additional: v.additionalFees,
     },
+    inspectionFee: v.inspectionFee ?? 0,
   };
 }

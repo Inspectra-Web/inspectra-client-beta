@@ -508,7 +508,7 @@ function ActionCard({
         </p>
       </div>
 
-      <RealtorActions propertyId={listing.id} first={first} />
+      <RealtorActions propertyId={listing.id} first={first} inspectionFee={listing.inspectionFee ?? 0} />
 
       <Link
         to={`/realtors/${realtor.id}`}

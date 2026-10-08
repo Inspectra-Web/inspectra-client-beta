@@ -48,6 +48,7 @@ import {
   type RealtorListing,
 } from "@/lib/properties";
 import { formatDate, formatPriceFull } from "@/lib/format";
+import { inspectionCharge } from "@/lib/inspections";
 import { LISTING_INTENT_LABEL, priceSuffix } from "@/lib/listing";
 import { readTour, toDocCheck } from "@/lib/listing";
 
@@ -283,7 +284,16 @@ export function RealtorListingDetail() {
                 </dl>
               )}
 
-              
+              <dl className="mt-4">
+                <Term
+                  label="Inspection fee"
+                  value={
+                    listing.inspectionFee > 0
+                      ? `${formatPriceFull(listing.inspectionFee)} to you per viewing. The buyer pays ${formatPriceFull(inspectionCharge(listing.inspectionFee).total)} with the service charge.`
+                      : "Free. Edit the listing to charge for viewings."
+                  }
+                />
+              </dl>
             </Panel>
           </Reveal>
 

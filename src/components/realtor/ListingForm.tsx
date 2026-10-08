@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -29,6 +29,8 @@ import {
   type ListingValues,
 } from "@/lib/listingSchema";
 import { apiMessage } from "@/lib/api";
+import { inspectionCharge } from "@/lib/inspections";
+import { useVirtualAccount } from "@/lib/virtualAccount";
 import {
   documentError,
   DOCUMENT_ACCEPT,
@@ -85,6 +87,9 @@ export function ListingForm({
   const updateListing = useUpdateListing();
   const addPhotos = useAddPhotos();
   const addDocument = useAddDocument();
+  const payout = useVirtualAccount();
+  // A paid viewing is released into this account, so the fee waits on it.
+  const canCharge = payout.data?.account?.status === "active";
 
   const {
     register, handleSubmit, watch, setValue, trigger,
@@ -95,6 +100,7 @@ export function ListingForm({
   });
 
   const v = watch();
+  const charge = inspectionCharge(Number(v.inspectionFee) || 0);
   const last = STEPS.length - 1;
   const [step, setStep] = useState(0);
   const [maxReached, setMaxReached] = useState(mode === "edit" ? last : 0);
@@ -439,6 +445,31 @@ export function ListingForm({
               {step === 3 && (
                 <div className="space-y-6">
                   <div>
+                    <SectionLabel>Inspection fee</SectionLabel>
+                    <p className="mb-3 text-sm text-muted">What a buyer pays you for a viewing. Leave it blank for a free inspection.</p>
+                    {canCharge ? (
+                      <div className="grid grid-cols-[14rem_1fr] items-start gap-4 max-sm:grid-cols-1">
+                        <Field label="Your fee (₦)" type="number" inputMode="numeric" min={0} placeholder="0" error={errors.inspectionFee?.message} {...register("inspectionFee")} />
+                        {charge.fee > 0 && (
+                          <p className="mt-6 rounded-xl border border-line bg-surface-2/40 px-4 py-3 text-sm text-muted max-sm:mt-0">
+                            The buyer pays <span className="font-medium text-ink">{naira(charge.total)}</span>: your {naira(charge.fee)} plus a {naira(charge.service)} INSPECTRA service charge. Your fee is paid into your virtual account after the viewing.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="rounded-xl border border-line bg-surface-2/40 px-4 py-3 text-sm text-muted">
+                        {payout.isPending ? "Checking your virtual account…" : (
+                          <>
+                            Viewings on this listing are free for now. To charge a fee,{" "}
+                            <Link to="/realtor/virtual-account" className="font-medium text-brand-ink underline-offset-4 hover:underline">open your virtual account</Link>{" "}
+                            first: that is where your fees are paid.
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
                     <SectionLabel>Additional fees</SectionLabel>
                     <p className="mb-3 text-sm text-muted">List every fee upfront: agency, legal, caution deposit, service charge. Buyers see the full breakdown, nothing added at signing.</p>
                     <div className="grid grid-cols-[1fr_9rem_auto] items-end gap-3 max-sm:grid-cols-1">
@@ -525,6 +556,7 @@ export function ListingForm({
                     <div className="grid grid-cols-2 gap-3 rounded-2xl border border-line bg-surface-2/40 p-5 max-sm:grid-cols-1">
                       <Summary label="Title" value={v.title || "—"} />
                       <Summary label="Price" value={naira(v.price)} />
+                      <Summary label="Inspection fee" value={charge.fee > 0 ? naira(charge.fee) : "Free"} />
                       <Summary label="Type" value={PROPERTY_TYPE_OPTIONS.find((o) => o.value === v.type)?.label ?? "—"} />
                       <Summary label="Status" value={LISTING_STATUS_OPTIONS.find((o) => o.value === v.listingStatus)?.label ?? "—"} />
                       <Summary label="Location" value={[v.city, v.state].filter(Boolean).join(", ") || "—"} />

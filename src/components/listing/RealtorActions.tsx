@@ -13,6 +13,8 @@ import {
 import { buttonClasses } from "@/components/ui/Button";
 import { useMe } from "@/lib/auth";
 import { cn } from "@/lib/cn";
+import { formatPriceFull } from "@/lib/format";
+import { inspectionCharge } from "@/lib/inspections";
 
 /**
  * The two things a buyer can do from a listing: book a viewing, or message the
@@ -27,12 +29,21 @@ import { cn } from "@/lib/cn";
 export function RealtorActions({
   propertyId,
   first,
+  inspectionFee,
 }: {
   propertyId: string;
   first: string;
+  inspectionFee: number;
 }) {
   const { pathname } = useLocation();
   const { data: user, isPending } = useMe();
+  const charge = inspectionCharge(inspectionFee);
+
+  // Paid on confirmation, never at booking, so "nothing is charged to book" stays true.
+  const feeLine =
+    charge.fee > 0
+      ? `Inspection fee ${formatPriceFull(charge.total)} (${formatPriceFull(charge.fee)} + ${formatPriceFull(charge.service)} service charge), paid once ${first} confirms.`
+      : "Free inspection.";
 
   // Nothing is offered on a guess: the card waits for the session to resolve.
   if (isPending)
@@ -53,6 +64,7 @@ export function RealtorActions({
           Sign in to arrange an inspection or message {first}. No fee to book, and
           every message stays on INSPECTRA.
         </p>
+        <p className="mt-2 text-xs text-faint">{feeLine}</p>
         <Link
           to="/login"
           state={{ from: pathname }}
@@ -87,11 +99,12 @@ export function RealtorActions({
           <DialogTitle>Book an inspection</DialogTitle>
           <DialogDescription>
             Pick a time that works for you. {first} confirms it, and nothing is charged
-            to book.
+            to book. {feeLine}
           </DialogDescription>
           <InspectionForm propertyId={propertyId} first={first} />
         </DialogContent>
       </Dialog>
+      <p className="px-1 text-center text-xs text-faint">{feeLine}</p>
 
       <Dialog>
         <DialogTrigger className={cn(buttonClasses("outline", "lg"), "w-full")}>

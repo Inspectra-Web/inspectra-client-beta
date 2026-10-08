@@ -81,6 +81,8 @@ export interface PublicListingDetail {
   documents: PublicListingDocument[];
   status: VerificationStatus;
   verifiedOn?: string;
+  /** Whole naira the realtor charges per viewing. 0 is a free inspection. */
+  inspectionFee: number;
   fees: ListingFees;
   views: number;
   createdAt: string;

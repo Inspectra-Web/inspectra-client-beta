@@ -76,6 +76,8 @@ export interface RealtorListing {
     note: string;
     reviewedAt?: string;
   };
+  /** Whole naira the realtor earns per viewing. 0 is a free inspection. */
+  inspectionFee: number;
   fees: ListingFees;
   views: number;
   createdAt: string;
@@ -205,6 +207,7 @@ export interface ListingInput {
   amenities?: string[];
   videoUrl?: string;
   fees?: Partial<ListingFees>;
+  inspectionFee?: number;
 }
 
 /**
@@ -262,6 +265,9 @@ export const DOCUMENT_MAX_MB = 10;
 export const PHOTOS_MAX = 20;
 export const DOCUMENTS_MAX = 5;
 export const DOCUMENT_ACCEPT = "application/pdf";
+
+// Mirrors INSPECTION_FEE_MAX in server/src/models/property.model.ts.
+export const INSPECTION_FEE_MAX = 50_000;
 
 /**
  * Where a document is read, relative to the api instance. The API never sends the

@@ -22,6 +22,15 @@ export type InspectionStatus =
   | "declined"
   | "cancelled";
 
+/** INSPECTRA's service charge, added on top of the realtor's fee. The server prices the
+ *  checkout itself; this only shows the seeker the same sum before they book. */
+export const INSPECTION_SERVICE_RATE = 0.2;
+
+export const inspectionCharge = (fee: number) => {
+  const service = Math.round(fee * INSPECTION_SERVICE_RATE);
+  return { fee, service, total: fee + service };
+};
+
 /** Which side of a booking someone is. Sent only to say who called a viewing off:
  *  it is all the page needs, and neither party is handed the other's user id. */
 export type Party = "seeker" | "realtor";

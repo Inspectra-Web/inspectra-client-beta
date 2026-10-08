@@ -21,7 +21,7 @@ import { Timeline } from "@/components/inspection/Timeline";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { apiMessage } from "@/lib/api";
-import { displayName, formatLongDate, formatTime } from "@/lib/format";
+import { displayName, formatLongDate, formatPriceFull, formatTime } from "@/lib/format";
 import { listingAddress } from "@/lib/marketplace";
 import {
   useCancelRealtorInspection,
@@ -30,6 +30,7 @@ import {
   slotPassed,
   type DiaryDetail,
   type InspectionDecision,
+  type InspectionRecord,
 } from "@/lib/inspections";
 
 const RESPONSE_MAX = 500;
@@ -297,6 +298,22 @@ function Loaded({ data }: { data: DiaryDetail }) {
               <Timeline status={inspection.status} cancelledBy={inspection.cancelledBy} />
             </Panel>
           </Reveal>
+
+          {inspection.escrow.status !== "none" && (
+            <Reveal y={16}>
+              <Panel title="Inspection fee">
+                <p className="text-sm text-muted">
+                  <span className="font-semibold text-ink">
+                    {formatPriceFull(inspection.escrow.fee)}
+                  </span>{" "}
+                  to you. {FEE_LINE[inspection.escrow.status]}
+                  {inspection.escrow.status === "unpaid" && inspection.escrow.payBy
+                    ? ` They have until ${formatTime(inspection.escrow.payBy)} on ${formatLongDate(inspection.escrow.payBy)}.`
+                    : ""}
+                </p>
+              </Panel>
+            </Reveal>
+          )}
         </div>
 
         <Reveal y={16} className="space-y-4">
@@ -319,6 +336,18 @@ function Loaded({ data }: { data: DiaryDetail }) {
     </div>
   );
 }
+
+const FEE_LINE: Record<InspectionRecord["escrow"]["status"], string> = {
+  none: "",
+  unpaid: "Waiting for the buyer to pay.",
+  held: "Paid by the buyer and held by INSPECTRA until the viewing is done.",
+  releasing: "On its way to your virtual account.",
+  released: "Paid into your virtual account.",
+  refunding: "Being refunded to the buyer.",
+  refunded: "Refunded to the buyer.",
+  forfeited: "Not paid out: the buyer missed the viewing.",
+  disputed: "On hold while INSPECTRA reviews what happened.",
+};
 
 function DetailSkeleton() {
   return (

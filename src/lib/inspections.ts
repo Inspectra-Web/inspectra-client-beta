@@ -335,6 +335,54 @@ export function useBookInspection() {
   });
 }
 
+/** Opens Flutterwave's checkout for a confirmed viewing. The server prices it from the
+ *  amounts locked onto the booking, so nothing about the price is sent from here. */
+export function usePayInspection() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post<{ data: { link: string } }>(`/inspections/me/${id}/pay`);
+      return res.data.data;
+    },
+    onSuccess: ({ link }) => {
+      window.location.assign(link);
+    },
+  });
+}
+
+/**
+ * Confirms an inspection payment after Flutterwave sends the seeker back. A query
+ * rather than a mutation for the same reason `useVerifyPayment` is one: StrictMode
+ * remounts in dev and the cache dedupes the second call by key.
+ */
+export function useVerifyInspectionPayment(id: string, reference: string, transactionId: string) {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ["verify-payment", reference],
+    queryFn: async () => {
+      const res = await api.post<{
+        message?: string;
+        data: { inspection: InspectionRecord | null };
+      }>(`/payments/${reference}/verify`, { transactionId });
+
+      const { inspection } = res.data.data;
+
+      if (inspection)
+        queryClient.setQueryData<InspectionDetail>([...INSPECTIONS_KEY, id], (prev) =>
+          prev ? { ...prev, inspection } : prev,
+        );
+
+      return { message: res.data.message ?? "Payment confirmed." };
+    },
+    enabled: reference.length > 0 && transactionId.length > 0,
+    retry: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useRescheduleInspection() {
   const queryClient = useQueryClient();
 

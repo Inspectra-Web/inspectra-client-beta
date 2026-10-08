@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import { toast } from "react-toastify";
 import {
   ArrowLeft,
   CalendarCheck,
   CalendarClock,
   Check,
+  Loader2,
   MapPin,
   MessageSquare,
   Navigation,
   ShieldCheck,
+  Wallet,
   X,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -22,16 +24,20 @@ import { Timeline } from "@/components/inspection/Timeline";
 import { SlotPicker } from "@/components/inspection/SlotPicker";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { apiMessage } from "@/lib/api";
-import { displayName, formatLongDate, formatTime } from "@/lib/format";
+import { displayName, formatDate, formatLongDate, formatPriceFull, formatTime } from "@/lib/format";
 import { listingAddress } from "@/lib/marketplace";
 import {
   useCancelMyInspection,
   useMyInspection,
+  usePayInspection,
   useRescheduleInspection,
+  useVerifyInspectionPayment,
   fromSlot,
   toSlot,
   type InspectionDetail as Detail,
+  type InspectionRecord,
 } from "@/lib/inspections";
 
 const PREP = [
@@ -75,6 +81,7 @@ function Loaded({ data }: { data: Detail }) {
   const cancel = useCancelMyInspection();
 
   const [moving, setMoving] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   const seed = fromSlot(inspection.slot);
   const [date, setDate] = useState(seed.date);
   const [time, setTime] = useState(seed.time);
@@ -84,6 +91,9 @@ function Loaded({ data }: { data: Detail }) {
   const live = inspection.status === "requested" || inspection.status === "confirmed";
   const address = listingAddress(property);
   const busy = reschedule.isPending || cancel.isPending;
+  // Once paid, cancelling forfeits the fee to the realtor, so it is asked first.
+  const paid = inspection.escrow.status === "held";
+  const realtorFirst = displayName(realtor.fullname).split(" ")[0] ?? "the realtor";
 
   const onMove = async () => {
     const slot = toSlot(date, time);
@@ -106,6 +116,7 @@ function Loaded({ data }: { data: Detail }) {
     try {
       const result = await cancel.mutateAsync(inspection.id);
       toast.success(result.message ?? "Viewing cancelled.");
+      setConfirmingCancel(false);
     } catch (err) {
       toast.error(apiMessage(err, "Could not cancel this viewing."));
     }
@@ -131,6 +142,12 @@ function Loaded({ data }: { data: Detail }) {
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-6 max-lg:grid-cols-1">
         <div className="space-y-6">
+          {inspection.escrow.status !== "none" && (
+            <Reveal y={16}>
+              <PaymentPanel inspection={inspection} realtorFirst={realtorFirst} />
+            </Reveal>
+          )}
+
           <Reveal y={16}>
             <Panel title="Schedule">
               <div className="flex items-start gap-4">
@@ -225,7 +242,12 @@ function Loaded({ data }: { data: Detail }) {
                       <CalendarClock className="size-4" aria-hidden />
                       Reschedule
                     </Button>
-                    <Button variant="ghost" size="sm" disabled={busy} onClick={onCancel}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busy}
+                      onClick={paid ? () => setConfirmingCancel(true) : onCancel}
+                    >
                       <X className="size-4" aria-hidden />
                       Cancel
                     </Button>
@@ -293,7 +315,153 @@ function Loaded({ data }: { data: Detail }) {
           </p>
         </Reveal>
       </div>
+
+      <ConfirmDialog
+        open={confirmingCancel}
+        onOpenChange={setConfirmingCancel}
+        title="Cancel a paid viewing?"
+        description={`You have paid for this viewing. If you cancel, the fee is not refunded: it goes to ${realtorFirst} for the time they set aside.`}
+        confirmLabel="Cancel the viewing"
+        cancelLabel="Keep it"
+        destructive
+        pending={cancel.isPending}
+        onConfirm={onCancel}
+      />
     </div>
+  );
+}
+
+const ESCROW_LINE: Partial<Record<InspectionRecord["escrow"]["status"], string>> = {
+  releasing: "Paying the realtor now.",
+  released: "Paid to the realtor.",
+  refunding: "Your refund is on its way.",
+  refunded: "Refunded to you.",
+  forfeited: "Kept by INSPECTRA: the viewing was missed.",
+  disputed: "On hold while INSPECTRA reviews what happened.",
+};
+
+/**
+ * The money side of a paid viewing. Unpaid, it states the terms before the button,
+ * because the no-refund rule has to be seen before anyone pays. Coming back from
+ * Flutterwave, it asks the API to confirm rather than believing the URL.
+ */
+function PaymentPanel({
+  inspection,
+  realtorFirst,
+}: {
+  inspection: InspectionRecord;
+  realtorFirst: string;
+}) {
+  const [params, setParams] = useSearchParams();
+  const pay = usePayInspection();
+
+  const reference = params.get("tx_ref") ?? "";
+  const transactionId = params.get("transaction_id") ?? "";
+  const declared = params.get("status") ?? "";
+  const returned = reference.length > 0;
+  const abandoned = returned && (declared === "cancelled" || !transactionId);
+
+  const verify = useVerifyInspectionPayment(
+    inspection.id,
+    abandoned ? "" : reference,
+    transactionId,
+  );
+
+  const { escrow } = inspection;
+  const open =
+    escrow.status === "unpaid" && !!escrow.payBy && new Date(escrow.payBy) > new Date();
+
+  const onPay = async () => {
+    try {
+      await pay.mutateAsync(inspection.id);
+    } catch (err) {
+      toast.error(apiMessage(err, "Could not start the payment."));
+    }
+  };
+
+  return (
+    <Panel title="Payment">
+      {returned && (
+        <div className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-line bg-surface-2/50 p-4 text-sm">
+          <p className="text-muted">
+            {abandoned ? (
+              "Payment not completed. Nothing was charged."
+            ) : verify.isPending ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Confirming your payment…
+              </span>
+            ) : verify.isError ? (
+              apiMessage(verify.error, "We could not confirm that payment.")
+            ) : (
+              verify.data.message
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setParams({}, { replace: true })}
+            className="shrink-0 text-xs font-medium text-muted hover:text-ink"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-line text-sm">
+        <div className="flex justify-between gap-4 px-4 py-3">
+          <span className="text-muted">Inspection fee</span>
+          <span className="tabular-nums text-ink">{formatPriceFull(escrow.fee)}</span>
+        </div>
+        <div className="flex justify-between gap-4 border-t border-line px-4 py-3">
+          <span className="text-muted">INSPECTRA service charge</span>
+          <span className="tabular-nums text-ink">{formatPriceFull(escrow.commission)}</span>
+        </div>
+        <div className="flex justify-between gap-4 border-t border-line bg-surface-2/60 px-4 py-3">
+          <span className="font-semibold text-ink">Total</span>
+          <span className="font-semibold tabular-nums text-ink">
+            {formatPriceFull(escrow.total)}
+          </span>
+        </div>
+      </div>
+
+      {escrow.status === "unpaid" ? (
+        open ? (
+          <>
+            <p className="mt-4 text-sm text-muted">
+              Pay by {formatTime(escrow.payBy!)} on {formatLongDate(escrow.payBy!)} to keep
+              this viewing. INSPECTRA holds the money until the viewing is done, then pays{" "}
+              {realtorFirst}.
+            </p>
+            <ul className="mt-3 space-y-1.5 text-xs text-muted">
+              <li>If you cancel after paying, the fee is not refunded.</li>
+              <li>If {realtorFirst} cancels or does not show up, you get everything back.</li>
+            </ul>
+            <Button
+              variant="brand"
+              className="mt-5 w-full"
+              disabled={pay.isPending}
+              onClick={onPay}
+            >
+              <Wallet className="size-4" aria-hidden />
+              {pay.isPending ? "Opening checkout…" : `Pay ${formatPriceFull(escrow.total)}`}
+            </Button>
+          </>
+        ) : (
+          <p className="mt-4 text-sm text-muted">
+            The time to pay for this viewing has passed, so it can no longer be paid.
+          </p>
+        )
+      ) : escrow.status === "held" ? (
+        <p className="mt-4 flex items-start gap-2 text-sm text-muted">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-verified" aria-hidden />
+          <span>
+            Paid{escrow.paidAt ? ` on ${formatDate(escrow.paidAt)}` : ""}. INSPECTRA holds it
+            until the viewing is done, then pays {realtorFirst}.
+          </span>
+        </p>
+      ) : (
+        <p className="mt-4 text-sm text-muted">{ESCROW_LINE[escrow.status] ?? ""}</p>
+      )}
+    </Panel>
   );
 }
 

@@ -20,6 +20,7 @@ import { StatusPill } from "@/components/dashboard/StatusPill";
 import { DateBlock } from "@/components/dashboard/DateBlock";
 import { PropertySummary } from "@/components/dashboard/PropertySummary";
 import { RealtorSummary } from "@/components/dashboard/RealtorSummary";
+import { AttendanceCard } from "@/components/inspection/AttendanceCard";
 import { Timeline } from "@/components/inspection/Timeline";
 import { SlotPicker } from "@/components/inspection/SlotPicker";
 import { Reveal } from "@/components/ui/Reveal";
@@ -35,6 +36,7 @@ import {
   useRescheduleInspection,
   useVerifyInspectionPayment,
   fromSlot,
+  movable,
   toSlot,
   type InspectionDetail as Detail,
   type InspectionRecord,
@@ -88,7 +90,9 @@ function Loaded({ data }: { data: Detail }) {
 
   // The two live states: still ahead of the realtor, or agreed and waiting. Both can
   // still be moved or called off; the three terminal states cannot.
-  const live = inspection.status === "requested" || inspection.status === "confirmed";
+  const live =
+    (inspection.status === "requested" || inspection.status === "confirmed") &&
+    movable(inspection);
   const address = listingAddress(property);
   const busy = reschedule.isPending || cancel.isPending;
   // Once paid, cancelling forfeits the fee to the realtor, so it is asked first.
@@ -147,6 +151,10 @@ function Loaded({ data }: { data: Detail }) {
               <PaymentPanel inspection={inspection} realtorFirst={realtorFirst} />
             </Reveal>
           )}
+
+          <Reveal y={16}>
+            <AttendanceCard inspection={inspection} side="seeker" other={realtorFirst} />
+          </Reveal>
 
           <Reveal y={16}>
             <Panel title="Schedule">

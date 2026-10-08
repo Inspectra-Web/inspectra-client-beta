@@ -17,6 +17,7 @@ import { StatusPill } from "@/components/dashboard/StatusPill";
 import { DateBlock } from "@/components/dashboard/DateBlock";
 import { PropertySummary } from "@/components/dashboard/PropertySummary";
 import { BuyerSummary } from "@/components/realtor/BuyerSummary";
+import { AttendanceCard } from "@/components/inspection/AttendanceCard";
 import { Timeline } from "@/components/inspection/Timeline";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -27,6 +28,7 @@ import {
   useCancelRealtorInspection,
   useDecideInspection,
   useRealtorInspection,
+  movable,
   slotPassed,
   type DiaryDetail,
   type InspectionDecision,
@@ -169,7 +171,7 @@ function Loaded({ data }: { data: DiaryDetail }) {
             </Panel>
           </Reveal>
 
-          {(waiting || confirmed) && (
+          {(waiting || confirmed) && movable(inspection) && (
             <Reveal y={16}>
               <Panel title={waiting ? "Answer this request" : "Manage this viewing"}>
                 {waiting && !replying && (
@@ -265,7 +267,11 @@ function Loaded({ data }: { data: DiaryDetail }) {
                     {/* Only once the slot has passed. The API refuses to close out a
                         viewing that has not happened, so offering it earlier would
                         be a button that cannot do its job. */}
-                    {confirmed && slotPassed(inspection.slot) && (
+                    {/* A paid viewing is closed out by its answer card instead, which
+                        also tells the money what happened. */}
+                    {confirmed &&
+                      slotPassed(inspection.slot) &&
+                      inspection.escrow.status === "none" && (
                       <Button
                         variant="brand"
                         size="sm"
@@ -292,6 +298,14 @@ function Loaded({ data }: { data: DiaryDetail }) {
               </Panel>
             </Reveal>
           )}
+
+          <Reveal y={16}>
+            <AttendanceCard
+              inspection={inspection}
+              side="realtor"
+              other={buyer.split(" ")[0] ?? "The buyer"}
+            />
+          </Reveal>
 
           <Reveal y={16}>
             <Panel title="Status">

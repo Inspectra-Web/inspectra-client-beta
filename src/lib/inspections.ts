@@ -31,6 +31,18 @@ export const inspectionCharge = (fee: number) => {
   return { fee, service, total: fee + service };
 };
 
+/** Whether a live booking can still be moved or called off. Mirrors `assertMovable`
+ *  in the server's inspection controller: a paid viewing that has taken place is
+ *  settled by its answers, and money already moving or under review is nobody's to
+ *  cancel. */
+export const movable = (inspection: { slot: string; escrow: { status: EscrowStatus } }) => {
+  const { status } = inspection.escrow;
+
+  if (status !== "none" && status !== "unpaid" && status !== "held") return false;
+
+  return !(status === "held" && new Date(inspection.slot).getTime() <= Date.now());
+};
+
 /** Which side of a booking someone is. Sent only to say who called a viewing off:
  *  it is all the page needs, and neither party is handed the other's user id. */
 export type Party = "seeker" | "realtor";
@@ -380,6 +392,30 @@ export function useVerifyInspectionPayment(id: string, reference: string, transa
     gcTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+  });
+}
+
+/** One side's answer after a paid viewing. Patches whichever console's detail cache
+ *  the answer came from, the way cancelling does. */
+export function useAnswerAttendance(side: Party) {
+  const queryClient = useQueryClient();
+  const base = side === "seeker" ? INSPECTIONS_KEY : DIARY_KEY;
+
+  return useMutation({
+    mutationFn: async (input: { id: string; answer: Attendance }): Promise<RecordResult> =>
+      unwrap(
+        await api.patch<RecordResponse>(
+          `/inspections/${side === "seeker" ? "me" : "realtor"}/${input.id}/attendance`,
+          { answer: input.answer },
+        ),
+      ),
+    onSuccess: ({ inspection }) => {
+      queryClient.setQueryData<{ inspection: InspectionRecord }>(
+        [...base, inspection.id],
+        (prev) => (prev ? { ...prev, inspection } : prev),
+      );
+      void queryClient.invalidateQueries({ queryKey: base });
+    },
   });
 }
 

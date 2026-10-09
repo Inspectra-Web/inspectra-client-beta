@@ -46,7 +46,7 @@ export const realtors: Realtor[] = [
     trustScore: 74,
     verifiedListings: 6,
     completedDeals: 12,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+    avatar: "https://images.unsplash.com/photo-1522529599102-193c0d76b5b6",
   },
   {
     id: "r5",
@@ -57,7 +57,7 @@ export const realtors: Realtor[] = [
     trustScore: 93,
     verifiedListings: 21,
     completedDeals: 52,
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
+    avatar: "https://images.unsplash.com/photo-1523824921871-d6f1a15151f1",
   },
   {
     id: "r6",
@@ -68,7 +68,7 @@ export const realtors: Realtor[] = [
     trustScore: 85,
     verifiedListings: 11,
     completedDeals: 24,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+    avatar: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f",
   },
   {
     id: "r7",
@@ -79,7 +79,7 @@ export const realtors: Realtor[] = [
     trustScore: 90,
     verifiedListings: 17,
     completedDeals: 39,
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956",
+    avatar: "https://images.unsplash.com/photo-1573496528298-f0e9d3c7ce55",
   },
   {
     id: "r8",
@@ -90,7 +90,7 @@ export const realtors: Realtor[] = [
     trustScore: 87,
     verifiedListings: 14,
     completedDeals: 29,
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7",
+    avatar: "https://images.unsplash.com/photo-1614023342667-6f060e9d1e04",
   },
   {
     id: "r9",
@@ -101,7 +101,7 @@ export const realtors: Realtor[] = [
     trustScore: 83,
     verifiedListings: 9,
     completedDeals: 19,
-    avatar: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e",
+    avatar: "https://images.unsplash.com/photo-1589156280159-27698a70f29e",
   },
   {
     id: "r10",
@@ -112,7 +112,7 @@ export const realtors: Realtor[] = [
     trustScore: 88,
     verifiedListings: 16,
     completedDeals: 33,
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d",
+    avatar: "https://images.unsplash.com/photo-1578758803946-2c4f6738df87",
   },
 ];
 

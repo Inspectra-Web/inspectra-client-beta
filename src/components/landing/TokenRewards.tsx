@@ -1,8 +1,10 @@
 import { Link } from "react-router";
-import { CalendarCheck, Clock, Coins, Flame, Search } from "lucide-react";
+import { CalendarCheck, Clock, Coins, Flame, Receipt, Search, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
+
+type Audience = "seeker" | "realtor";
 
 interface Step {
   icon: LucideIcon;
@@ -10,12 +12,7 @@ interface Step {
   body: string;
 }
 
-const STEPS: Step[] = [
-  {
-    icon: CalendarCheck,
-    title: "Book an inspection",
-    body: "Pay for your viewing securely in-app, as you normally would.",
-  },
+const BURN_STEPS: Step[] = [
   {
     icon: Coins,
     title: "Claim your crypto",
@@ -28,7 +25,35 @@ const STEPS: Step[] = [
   },
 ];
 
-export function TokenRewards() {
+const COPY = {
+  seeker: {
+    title: "Earn crypto while you find your next home",
+    body: "Get instant crypto cashback every time you pay for an inspection on INSPECTRA.",
+    tagline: "Book your inspection, claim your crypto, and grow your wealth while you search.",
+    first: {
+      icon: CalendarCheck,
+      title: "Book an inspection",
+      body: "Pay for your viewing securely in-app, as you normally would.",
+    },
+    cta: { to: "/listings", label: "Browse verified homes", Icon: Search },
+  },
+  realtor: {
+    title: "Earn crypto while you build your real estate business",
+    body: "Get instant crypto cashback every time you pay your realtor subscription.",
+    tagline: "Pay your fee, claim your crypto, and grow your wealth as a realtor.",
+    first: {
+      icon: Receipt,
+      title: "Pay your fee",
+      body: "Renew your realtor subscription as you normally would.",
+    },
+    cta: { to: "/pricing", label: "See realtor plans", Icon: Tag },
+  },
+} satisfies Record<Audience, unknown>;
+
+export function TokenRewards({ audience = "seeker" }: { audience?: Audience }) {
+  const copy = COPY[audience];
+  const steps = [copy.first, ...BURN_STEPS];
+
   return (
     <section className="pb-32 max-lg:pb-24 max-sm:pb-16">
       <Container>
@@ -49,24 +74,22 @@ export function TokenRewards() {
                 </span>
               </div>
               <h2 className="display mt-4 text-[2.6rem] text-white text-balance max-lg:text-4xl max-sm:text-3xl">
-                Earn crypto while you find your next home
+                {copy.title}
               </h2>
               <p className="mt-5 max-w-md text-[1.05rem] leading-relaxed text-white/70">
-                Get instant crypto cashback every time you pay for an inspection
-                on INSPECTRA. We burn tokens with every reward given, reducing
-                the total supply to protect your asset's value.
+                {copy.body} We burn tokens with every reward given, reducing the
+                total supply to protect your asset's value.
               </p>
               <p className="mt-5 max-w-md text-[1.05rem] italic text-white/90">
-                Book your inspection, claim your crypto, and grow your wealth
-                while you search.
+                {copy.tagline}
               </p>
 
               <Link
-                to="/listings"
+                to={copy.cta.to}
                 className="mt-9 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand px-7 text-sm font-semibold text-[#04121f] transition-transform hover:-translate-y-0.5"
               >
-                <Search className="size-4" aria-hidden />
-                Browse verified homes
+                <copy.cta.Icon className="size-4" aria-hidden />
+                {copy.cta.label}
               </Link>
             </div>
 
@@ -75,7 +98,7 @@ export function TokenRewards() {
                 aria-hidden
                 className="absolute bottom-10 left-[2.15rem] top-10 w-px bg-gradient-to-b from-brand/60 via-brand/30 to-transparent"
               />
-              {STEPS.map(({ icon: Icon, title, body }, i) => (
+              {steps.map(({ icon: Icon, title, body }, i) => (
                 <li
                   key={title}
                   className="relative flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm"

@@ -17,7 +17,7 @@ export function CertProof() {
             </blockquote>
             <div className="mt-8 flex items-center gap-3">
               <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=3&w=88&h=88&q=80"
+                src="https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=facearea&facepad=3&w=88&h=88&q=80"
                 alt=""
                 className="size-11 rounded-full object-cover"
               />
@@ -36,7 +36,7 @@ export function CertProof() {
             className="relative overflow-hidden rounded-2xl border border-line max-lg:order-1 max-lg:mx-auto max-lg:max-w-sm"
           >
             <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&crop=faces&w=800&h=1000&q=80"
+              src="https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&crop=faces&w=800&h=1000&q=80"
               alt="Emeka Balogun, a certified INSPECTRA realtor"
               className="aspect-[4/5] w-full object-cover object-[center_25%] max-lg:aspect-[16/10]"
             />

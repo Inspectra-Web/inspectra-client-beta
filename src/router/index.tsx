@@ -8,6 +8,7 @@ import { RealtorDetail } from "@/pages/RealtorDetail";
 import { GetCertified } from "@/pages/GetCertified";
 import { Pricing } from "@/pages/Pricing";
 import { About } from "@/pages/About";
+import { RealtorLanding } from "@/pages/RealtorLanding";
 import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 import { ForgotPassword } from "@/pages/ForgotPassword";
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
       { path: "enablement", element: <GetCertified /> },
       { path: "pricing", element: <Pricing /> },
       { path: "about", element: <About /> },
+      { path: "for-realtors", element: <RealtorLanding /> },
       { path: "login", element: <SignIn /> },
       { path: "register", element: <SignUp /> },
       { path: "forgot-password", element: <ForgotPassword /> },

@@ -12,28 +12,75 @@ import {
   BadgeCheck,
   Tag,
   Info,
+  ChevronDown,
+  Handshake,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import logo from "@/assets/inspectra-logo-primary-lg.png";
 import { Container } from "@/components/ui/Container";
 import { buttonClasses } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
 import { cn } from "@/lib/cn";
 import { homeFor, useMe } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 
-// Icons are drawer-only: the desktop nav is text.
-const NAV = [
+interface NavLinkItem {
+  label: string;
+  to: string;
+  Icon: LucideIcon;
+  hint?: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavLinkItem[];
+}
+
+const REALTORS: NavGroup = {
+  label: "Realtors",
+  items: [
+    {
+      label: "Find a realtor",
+      to: "/realtors",
+      Icon: Users,
+      hint: "Browse verified, trust-ranked agents",
+    },
+    {
+      label: "Join as a realtor",
+      to: "/for-realtors",
+      Icon: Handshake,
+      hint: "List with INSPECTRA and grow your business",
+    },
+    {
+      label: "Get Certified",
+      to: "/enablement",
+      Icon: BadgeCheck,
+      hint: "Earn the certified badge buyers look for",
+    },
+    {
+      label: "Pricing",
+      to: "/pricing",
+      Icon: Tag,
+      hint: "Realtor plans and what each one includes",
+    },
+  ],
+};
+
+// Icons are drawer-only in the top-level desktop nav, which is text.
+const NAV: (NavLinkItem | NavGroup)[] = [
   { label: "Listings", to: "/listings", Icon: Building2 },
-  { label: "Realtors", to: "/realtors", Icon: Users },
-  { label: "Get Certified", to: "/enablement", Icon: BadgeCheck },
-  { label: "Pricing", to: "/pricing", Icon: Tag },
+  REALTORS,
   { label: "About", to: "/about", Icon: Info },
 ];
+
+const isGroup = (item: NavLinkItem | NavGroup): item is NavGroup => "items" in item;
 
 export function Header() {
   const { data: user, isPending } = useMe();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState<string | null>(null);
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -65,7 +112,8 @@ export function Header() {
     pathname === "/listings" ||
     pathname === "/enablement" ||
     pathname === "/pricing" ||
-    pathname === "/about";
+    pathname === "/about" ||
+    pathname === "/for-realtors";
   const solid = scrolled || open;
   const onDarkHero = hasDarkHero && !solid;
 
@@ -84,26 +132,83 @@ export function Header() {
 
         {/* desktop nav */}
         <nav className="flex items-center gap-1 max-lg:hidden">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "rounded-full px-3.5 py-2 text-sm font-medium transition-colors max-xl:px-3",
-                  isActive
-                    ? onDarkHero
-                      ? "bg-white/15 text-white"
-                      : "bg-surface-2 text-ink"
-                    : onDarkHero
-                      ? "text-white/75 hover:bg-white/10 hover:text-white"
-                      : "text-muted hover:bg-surface-2 hover:text-ink",
-                )
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          {NAV.map((item) => {
+            const pill = (isActive: boolean) =>
+              cn(
+                "rounded-full px-3.5 py-2 text-sm font-medium transition-colors max-xl:px-3",
+                isActive
+                  ? onDarkHero
+                    ? "bg-white/15 text-white"
+                    : "bg-surface-2 text-ink"
+                  : onDarkHero
+                    ? "text-white/75 hover:bg-white/10 hover:text-white"
+                    : "text-muted hover:bg-surface-2 hover:text-ink",
+              );
+
+            if (!isGroup(item)) {
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => pill(isActive)}
+                >
+                  {item.label}
+                </NavLink>
+              );
+            }
+
+            const groupActive = item.items.some(
+              (link) => pathname === link.to || pathname.startsWith(`${link.to}/`),
+            );
+            return (
+              <Popover
+                key={item.label}
+                open={menu === item.label}
+                onOpenChange={(next) => setMenu(next ? item.label : null)}
+              >
+                <PopoverTrigger
+                  className={cn(pill(groupActive), "inline-flex items-center gap-1")}
+                >
+                  {item.label}
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 transition-transform duration-200",
+                      menu === item.label && "rotate-180",
+                    )}
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                </PopoverTrigger>
+                <PopoverContent align="center" sideOffset={10} className="w-72 p-2">
+                  {item.items.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setMenu(null)}
+                      className={({ isActive }) =>
+                        cn(
+                          "group flex items-start gap-3 rounded-lg p-3 transition-colors duration-200",
+                          isActive ? "bg-brand/10" : "hover:bg-brand/8",
+                        )
+                      }
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand-ink transition-colors duration-200 group-hover:bg-brand group-hover:text-white">
+                        <link.Icon className="size-4.5" strokeWidth={2} aria-hidden />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-ink transition-colors duration-200 group-hover:text-brand-ink">
+                          {link.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-snug text-muted">
+                          {link.hint}
+                        </span>
+                      </span>
+                    </NavLink>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            );
+          })}
         </nav>
 
         {/* desktop actions */}
@@ -223,35 +328,20 @@ export function Header() {
               </div>
 
               <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-                {NAV.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setOpen(false)}
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] font-medium transition-colors",
-                        isActive
-                          ? "bg-brand/10 text-brand-ink"
-                          : "text-muted hover:bg-surface-2 hover:text-ink",
-                      )
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <item.Icon
-                          className={cn(
-                            "size-4.5 shrink-0",
-                            !isActive && "text-faint",
-                          )}
-                          strokeWidth={2}
-                          aria-hidden
-                        />
-                        {item.label}
-                      </>
-                    )}
-                  </NavLink>
-                ))}
+                {NAV.map((entry) =>
+                  isGroup(entry) ? (
+                    <div key={entry.label} className="space-y-1 py-2">
+                      <p className="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-faint">
+                        {entry.label}
+                      </p>
+                      {entry.items.map((item) => (
+                        <DrawerLink key={item.to} item={item} onNavigate={() => setOpen(false)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <DrawerLink key={entry.to} item={entry} onNavigate={() => setOpen(false)} />
+                  ),
+                )}
               </nav>
 
               {!isPending && (
@@ -298,5 +388,39 @@ export function Header() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function DrawerLink({
+  item,
+  onNavigate,
+}: {
+  item: NavLinkItem;
+  onNavigate: () => void;
+}) {
+  return (
+    <NavLink
+      to={item.to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] font-medium transition-colors",
+          isActive
+            ? "bg-brand/10 text-brand-ink"
+            : "text-muted hover:bg-surface-2 hover:text-ink",
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <item.Icon
+            className={cn("size-4.5 shrink-0", !isActive && "text-faint")}
+            strokeWidth={2}
+            aria-hidden
+          />
+          {item.label}
+        </>
+      )}
+    </NavLink>
   );
 }

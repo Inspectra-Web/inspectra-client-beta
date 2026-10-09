@@ -1,5 +1,5 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { ArrowRight, BadgeCheck } from "lucide-react";
+import { ArrowRight, Handshake } from "lucide-react";
 import { Link } from "react-router";
 import { Container } from "@/components/ui/Container";
 import { Typewriter } from "@/components/ui/Typewriter";
@@ -82,11 +82,11 @@ export function Hero() {
               <ArrowRight className="size-4" aria-hidden />
             </Link>
             <Link
-              to="/enablement"
+              to="/for-realtors"
               className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 text-base font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 max-sm:h-12"
             >
-              <BadgeCheck className="size-4" aria-hidden />
-              Get certified as a realtor
+              <Handshake className="size-4" aria-hidden />
+              Join as a realtor
             </Link>
           </motion.div>
         </motion.div>

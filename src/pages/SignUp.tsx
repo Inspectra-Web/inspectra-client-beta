@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -66,6 +66,7 @@ export function SignUp() {
   // holding the address rather than navigating anywhere.
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const {
     register,
@@ -76,7 +77,9 @@ export function SignUp() {
     formState: { errors, isSubmitting },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { role: "seeker" },
+    defaultValues: {
+      role: searchParams.get("role") === "realtor" ? "realtor" : "seeker",
+    },
   });
 
   const role = watch("role");

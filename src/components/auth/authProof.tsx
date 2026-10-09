@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 const HOME_IMAGE =
   "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80";
 const REALTOR_IMAGE =
-  "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&crop=faces&w=900&q=80";
+  "https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&crop=faces&w=900&q=80";
 
 /** A verified home: badge on a real photo plus a short proof footer. */
 export function VerifiedProof() {

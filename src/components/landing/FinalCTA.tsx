@@ -34,7 +34,7 @@ export function FinalCTA() {
                 Browse verified homes
               </Link>
               <Link
-                to="/register"
+                to="/for-realtors"
                 className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/30 px-8 text-base font-semibold text-white transition-colors hover:bg-white/10 max-sm:w-full"
               >
                 List your property

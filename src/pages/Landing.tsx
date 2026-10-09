@@ -6,7 +6,8 @@ import { Partners } from "@/components/landing/Partners";
 // import { FeaturedListings } from "@/components/landing/FeaturedListings";
 // import { Testimonial } from "@/components/landing/Testimonial";
 // import { CertifiedRealtors } from "@/components/landing/CertifiedRealtors";
-import { ForRealtors } from "@/components/landing/ForRealtors";
+import { TokenRewards } from "@/components/landing/TokenRewards";
+// import { ForRealtors } from "@/components/landing/ForRealtors";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 
 export function Landing() {
@@ -16,6 +17,7 @@ export function Landing() {
       <Solutions />
       <TrustLayers />
       <HowItWorks />
+      <TokenRewards />
       {/* Live on INSPECTRA. Commented out until real properties are listed: the
           section promises a live marketplace and would render an empty grid. */}
       {/* <FeaturedListings /> */}
@@ -26,7 +28,9 @@ export function Landing() {
           writes Profile.certified yet, so there is no one to show. */}
       {/* <CertifiedRealtors /> */}
       <Partners />
-      <ForRealtors />
+      {/* For realtors. Commented out: this page speaks to seekers only, and the
+          realtor pitch moves to its own realtor landing page. */}
+      {/* <ForRealtors /> */}
       <FinalCTA />
     </>
   );

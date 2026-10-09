@@ -6,7 +6,7 @@ import { ArrowRight, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "react-toastify";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthField, PasswordField } from "@/components/auth/AuthField";
-import { GoogleButton, OrDivider } from "@/components/auth/SocialAuth";
+// import { GoogleButton, OrDivider } from "@/components/auth/SocialAuth";
 import { VerifiedProof } from "@/components/auth/authProof";
 import { signInSchema, type SignInValues } from "@/lib/authSchemas";
 import { apiMessage, apiStatus, resendVerification } from "@/lib/api";
@@ -82,10 +82,10 @@ export function SignIn() {
         headline: (
           <>
             Welcome back to the
-            <span className="block text-brand-gradient">verified way to buy.</span>
+            <span className="block text-brand-gradient">verified way to find a home.</span>
           </>
         ),
-        sub: "Pick up where you left off: saved homes, booked inspections and every message, all in one trusted place.",
+        sub: "Pick up where you left off: your property requests and everything that comes after, all in one trusted place.",
         proof: <VerifiedProof />,
       }}
     >
@@ -99,10 +99,11 @@ export function SignIn() {
         </p>
       </header>
 
-      <div className="mt-8 space-y-4">
+      {/* Google sign-in is not wired to the API yet, so it stays off until it works. */}
+      {/* <div className="mt-8 space-y-4">
         <GoogleButton label="Continue with Google" />
         <OrDivider />
-      </div>
+      </div> */}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
         <AuthField

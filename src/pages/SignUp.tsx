@@ -14,7 +14,7 @@ import {
 import { toast } from "react-toastify";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthField, PasswordField } from "@/components/auth/AuthField";
-import { GoogleButton, OrDivider } from "@/components/auth/SocialAuth";
+// import { GoogleButton, OrDivider } from "@/components/auth/SocialAuth";
 import { VerifiedProof, CredentialProof } from "@/components/auth/authProof";
 import { signUpSchema, type SignUpValues } from "@/lib/authSchemas";
 import { apiMessage, apiStatus, registerAccount, resendVerification } from "@/lib/api";
@@ -23,8 +23,8 @@ import { cn } from "@/lib/cn";
 const ROLES = [
   {
     value: "seeker",
-    label: "I'm looking to buy",
-    desc: "Browse verified homes and book inspections.",
+    label: "I'm looking for a property",
+    desc: "Rent, buy, lease or shortlet a verified home.",
     Icon: Search,
   },
   {
@@ -45,7 +45,7 @@ const SIDE = {
         <span className="block text-brand-gradient">actually verified.</span>
       </>
     ),
-    sub: "Every listing is checked for title, documents and fees before it reaches you. Save the ones you love and book inspections in a tap.",
+    sub: "Every listing is checked for title, documents and fees before it reaches you. Tell us what you're looking for and be first to hear when matching homes go live.",
     proof: <VerifiedProof />,
   },
   realtor: {
@@ -217,10 +217,11 @@ export function SignUp() {
         </div>
       </fieldset>
 
-      <div className="mt-6 space-y-4">
+      {/* Google sign-up is not wired to the API yet, so it stays off until it works. */}
+      {/* <div className="mt-6 space-y-4">
         <GoogleButton label="Sign up with Google" />
         <OrDivider />
-      </div>
+      </div> */}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
         <AuthField

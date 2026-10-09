@@ -323,7 +323,11 @@ function Loaded({ data }: { data: DiaryDetail }) {
                   to you.{" "}
                   {inspection.escrow.status === "unpaid" && inspection.status === "cancelled"
                     ? "Not paid in time, so the viewing was cancelled."
-                    : FEE_LINE[inspection.escrow.status]}
+                    : inspection.escrow.status === "held" && inspection.status === "cancelled"
+                      ? inspection.cancelledBy === "seeker"
+                        ? "The buyer cancelled after paying, so it is paid to you."
+                        : "You cancelled, so it is refunded to the buyer."
+                      : FEE_LINE[inspection.escrow.status]}
                   {inspection.escrow.status === "unpaid" &&
                   inspection.status === "confirmed" &&
                   inspection.escrow.payBy

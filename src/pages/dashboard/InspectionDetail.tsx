@@ -464,8 +464,12 @@ function PaymentPanel({
         <p className="mt-4 flex items-start gap-2 text-sm text-muted">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-verified" aria-hidden />
           <span>
-            Paid{escrow.paidAt ? ` on ${formatDate(escrow.paidAt)}` : ""}. INSPECTRA holds it
-            until the viewing is done, then pays {realtorFirst}.
+            Paid{escrow.paidAt ? ` on ${formatDate(escrow.paidAt)}` : ""}.{" "}
+            {inspection.status !== "cancelled"
+              ? `INSPECTRA holds it until the viewing is done, then pays ${realtorFirst}.`
+              : inspection.cancelledBy === "realtor"
+                ? `${realtorFirst} cancelled, so you are owed a full refund.`
+                : `You cancelled after paying, so the fee goes to ${realtorFirst}.`}
           </span>
         </p>
       ) : (

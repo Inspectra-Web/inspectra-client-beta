@@ -7,8 +7,7 @@ import {
   LogIn,
   UserPlus,
   LayoutDashboard,
-  Building2,
-  Users,
+  ClipboardList,
   BadgeCheck,
   Tag,
   Info,
@@ -39,13 +38,8 @@ interface NavGroup {
 
 const REALTORS: NavGroup = {
   label: "Realtors",
+  // "Find a realtor" returns with the /realtors directory when listings open.
   items: [
-    {
-      label: "Find a realtor",
-      to: "/realtors",
-      Icon: Users,
-      hint: "Browse verified, trust-ranked agents",
-    },
     {
       label: "Join as a realtor",
       to: "/for-realtors",
@@ -69,7 +63,7 @@ const REALTORS: NavGroup = {
 
 // Icons are drawer-only in the top-level desktop nav, which is text.
 const NAV: (NavLinkItem | NavGroup)[] = [
-  { label: "Listings", to: "/listings", Icon: Building2 },
+  { label: "Request a property", to: "/request", Icon: ClipboardList },
   REALTORS,
   { label: "About", to: "/about", Icon: Info },
 ];

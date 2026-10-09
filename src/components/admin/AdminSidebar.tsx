@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import {
   BadgeCheck,
   Building2,
+  ClipboardList,
   Landmark,
   LayoutDashboard,
   Scale,
@@ -30,6 +31,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Command",
     items: [{ label: "Overview", to: "/admin", Icon: LayoutDashboard, end: true }],
+  },
+  {
+    label: "Waitlist",
+    items: [{ label: "Requests", to: "/admin/requests", Icon: ClipboardList }],
   },
   {
     label: "Trust operations",

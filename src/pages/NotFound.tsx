@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowLeft, MapPinOff, Search } from "lucide-react";
+import { ArrowLeft, ClipboardList, MapPinOff } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import logoWhite from "@/assets/inspectra-logo-white-lg.png";
 
@@ -9,8 +9,7 @@ const BG_IMAGE =
 
 // Familiar destinations, so a dead link is never a dead end.
 const QUICK_LINKS = [
-  { label: "Browse listings", to: "/listings" },
-  { label: "Find realtors", to: "/realtors" },
+  { label: "Request a property", to: "/request" },
   { label: "Get certified", to: "/enablement" },
   { label: "Pricing", to: "/pricing" },
   { label: "About", to: "/about" },
@@ -103,11 +102,11 @@ export function NotFound() {
             Back to home
           </Link>
           <Link
-            to="/listings"
+            to="/request"
             className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/15 max-sm:h-12"
           >
-            <Search className="size-4" aria-hidden />
-            Browse verified listings
+            <ClipboardList className="size-4" aria-hidden />
+            Request a property
           </Link>
         </motion.div>
 

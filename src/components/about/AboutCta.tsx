@@ -16,18 +16,18 @@ export function AboutCta() {
               Whether you're buying or selling, start with trust.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-[1.05rem] leading-relaxed text-white/70 max-sm:text-base">
-              Browse listings that were checked before they ever went live, or earn the
-              certification that lets you sell on INSPECTRA.
+              Tell us the home you want and hear first when verified homes go live, or earn
+              the certification that lets you sell on INSPECTRA.
             </p>
           </div>
 
           <div className="mx-auto mt-9 flex max-w-xl items-center justify-center gap-3 max-sm:flex-col max-sm:items-stretch">
             <Link
-              to="/listings"
+              to="/request"
               className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand px-8 text-base font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5 max-sm:h-12"
             >
               <Home className="size-4" aria-hidden />
-              Browse verified listings
+              Request a property
             </Link>
             <Link
               to="/enablement"

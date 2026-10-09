@@ -1,14 +1,15 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "@/layouts/RootLayout";
 import { Landing } from "@/pages/Landing";
-import { Listings } from "@/pages/Listings";
-import { ListingDetail } from "@/pages/ListingDetail";
-import { Realtors } from "@/pages/Realtors";
-import { RealtorDetail } from "@/pages/RealtorDetail";
+// import { Listings } from "@/pages/Listings";
+// import { ListingDetail } from "@/pages/ListingDetail";
+// import { Realtors } from "@/pages/Realtors";
+// import { RealtorDetail } from "@/pages/RealtorDetail";
 import { GetCertified } from "@/pages/GetCertified";
 import { Pricing } from "@/pages/Pricing";
 import { About } from "@/pages/About";
 import { RealtorLanding } from "@/pages/RealtorLanding";
+import { Request } from "@/pages/Request";
 import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 import { ForgotPassword } from "@/pages/ForgotPassword";
@@ -18,6 +19,9 @@ import { Terms } from "@/pages/Terms";
 import { Privacy } from "@/pages/Privacy";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { Overview } from "@/pages/dashboard/Overview";
+import { Requests } from "@/pages/dashboard/Requests";
+import { RequestDetail } from "@/pages/dashboard/RequestDetail";
+import { RequestEdit } from "@/pages/dashboard/RequestEdit";
 import { Saved } from "@/pages/dashboard/Saved";
 import { Inquiries } from "@/pages/dashboard/Inquiries";
 import { InquiryDetail } from "@/pages/dashboard/InquiryDetail";
@@ -48,6 +52,7 @@ import { AdminOverview } from "@/pages/admin/Overview";
 import { AdminVerification } from "@/pages/admin/Verification";
 import { AdminVerificationDetail } from "@/pages/admin/VerificationDetail";
 import { AdminListings } from "@/pages/admin/Listings";
+import { AdminRequests } from "@/pages/admin/Requests";
 import { AdminListingDetail } from "@/pages/admin/ListingDetail";
 import { AdminRealtors } from "@/pages/admin/Realtors";
 import { AdminRealtorDetail } from "@/pages/admin/RealtorDetail";
@@ -70,14 +75,18 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Landing /> },
-      { path: "listings", element: <Listings /> },
-      { path: "listings/:slug", element: <ListingDetail /> },
-      { path: "realtors", element: <Realtors /> },
-      { path: "realtors/:id", element: <RealtorDetail /> },
+      // Hidden for the waitlist launch: nothing is listed yet, so seekers file a request
+      // at /request instead. Unrouted rather than deleted; they fall through to NotFound
+      // until listings open. The pages and their imports stay.
+      // { path: "listings", element: <Listings /> },
+      // { path: "listings/:slug", element: <ListingDetail /> },
+      // { path: "realtors", element: <Realtors /> },
+      // { path: "realtors/:id", element: <RealtorDetail /> },
       { path: "enablement", element: <GetCertified /> },
       { path: "pricing", element: <Pricing /> },
       { path: "about", element: <About /> },
       { path: "for-realtors", element: <RealtorLanding /> },
+      { path: "request", element: <Request /> },
       { path: "login", element: <SignIn /> },
       { path: "register", element: <SignUp /> },
       { path: "forgot-password", element: <ForgotPassword /> },
@@ -99,6 +108,9 @@ export const router = createBrowserRouter([
         element: <DashboardLayout />,
         children: [
           { index: true, element: <Overview /> },
+          { path: "requests", element: <Requests /> },
+          { path: "requests/:id", element: <RequestDetail /> },
+          { path: "requests/:id/edit", element: <RequestEdit /> },
           { path: "saved", element: <Saved /> },
           { path: "inquiries", element: <Inquiries /> },
           { path: "inquiries/:id", element: <InquiryDetail /> },
@@ -161,6 +173,7 @@ export const router = createBrowserRouter([
           { index: true, element: <AdminOverview /> },
           { path: "verification", element: <AdminVerification /> },
           { path: "verification/:id", element: <AdminVerificationDetail /> },
+          { path: "requests", element: <AdminRequests /> },
           { path: "listings", element: <AdminListings /> },
           { path: "listings/:id", element: <AdminListingDetail /> },
           { path: "realtors", element: <AdminRealtors /> },

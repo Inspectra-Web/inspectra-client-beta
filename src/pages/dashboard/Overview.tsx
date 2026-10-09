@@ -3,6 +3,7 @@ import {
   Heart,
   MessageSquare,
   CalendarCheck,
+  ClipboardList,
   ArrowRight,
   Search,
   ShieldCheck,
@@ -28,6 +29,7 @@ import {
   EMPTY_QUERY as LISTINGS_QUERY,
 } from "@/lib/marketplace";
 import { useMyInquiries, EMPTY_QUERY, type InquiryRow } from "@/lib/inquiries";
+import { requestState, useMyRequests } from "@/lib/requests";
 import {
   useMyInspections,
   UPCOMING_QUERY,
@@ -49,6 +51,10 @@ export function Overview() {
   const { ids } = useSavedIds();
   const threadsQuery = useMyInquiries(EMPTY_QUERY);
   const bookedQuery = useMyInspections(UPCOMING_QUERY);
+
+  const { data: requests } = useMyRequests();
+  const liveRequests = (requests ?? []).filter((r) => requestState(r) === "active").length;
+  const expiredRequests = (requests ?? []).filter((r) => requestState(r) === "expired").length;
 
   const threads = threadsQuery.data;
   const booked = bookedQuery.data;
@@ -76,7 +82,23 @@ export function Overview() {
       </Reveal>
 
       {/* stats */}
-      <Reveal className="grid grid-cols-3 gap-4 max-md:grid-cols-1" y={16}>
+      <Reveal className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1" y={16}>
+        <StatCard
+          icon={ClipboardList}
+          label="Active requests"
+          value={liveRequests}
+          // Expired ones are the only requests asking something of the seeker.
+          hint={
+            requests
+              ? expiredRequests > 0
+                ? `${expiredRequests} expired, renew to keep hearing`
+                : requests.length === 0
+                  ? "Tell us what you're looking for"
+                  : undefined
+              : undefined
+          }
+          to="/dashboard/requests"
+        />
         <StatCard icon={Heart} label="Saved homes" value={ids.length} to="/dashboard/saved" />
         <StatCard
           icon={MessageSquare}
@@ -106,7 +128,7 @@ export function Overview() {
           <EmptyState
             icon={Search}
             title="Your search starts here"
-            message="Message a realtor or book a viewing, and it will show up on this page."
+            message="Once verified homes go live, the realtors you message and the viewings you book will show up here."
           />
         </Reveal>
       ) : (
@@ -129,8 +151,8 @@ export function Overview() {
               ) : (
                 <div className="py-6">
                   <p className="text-muted">No inspections scheduled yet.</p>
-                  <Link to="/listings" className={buttonClasses("outline", "sm", "mt-4")}>
-                    Find a home to view
+                  <Link to="/dashboard/requests" className={buttonClasses("outline", "sm", "mt-4")}>
+                    View your requests
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>
                 </div>

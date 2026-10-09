@@ -5,16 +5,18 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useMyInquiries, EMPTY_QUERY } from "@/lib/inquiries";
 import { useMyInspections, UPCOMING_QUERY } from "@/lib/inspections";
 import { useSavedIds } from "@/lib/saved";
+import { requestState, useMyRequests } from "@/lib/requests";
 import { useAuthUser } from "@/lib/auth";
 import { displayName } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import {
-  ArrowUpRight,
   CalendarCheck,
+  ClipboardList,
   Heart,
   LayoutDashboard,
   type LucideIcon,
   MessageSquare,
+  Plus,
   UserCircle,
 } from "lucide-react";
 import { Link, NavLink } from "react-router";
@@ -27,8 +29,19 @@ type NavItem = {
   count?: number;
 };
 
-const nav = (awaitingReply: number, saved: number, upcoming: number): NavItem[] => [
+const nav = (
+  liveRequests: number,
+  awaitingReply: number,
+  saved: number,
+  upcoming: number,
+): NavItem[] => [
   { label: "Overview", to: "/dashboard", Icon: LayoutDashboard, end: true },
+  {
+    label: "My requests",
+    to: "/dashboard/requests",
+    Icon: ClipboardList,
+    count: liveRequests,
+  },
   {
     label: "Saved homes",
     to: "/dashboard/saved",
@@ -65,7 +78,12 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   // pill and the page share one cache entry.
   const { data: booked } = useMyInspections(UPCOMING_QUERY);
 
-  const NAV = nav(data?.counts.new ?? 0, saved.length, booked?.counts.upcoming ?? 0);
+  // The same entry the requests page reads. The pill counts live ones: an expired
+  // request is not standing in the queue until it is renewed.
+  const { data: requests } = useMyRequests();
+  const live = (requests ?? []).filter((r) => requestState(r) === "active").length;
+
+  const NAV = nav(live, data?.counts.new ?? 0, saved.length, booked?.counts.upcoming ?? 0);
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -106,12 +124,12 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <Link
-        to="/listings"
+        to="/request"
         onClick={onNavigate}
-        className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5"
+        className="mt-6 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5"
       >
-        Browse listings
-        <ArrowUpRight className="size-4" aria-hidden />
+        New request
+        <Plus className="size-4" aria-hidden />
       </Link>
 
       <div className="mt-auto space-y-4 pt-6">

@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, ClipboardList } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { CtaBand } from "@/components/landing/CtaBand";
@@ -15,23 +15,23 @@ export function FinalCTA() {
           <CtaBand image={IMAGE} className="py-24 text-center max-sm:py-16">
             <div className="mx-auto max-w-2xl">
             <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/60">
-              Start your search
+              Join the waitlist
             </span>
             <h2 className="display mt-5 text-[3.25rem] text-white text-balance max-lg:text-4xl max-sm:text-3xl">
-              Your next home is already verified. Come find it.
+              Tell us the home you want. Be first when it's verified.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base">
-              Search homes you can trust, or list your property to buyers who trust what
-              they see. It starts here.
+              We're opening in Lagos, Abuja and Port Harcourt. File your request now, or list
+              your property with buyers who trust what they see.
             </p>
 
             <div className="mt-9 flex items-center justify-center gap-3 max-sm:flex-col">
               <Link
-                to="/listings"
+                to="/request"
                 className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand px-8 text-base font-semibold text-[#04121f] transition-transform hover:-translate-y-0.5 max-sm:w-full"
               >
-                <Search className="size-4" aria-hidden />
-                Browse verified homes
+                <ClipboardList className="size-4" aria-hidden />
+                Request a property
               </Link>
               <Link
                 to="/for-realtors"
@@ -43,7 +43,7 @@ export function FinalCTA() {
             </div>
 
             <p className="mt-6 text-sm text-white/60">
-              Free for home seekers · No listing goes live unverified
+              Lagos · Abuja · Port Harcourt · No listing goes live unverified
             </p>
           </div>
           </CtaBand>

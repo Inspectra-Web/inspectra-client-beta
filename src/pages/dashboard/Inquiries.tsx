@@ -3,8 +3,8 @@ import { Link } from "react-router";
 import {
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   MessageSquare,
-  Search,
   SearchX,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -110,7 +110,7 @@ export function Inquiries() {
             message={
               filtered
                 ? "Clear the filter to see every conversation you have started."
-                : "Reach out from any listing to ask about documents, pricing or a viewing."
+                : "Once verified homes go live, you can message a realtor about any listing from here."
             }
             action={
               filtered ? (
@@ -121,9 +121,9 @@ export function Inquiries() {
                   Clear filter
                 </Button>
               ) : (
-                <Link to="/listings" className={buttonClasses("brand", "md")}>
-                  <Search className="size-4" aria-hidden />
-                  Browse listings
+                <Link to="/dashboard/requests" className={buttonClasses("brand", "md")}>
+                  <ClipboardList className="size-4" aria-hidden />
+                  View your requests
                 </Link>
               )
             }

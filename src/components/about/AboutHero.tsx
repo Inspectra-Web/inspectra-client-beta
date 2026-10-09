@@ -80,10 +80,10 @@ export function AboutHero() {
             className="mt-9 flex items-center gap-3 max-sm:flex-col max-sm:items-stretch"
           >
             <Link
-              to="/listings"
+              to="/request"
               className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand px-8 text-base font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5 max-sm:h-12"
             >
-              Browse verified listings
+              Request a property
               <ArrowRight className="size-4" aria-hidden />
             </Link>
             <Link

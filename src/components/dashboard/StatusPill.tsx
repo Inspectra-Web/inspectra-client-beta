@@ -12,7 +12,9 @@ type PillStatus =
   | "confirmed"
   | "completed"
   | "declined"
-  | "cancelled";
+  | "cancelled"
+  | "active"
+  | "expired";
 
 const MAP: Record<PillStatus, { label: string; className: string }> = {
   new: { label: "New", className: "bg-brand/10 text-brand-ink" },
@@ -29,6 +31,10 @@ const MAP: Record<PillStatus, { label: string; className: string }> = {
   // either side calling off a viewing they had agreed is routine.
   declined: { label: "Declined", className: "bg-rose-500/10 text-rose-600 dark:text-rose-400" },
   cancelled: { label: "Cancelled", className: "bg-surface-2 text-muted" },
+  // Property requests. Expired is the one that wants the seeker: renew it or it stops
+  // counting, so it takes the pending tone rather than the neutral closed one.
+  active: { label: "Active", className: "bg-verified/10 text-verified" },
+  expired: { label: "Expired", className: "bg-gold/10 text-gold" },
 };
 
 export function StatusPill({

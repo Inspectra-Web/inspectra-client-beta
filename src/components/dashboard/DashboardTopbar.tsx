@@ -6,6 +6,7 @@ import { displayName } from "@/lib/format";
 
 const TITLES: Record<string, string> = {
   "/dashboard": "Overview",
+  "/dashboard/requests": "My requests",
   "/dashboard/saved": "Saved homes",
   "/dashboard/inquiries": "Inquiries",
   "/dashboard/inspections": "Inspections",
@@ -15,7 +16,9 @@ const TITLES: Record<string, string> = {
 /** Sticky top bar: mobile menu trigger, page title, notifications, avatar. */
 export function DashboardTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { pathname } = useLocation();
-  const title = TITLES[pathname] ?? "Dashboard";
+  // A detail page takes its section's title: /dashboard/requests/:id reads "My requests".
+  const section = Object.keys(TITLES).find((path) => path !== "/dashboard" && pathname.startsWith(`${path}/`));
+  const title = TITLES[pathname] ?? (section ? TITLES[section] : "Dashboard");
   const user = useAuthUser();
 
   return (

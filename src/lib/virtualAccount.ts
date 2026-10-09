@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
 
@@ -47,5 +47,41 @@ export function useOpenVirtualAccount() {
     },
     // Re-read rather than patch, so the balance arrives with the new account.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: VIRTUAL_ACCOUNT_KEY }),
+  });
+}
+
+/** One inspection fee paid into the realtor's account. Amounts in kobo, like the balance. */
+export interface Earning {
+  id: string;
+  amount: number;
+  reference: string;
+  paidAt: string;
+  slot?: string;
+  inspection?: string;
+  property: string;
+}
+
+export interface Earnings {
+  earnings: Earning[];
+  /** Everything paid in so far, in kobo. */
+  earned: number;
+  /** Paid by buyers and waiting on a viewing, an answer or the transfer. Not theirs yet. */
+  held: { count: number; kobo: number };
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export function useEarnings(page: number) {
+  return useQuery({
+    queryKey: [...VIRTUAL_ACCOUNT_KEY, "earnings", page],
+    queryFn: async () => {
+      const res = await api.get<{ data: Earnings }>("/virtual-accounts/me/earnings", {
+        params: { page },
+      });
+      return res.data.data;
+    },
+    placeholderData: keepPreviousData,
   });
 }

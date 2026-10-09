@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import { Check, CircleAlert, Copy, Landmark } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleAlert, Copy, Landmark } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { EmptyState } from "@/components/dashboard/EmptyState";
@@ -11,8 +11,10 @@ import { apiMessage } from "@/lib/api";
 import { useIdentity } from "@/lib/identity";
 import { useProfile } from "@/lib/profile";
 import { formatDate } from "@/lib/format";
+import { DataTable, thCls, tdCls, rowCls } from "@/components/dashboard/DataTable";
 import {
   formatKobo,
+  useEarnings,
   useOpenVirtualAccount,
   useVirtualAccount,
   type Balance,
@@ -43,7 +45,10 @@ export function RealtorVirtualAccount() {
       ) : isPending ? (
         <div className="h-56 animate-pulse rounded-2xl border border-line bg-surface" />
       ) : data.account?.status === "active" ? (
-        <AccountDetails account={data.account} balance={data.balance} />
+        <>
+          <AccountDetails account={data.account} balance={data.balance} />
+          <EarningsPanel />
+        </>
       ) : (
         <OpenAccount />
       )}
@@ -117,6 +122,108 @@ function AccountDetails({ account, balance }: { account: VirtualAccount; balance
         </Panel>
       </Reveal>
     </div>
+  );
+}
+
+/**
+ * Inspection fees that have actually landed, from the ledger, and what buyers have paid
+ * that is still on its way. Nothing here is projected: a fee appears once its transfer
+ * succeeded, and a disputed one appears in neither figure until it is decided.
+ */
+function EarningsPanel() {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const { data, isPending, isError, error, isPlaceholderData } = useEarnings(page);
+
+  return (
+    <Reveal y={16}>
+      <Panel title="Inspection fees">
+        {isError ? (
+          <p className="text-sm text-muted">{apiMessage(error, "Could not load your inspection fees.")}</p>
+        ) : isPending ? (
+          <div className="h-32 animate-pulse rounded-xl bg-surface-2/60" />
+        ) : (
+          <>
+            <dl className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+              <div className="rounded-xl border border-line bg-surface-2/40 p-4">
+                <dt className="text-sm text-muted">Paid to you</dt>
+                <dd className="display mt-1 text-2xl tabular-nums text-ink">{formatKobo(data.earned)}</dd>
+                <dd className="mt-0.5 text-xs text-faint">
+                  {data.total} {data.total === 1 ? "viewing" : "viewings"}
+                </dd>
+              </div>
+              <div className="rounded-xl border border-line bg-surface-2/40 p-4">
+                <dt className="text-sm text-muted">Held for you</dt>
+                <dd className="display mt-1 text-2xl tabular-nums text-ink">{formatKobo(data.held.kobo)}</dd>
+                <dd className="mt-0.5 text-xs text-faint">
+                  Paid by buyers, released once each viewing is confirmed
+                </dd>
+              </div>
+            </dl>
+
+            {data.earnings.length === 0 ? (
+              <p className="mt-5 text-sm text-muted">
+                No inspection fees paid out yet. They appear here as each paid viewing is confirmed.
+              </p>
+            ) : (
+              <DataTable
+                className={cn("mt-5 transition-opacity", isPlaceholderData && "opacity-60")}
+                minWidthClass="sm:min-w-[620px]"
+                head={
+                  <tr>
+                    <th className={thCls}>Listing</th>
+                    <th className={cn(thCls, "max-md:hidden")}>Viewing</th>
+                    <th className={thCls}>Paid</th>
+                    <th className={cn(thCls, "text-right")}>Amount</th>
+                  </tr>
+                }
+              >
+                {data.earnings.map((e) => (
+                  <tr
+                    key={e.id}
+                    className={rowCls}
+                    onClick={() => e.inspection && navigate(`/realtor/inspections/${e.inspection}`)}
+                  >
+                    <td className={tdCls}>
+                      <p className="truncate font-medium text-ink">{e.property || "Removed listing"}</p>
+                      <p className="truncate text-xs text-faint">{e.reference}</p>
+                    </td>
+                    <td className={cn(tdCls, "text-sm text-muted max-md:hidden")}>
+                      {e.slot ? formatDate(e.slot) : ""}
+                    </td>
+                    <td className={cn(tdCls, "text-sm text-muted")}>{formatDate(e.paidAt)}</td>
+                    <td className={cn(tdCls, "text-right font-medium tabular-nums text-ink")}>
+                      {formatKobo(e.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </DataTable>
+            )}
+
+            {data.pages > 1 && (
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  <ChevronLeft className="size-4" aria-hidden />
+                  Previous
+                </Button>
+                <span className="text-sm tabular-nums text-muted">
+                  Page {data.page} of {data.pages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= data.pages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                  <ChevronRight className="size-4" aria-hidden />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </Panel>
+    </Reveal>
   );
 }
 

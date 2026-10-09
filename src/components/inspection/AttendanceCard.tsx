@@ -74,11 +74,21 @@ export function AttendanceCard({
         </p>
       ) : (
         <>
-          <p className="text-sm text-muted">
-            {side === "seeker"
-              ? `Tell us whether your viewing with ${other} went ahead. If you don't answer, the fee is paid to them 48 hours after we ask.`
-              : `Tell us whether ${other} came to the viewing. Your fee is released once it is confirmed.`}
-          </p>
+          {side === "seeker" && escrow.realtorAnswer.answer === "no_show" ? (
+            <p className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-sm text-ink">
+              {other} reported that you didn&apos;t attend
+              {escrow.realtorAnswer.at
+                ? ` on ${formatDate(escrow.realtorAnswer.at)} at ${formatTime(escrow.realtorAnswer.at)}`
+                : ""}
+              . If you did, say so below within 48 hours of that, or the fee is not refunded.
+            </p>
+          ) : (
+            <p className="text-sm text-muted">
+              {side === "seeker"
+                ? `Tell us whether your viewing with ${other} went ahead. If you don't answer, the fee is paid to them 48 hours after we ask.`
+                : `Tell us whether ${other} came to the viewing. Your fee is released once it is confirmed.`}
+            </p>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               variant="brand"

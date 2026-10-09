@@ -188,7 +188,7 @@ export function Header() {
                       className={({ isActive }) =>
                         cn(
                           "group flex items-start gap-3 rounded-lg p-3 transition-colors duration-200",
-                          isActive ? "bg-brand/10" : "hover:bg-brand/8",
+                          isActive ? "bg-brand/12" : "hover:bg-brand/15",
                         )
                       }
                     >

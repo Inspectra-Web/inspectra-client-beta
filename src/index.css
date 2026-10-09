@@ -3,6 +3,10 @@
 /* Class-based dark mode driven by ThemeProvider (see src/lib/theme.tsx). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tailwind v4 gates hover: behind @media (hover: hover), which touchscreen laptops
+   report as false even with a mouse attached, so every hover style silently died. */
+@custom-variant hover (&:hover);
+
 /* ------------------------------------------------------------------ *
  * INSPECTRA — editorial / premium design tokens.
  * Warm-paper canvas, deep ink, brand blue used precisely as an accent,

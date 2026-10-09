@@ -79,6 +79,9 @@ export interface InspectionEscrow {
   releaseAt?: string;
   realtorAnswer: EscrowAnswer;
   seekerAnswer: EscrowAnswer;
+  /** Set only by a split decision: the realtor's share and the seeker's refund. */
+  releaseAmount?: number;
+  refundAmount?: number;
   dispute: {
     reason: string;
     openedAt?: string;

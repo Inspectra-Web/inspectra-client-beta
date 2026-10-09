@@ -431,6 +431,18 @@ function PaymentPanel({
         </div>
       </div>
 
+      {escrow.dispute.outcome && (
+        <p className="mt-4 rounded-xl border border-line bg-surface-2/50 p-3 text-sm text-ink">
+          INSPECTRA reviewed this viewing:{" "}
+          {escrow.dispute.outcome === "release"
+            ? `the fee goes to ${realtorFirst}.`
+            : escrow.dispute.outcome === "refund"
+              ? "you are refunded in full."
+              : `${formatPriceFull(escrow.refundAmount ?? 0)} is refunded to you and ${formatPriceFull(escrow.releaseAmount ?? 0)} paid to ${realtorFirst}.`}
+          {escrow.dispute.note && <span className="mt-1 block text-muted">{escrow.dispute.note}</span>}
+        </p>
+      )}
+
       {escrow.status === "unpaid" ? (
         open ? (
           <>
@@ -475,7 +487,12 @@ function PaymentPanel({
           </span>
         </p>
       ) : (
-        <p className="mt-4 text-sm text-muted">{ESCROW_LINE[escrow.status] ?? ""}</p>
+        <p className="mt-4 text-sm text-muted">
+          {/* After a ruling, the review note above already says who got what. */}
+          {escrow.dispute.outcome && (escrow.status === "released" || escrow.status === "refunded")
+            ? "Settled."
+            : (ESCROW_LINE[escrow.status] ?? "")}
+        </p>
       )}
     </Panel>
   );

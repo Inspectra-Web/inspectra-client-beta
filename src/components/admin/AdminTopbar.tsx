@@ -8,6 +8,7 @@ const TITLES: Record<string, string> = {
   "/admin": "Overview",
   "/admin/verification": "Verification",
   "/admin/realtors": "Realtors",
+  "/admin/disputes": "Disputes",
   "/admin/listings": "Listings",
   "/admin/users": "Users",
   "/admin/payments": "Payments",
@@ -24,6 +25,8 @@ export function AdminTopbar({ onOpenMenu }: { onOpenMenu: () => void }) {
     TITLES[pathname] ??
     (pathname.startsWith("/admin/verification")
       ? "Verification"
+      : pathname.startsWith("/admin/disputes")
+        ? "Disputes"
       : pathname.startsWith("/admin/realtors")
         ? "Realtors"
         : pathname.startsWith("/admin/listings")

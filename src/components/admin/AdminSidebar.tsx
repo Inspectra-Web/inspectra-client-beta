@@ -1,6 +1,7 @@
 import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { QUEUE_QUERY, useAdminListings } from "@/lib/adminListings";
+import { DISPUTES_QUERY, useAdminDisputes } from "@/lib/adminDisputes";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuthUser } from "@/lib/auth";
@@ -11,6 +12,7 @@ import {
   Building2,
   Landmark,
   LayoutDashboard,
+  Scale,
   type LucideIcon,
   ShieldCheck,
   UserCircle,
@@ -34,6 +36,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Verification", to: "/admin/verification", Icon: ShieldCheck },
       { label: "Realtors", to: "/admin/realtors", Icon: BadgeCheck },
+      { label: "Disputes", to: "/admin/disputes", Icon: Scale },
     ],
   },
   {
@@ -60,6 +63,8 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   // The queue page issues this exact query, so the pill and the page share one cache entry.
   const { data } = useAdminListings(QUEUE_QUERY);
   const queueCount = data?.total ?? 0;
+  // Same: the disputes page opens on this query, so they share a cache entry.
+  const disputeCount = useAdminDisputes(DISPUTES_QUERY).data?.counts.open ?? 0;
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -100,6 +105,11 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 <Icon className="size-4.5 shrink-0" />
                 <span className="flex-1">{label}</span>
                 {/* live queue badge on Verification */}
+                {to === "/admin/disputes" && disputeCount > 0 && (
+                  <span className="rounded-full bg-rose-500/10 px-1.5 text-xs font-semibold tabular-nums text-rose-500">
+                    {disputeCount}
+                  </span>
+                )}
                 {to === "/admin/verification" && queueCount > 0 && (
                   <span className="rounded-full bg-gold/15 px-1.5 text-xs font-semibold tabular-nums text-gold">
                     {queueCount}

@@ -336,6 +336,19 @@ function Loaded({ data }: { data: DiaryDetail }) {
                     ? ` They have until ${formatTime(inspection.escrow.payBy)} on ${formatLongDate(inspection.escrow.payBy)}.`
                     : ""}
                 </p>
+                {inspection.escrow.dispute.outcome && (
+                  <p className="mt-4 rounded-xl border border-line bg-surface-2/50 p-3 text-sm text-ink">
+                    INSPECTRA reviewed this viewing:{" "}
+                    {inspection.escrow.dispute.outcome === "release"
+                      ? "the fee is paid to you."
+                      : inspection.escrow.dispute.outcome === "refund"
+                        ? "the buyer is refunded in full."
+                        : `${formatPriceFull(inspection.escrow.releaseAmount ?? 0)} is paid to you and ${formatPriceFull(inspection.escrow.refundAmount ?? 0)} refunded to the buyer.`}
+                    {inspection.escrow.dispute.note && (
+                      <span className="mt-1 block text-muted">{inspection.escrow.dispute.note}</span>
+                    )}
+                  </p>
+                )}
               </Panel>
             </Reveal>
           )}

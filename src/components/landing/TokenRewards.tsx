@@ -3,6 +3,7 @@ import { CalendarCheck, ClipboardList, Clock, Coins, Flame, Receipt, Tag } from 
 import type { LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
+import giftCard from "@/assets/lbt-gift-card.webp";
 
 type Audience = "seeker" | "realtor";
 
@@ -93,29 +94,46 @@ export function TokenRewards({ audience = "seeker" }: { audience?: Audience }) {
               </Link>
             </div>
 
-            <ol className="relative space-y-3">
-              <span
-                aria-hidden
-                className="absolute bottom-10 left-[2.15rem] top-10 w-px bg-gradient-to-b from-brand/60 via-brand/30 to-transparent"
-              />
-              {steps.map(({ icon: Icon, title, body }, i) => (
-                <li
-                  key={title}
-                  className="relative flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm"
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/15 text-brand ring-4 ring-[#06121b]">
-                    <Icon className="size-4.5" strokeWidth={2} aria-hidden />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/45">
-                      Step 0{i + 1}
-                    </p>
-                    <p className="display mt-0.5 text-lg text-white">{title}</p>
-                    <p className="mt-0.5 text-sm text-white/60">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <div>
+              <div className="relative mx-auto mb-8 max-w-md max-lg:max-w-sm">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-6 rounded-full bg-brand/25 blur-3xl"
+                />
+                <img
+                  src={giftCard}
+                  alt="The $LBT x INSPECTRA gift card"
+                  width={1400}
+                  height={863}
+                  loading="lazy"
+                  className="relative w-full -rotate-3 drop-shadow-[0_24px_40px_rgba(0,0,0,0.5)]"
+                />
+              </div>
+
+              <ol className="relative space-y-3">
+                <span
+                  aria-hidden
+                  className="absolute bottom-10 left-[2.15rem] top-10 w-px bg-gradient-to-b from-brand/60 via-brand/30 to-transparent"
+                />
+                {steps.map(({ icon: Icon, title, body }, i) => (
+                  <li
+                    key={title}
+                    className="relative flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm"
+                  >
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/15 text-brand ring-4 ring-[#06121b]">
+                      <Icon className="size-4.5" strokeWidth={2} aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/45">
+                        Step 0{i + 1}
+                      </p>
+                      <p className="display mt-0.5 text-lg text-white">{title}</p>
+                      <p className="mt-0.5 text-sm text-white/60">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
         </Reveal>
       </Container>

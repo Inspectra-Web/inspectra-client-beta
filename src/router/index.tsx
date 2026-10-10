@@ -53,6 +53,7 @@ import { AdminVerification } from "@/pages/admin/Verification";
 import { AdminVerificationDetail } from "@/pages/admin/VerificationDetail";
 import { AdminListings } from "@/pages/admin/Listings";
 import { AdminRequests } from "@/pages/admin/Requests";
+import { AdminRequestDetail } from "@/pages/admin/RequestDetail";
 import { AdminListingDetail } from "@/pages/admin/ListingDetail";
 import { AdminRealtors } from "@/pages/admin/Realtors";
 import { AdminRealtorDetail } from "@/pages/admin/RealtorDetail";
@@ -174,6 +175,7 @@ export const router = createBrowserRouter([
           { path: "verification", element: <AdminVerification /> },
           { path: "verification/:id", element: <AdminVerificationDetail /> },
           { path: "requests", element: <AdminRequests /> },
+          { path: "requests/:id", element: <AdminRequestDetail /> },
           { path: "listings", element: <AdminListings /> },
           { path: "listings/:id", element: <AdminListingDetail /> },
           { path: "realtors", element: <AdminRealtors /> },

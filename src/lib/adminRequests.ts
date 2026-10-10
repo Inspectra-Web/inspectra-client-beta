@@ -17,6 +17,9 @@ import type {
 /** Live is active and unexpired. Mirrors RequestState in server/src/validators/admin.validator.ts. */
 export type AdminRequestState = "live" | "expired" | "closed";
 
+// The API says "live"; the console says "Active", the same word the seeker sees.
+export const STATE_PILL = { live: "active", expired: "expired", closed: "closed" } as const;
+
 export interface AdminRequestRow {
   id: string;
   /** "REQ-B253A7": the reference the seeker's confirmation email carries. */
@@ -106,6 +109,16 @@ interface DemandResponse {
   data: RequestDemand;
 }
 
+/** A row plus how many live requests the seeker holds against the cap of three. */
+export interface AdminRequestDetail extends AdminRequestRow {
+  seekerLive: number;
+}
+
+interface DetailResponse {
+  status: string;
+  data: { request: AdminRequestDetail };
+}
+
 export const ADMIN_REQUESTS_KEY = ["admin", "requests"];
 
 /** The list opens on live requests: the demand someone could act on today. */
@@ -130,6 +143,16 @@ export function useAdminRequests(query: AdminRequestQuery) {
       return res.data.data;
     },
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useAdminRequest(id: string) {
+  return useQuery({
+    queryKey: [...ADMIN_REQUESTS_KEY, "detail", id],
+    queryFn: async () => {
+      const res = await api.get<DetailResponse>(`/admin/requests/${id}`);
+      return res.data.data.request;
+    },
   });
 }
 

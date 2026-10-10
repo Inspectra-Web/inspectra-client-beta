@@ -1,17 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  Building,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-  Search,
-  UsersRound,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardList, MapPin, Search, UsersRound } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -24,10 +13,11 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { apiMessage } from "@/lib/api";
-import { displayName, formatDate, formatPhone, formatPrice, whatsappDigits } from "@/lib/format";
+import { displayName, formatDate, formatPrice } from "@/lib/format";
 import { priceSuffix } from "@/lib/listing";
 import {
   REQUESTS_QUERY,
+  STATE_PILL,
   useAdminRequests,
   useRequestDemand,
   type AdminRequestQuery,
@@ -50,8 +40,6 @@ import {
 import { cn } from "@/lib/cn";
 
 const STATE_LABEL: Record<AdminRequestState, string> = { live: "Active", expired: "Expired", closed: "Closed" };
-// The API says "live"; the console says "Active", the same word the seeker sees.
-const STATE_PILL = { live: "active", expired: "expired", closed: "closed" } as const;
 
 const SEGMENTS_SHOWN = 10;
 
@@ -328,23 +316,19 @@ function RequestList() {
       ) : (
         <DataTable
           className={cn("transition-opacity", isPlaceholderData && "opacity-60")}
-          minWidthClass="sm:min-w-[760px]"
+          minWidthClass="sm:min-w-[680px]"
           head={
             <tr>
               <th className={thCls}>Seeker</th>
               <th className={thCls}>Wants</th>
               <th className={cn(thCls, "max-md:hidden")}>Budget</th>
-              <th className={cn(thCls, "max-lg:hidden")}>Contact</th>
+              <th className={cn(thCls, "max-lg:hidden")}>Filed</th>
               <th className={thCls}>State</th>
             </tr>
           }
         >
           {rows.map((r) => (
-            <Row
-              key={r.id}
-              row={r}
-              onOpen={() => navigate(`/admin/users/${r.seeker.id}`)}
-            />
+            <Row key={r.id} row={r} onOpen={() => navigate(`/admin/requests/${r.id}`)} />
           ))}
         </DataTable>
       )}
@@ -377,13 +361,9 @@ function RequestList() {
   );
 }
 
-/** A row opens the seeker's account; the contact links act on their own. */
+/** A row opens the request; contact details and the full brief live there. */
 function Row({ row, onOpen }: { row: AdminRequestRow; onOpen: () => void }) {
-  const { seeker } = row;
-  const name = displayName(seeker.fullname);
-  const phone = seeker.whatsapp || seeker.phone;
-  const wantsWhatsapp = seeker.contactMeans.includes("WhatsApp");
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const name = displayName(row.seeker.fullname);
   const range =
     row.budgetMin != null
       ? `${formatPrice(row.budgetMin)} to ${budget(row.budgetMax, row.intent)}`
@@ -393,65 +373,18 @@ function Row({ row, onOpen }: { row: AdminRequestRow; onOpen: () => void }) {
     <tr className={cn(rowCls, row.state !== "live" && "opacity-70")} onClick={onOpen}>
       <td className={cn(tdCls, "max-w-[13rem]")}>
         <div className="flex items-center gap-3">
-          <UserAvatar name={name} avatar={seeker.avatar} className="size-10" />
-          <div className="min-w-0">
-            <p className="truncate font-medium text-ink">{name}</p>
-            <p className="truncate text-xs text-muted">{seeker.email}</p>
-            {!seeker.verified && (
-              <p className="mt-0.5 text-[0.7rem] font-semibold text-gold">Email not verified</p>
-            )}
-          </div>
+          <UserAvatar name={name} avatar={row.seeker.avatar} className="size-9" />
+          <p className="truncate font-medium text-ink">{name}</p>
         </div>
       </td>
-      <td className={cn(tdCls, "max-w-[16rem]")}>
-        <p className="flex items-center gap-1.5 font-medium text-ink">
-          <Building className="size-3.5 shrink-0 text-faint" aria-hidden />
-          <span className="truncate">{requestTitle(row)}</span>
-        </p>
+      <td className={cn(tdCls, "max-w-[18rem]")}>
+        <p className="truncate font-medium text-ink">{requestTitle(row)}</p>
         <p className="truncate text-xs text-muted">
-          {[
-            row.areas.length ? row.areas.join(", ") : "Anywhere in the city",
-            row.bedrooms != null ? `${row.bedrooms}+ bed` : null,
-            TIMELINE_OPTIONS.find((t) => t.value === row.timeline)?.label,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        {row.notes && <p className="mt-0.5 line-clamp-1 text-xs italic text-faint">"{row.notes}"</p>}
-        <p className="mt-0.5 text-[0.7rem] tabular-nums text-faint">
-          {row.ref} · Filed {formatDate(row.createdAt)}
+          {row.areas.length ? row.areas.join(", ") : "Anywhere in the city"}
         </p>
       </td>
       <td className={cn(tdCls, "whitespace-nowrap tabular-nums text-ink max-md:hidden")}>{range}</td>
-      <td className={cn(tdCls, "max-lg:hidden")}>
-        <div className="space-y-1 whitespace-nowrap text-xs">
-          {phone && (
-            <a href={`tel:${phone}`} onClick={stop} className="flex items-center gap-1.5 text-ink hover:text-brand-ink">
-              <Phone className="size-3.5 text-faint" aria-hidden />
-              {formatPhone(phone)}
-            </a>
-          )}
-          <div className="flex items-center gap-3">
-            {phone && wantsWhatsapp && (
-              <a
-                href={`https://wa.me/${whatsappDigits(phone)}`}
-                target="_blank"
-                rel="noreferrer"
-                onClick={stop}
-                className="inline-flex items-center gap-1.5 text-ink hover:text-brand-ink"
-              >
-                <MessageCircle className="size-3.5 text-faint" aria-hidden />
-                WhatsApp
-              </a>
-            )}
-            <a href={`mailto:${seeker.email}`} onClick={stop} className="inline-flex items-center gap-1.5 text-ink hover:text-brand-ink">
-              <Mail className="size-3.5 text-faint" aria-hidden />
-              Email
-            </a>
-          </div>
-          {seeker.contactMeans && <p className="text-faint">Prefers {seeker.contactMeans}</p>}
-        </div>
-      </td>
+      <td className={cn(tdCls, "whitespace-nowrap text-muted max-lg:hidden")}>{formatDate(row.createdAt)}</td>
       <td className={tdCls}>
         <StatusPill status={STATE_PILL[row.state]} />
       </td>

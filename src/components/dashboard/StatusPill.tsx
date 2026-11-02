@@ -14,7 +14,9 @@ type PillStatus =
   | "declined"
   | "cancelled"
   | "active"
-  | "expired";
+  | "expired"
+  | "draft"
+  | "published";
 
 const MAP: Record<PillStatus, { label: string; className: string }> = {
   new: { label: "New", className: "bg-brand/10 text-brand-ink" },
@@ -35,6 +37,9 @@ const MAP: Record<PillStatus, { label: string; className: string }> = {
   // counting, so it takes the pending tone rather than the neutral closed one.
   active: { label: "Active", className: "bg-verified/10 text-verified" },
   expired: { label: "Expired", className: "bg-gold/10 text-gold" },
+  // The realtor course. A draft is hidden from the public, not a problem to fix.
+  draft: { label: "Draft", className: "bg-surface-2 text-muted" },
+  published: { label: "Published", className: "bg-verified/10 text-verified" },
 };
 
 export function StatusPill({

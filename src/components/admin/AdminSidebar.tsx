@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   Building2,
   ClipboardList,
+  GraduationCap,
   Landmark,
   LayoutDashboard,
   Scale,
@@ -35,6 +36,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Waitlist",
     items: [{ label: "Requests", to: "/admin/requests", Icon: ClipboardList }],
+  },
+  {
+    label: "Acquisition",
+    items: [{ label: "Course", to: "/admin/course", Icon: GraduationCap }],
   },
   {
     label: "Trust operations",

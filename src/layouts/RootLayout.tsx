@@ -16,7 +16,8 @@ export function RootLayout() {
     pathname === "/enablement" ||
     pathname === "/pricing" ||
     pathname === "/about" ||
-    pathname === "/for-realtors";
+    pathname === "/for-realtors" ||
+    pathname === "/course";
 
   // Auth routes own the full viewport with their own minimal chrome (see AuthShell):
   // no global header, footer or scroll-to-top button.

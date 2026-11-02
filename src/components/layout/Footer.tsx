@@ -13,6 +13,7 @@ const COLUMNS = [
   {
     title: "For realtors",
     links: [
+      { label: "Realtor course", to: "/course" },
       { label: "Get certified", to: "/enablement" },
       { label: "List a property", to: "/register" },
       { label: "Subscription plans", to: "/pricing" },

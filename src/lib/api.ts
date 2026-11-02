@@ -36,9 +36,15 @@ export async function registerAccount(body: {
   password: string;
   confirmPassword: string;
   role: SignupRole;
-}): Promise<string> {
-  const res = await api.post<MessageResponse>("/auth/register", body);
-  return res.data.message;
+  /** The course invite a realtor registers with. */
+  invite?: string;
+}): Promise<{ emailSent: boolean }> {
+  const res = await api.post<MessageResponse & { data?: { emailSent?: boolean } }>(
+    "/auth/register",
+    body,
+  );
+  // The account exists either way; only the verification email may have failed.
+  return { emailSent: res.data.data?.emailSent ?? true };
 }
 
 export async function verifyEmail(token: string): Promise<string> {

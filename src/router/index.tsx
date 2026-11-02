@@ -10,6 +10,9 @@ import { Pricing } from "@/pages/Pricing";
 import { About } from "@/pages/About";
 import { RealtorLanding } from "@/pages/RealtorLanding";
 import { Request } from "@/pages/Request";
+import { Course } from "@/pages/Course";
+import { CourseLearn } from "@/pages/CourseLearn";
+import { CourseCallback } from "@/pages/CourseCallback";
 import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 import { ForgotPassword } from "@/pages/ForgotPassword";
@@ -64,6 +67,8 @@ import { AdminVirtualAccounts } from "@/pages/admin/VirtualAccounts";
 import { AdminDisputes } from "@/pages/admin/Disputes";
 import { AdminDisputeDetail } from "@/pages/admin/DisputeDetail";
 import { AdminWallets } from "@/pages/admin/Wallets";
+import { AdminCourse } from "@/pages/admin/Course";
+import { AdminCourseEnrollments } from "@/pages/admin/CourseEnrollments";
 import { AdminAccount } from "@/pages/admin/Account";
 import { AdminNotFound } from "@/pages/admin/AdminNotFound";
 import { AdminSignIn } from "@/pages/AdminSignIn";
@@ -88,6 +93,7 @@ export const router = createBrowserRouter([
       { path: "about", element: <About /> },
       { path: "for-realtors", element: <RealtorLanding /> },
       { path: "request", element: <Request /> },
+      { path: "course", element: <Course /> },
       { path: "login", element: <SignIn /> },
       { path: "register", element: <SignUp /> },
       { path: "forgot-password", element: <ForgotPassword /> },
@@ -163,6 +169,9 @@ export const router = createBrowserRouter([
   // Standalone, and outside the guard below: the console's sign-in door owns the
   // full viewport like the other auth pages, so it skips RootLayout entirely.
   { path: "/admin/login", element: <AdminSignIn /> },
+  // Standalone: the course player is a focused viewing room with no site chrome.
+  { path: "/course/learn", element: <CourseLearn /> },
+  { path: "/course/callback", element: <CourseCallback /> },
   {
     element: <RequireAuth roles={["admin"]} loginPath="/admin/login" />,
     children: [
@@ -187,6 +196,8 @@ export const router = createBrowserRouter([
           { path: "payments", element: <AdminPayments /> },
           { path: "virtual-accounts", element: <AdminVirtualAccounts /> },
           { path: "wallets", element: <AdminWallets /> },
+          { path: "course", element: <AdminCourse /> },
+          { path: "course/enrollments", element: <AdminCourseEnrollments /> },
           { path: "account", element: <AdminAccount /> },
           { path: "*", element: <AdminNotFound /> },
         ],

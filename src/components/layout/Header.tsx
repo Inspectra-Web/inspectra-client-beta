@@ -13,6 +13,7 @@ import {
   Info,
   ChevronDown,
   Handshake,
+  GraduationCap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import logo from "@/assets/inspectra-logo-primary-lg.png";
@@ -64,6 +65,7 @@ const REALTORS: NavGroup = {
 // Icons are drawer-only in the top-level desktop nav, which is text.
 const NAV: (NavLinkItem | NavGroup)[] = [
   { label: "Request a property", to: "/request", Icon: ClipboardList },
+  { label: "Realtor course", to: "/course", Icon: GraduationCap },
   REALTORS,
   { label: "About", to: "/about", Icon: Info },
 ];
@@ -107,7 +109,8 @@ export function Header() {
     pathname === "/enablement" ||
     pathname === "/pricing" ||
     pathname === "/about" ||
-    pathname === "/for-realtors";
+    pathname === "/for-realtors" ||
+    pathname === "/course";
   const solid = scrolled || open;
   const onDarkHero = hasDarkHero && !solid;
 

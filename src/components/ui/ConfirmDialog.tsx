@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { Loader2 } from "lucide-react";
 
@@ -14,6 +15,8 @@ interface ConfirmDialogProps {
   destructive?: boolean;
   pending?: boolean;
   onConfirm: () => void | Promise<void>;
+  /** Optional detail between the description and the buttons, e.g. what is being confirmed. */
+  children?: ReactNode;
 }
 
 /**
@@ -31,6 +34,7 @@ export function ConfirmDialog({
   destructive = false,
   pending = false,
   onConfirm,
+  children,
 }: ConfirmDialogProps) {
   async function handleConfirm(event: React.MouseEvent) {
     // Radix closes on click by default. Hold it open while the work runs so the
@@ -59,6 +63,8 @@ export function ConfirmDialog({
           <AlertDialog.Description className="mt-2 text-sm leading-relaxed text-muted">
             {description}
           </AlertDialog.Description>
+
+          {children}
 
           <div className="mt-6 flex justify-end gap-2 max-sm:flex-col-reverse">
             <AlertDialog.Cancel asChild>

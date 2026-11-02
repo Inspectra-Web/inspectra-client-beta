@@ -18,6 +18,7 @@ import {
   useSaveCourse,
   useSetCourseStatus,
   useUploadCourseAsset,
+  COURSE_UPLOAD_MAX_MB,
   type Course,
 } from "@/lib/course";
 import { apiMessage } from "@/lib/api";
@@ -83,6 +84,15 @@ function CourseEditor({ course }: { course: Course }) {
     if (!file) return;
 
     const kind = field === "cover" ? "cover" : "video";
+
+    // Refused before a byte is sent: a long upload that fails at the end wastes the wait.
+    if (file.size > COURSE_UPLOAD_MAX_MB * 1024 * 1024) {
+      toast.error(
+        `This ${kind} is ${Math.ceil(file.size / (1024 * 1024))} MB. The limit is ${COURSE_UPLOAD_MAX_MB} MB, so compress it or upload a shorter cut.`,
+      );
+      return;
+    }
+
     setUploading({ kind, loaded: 0, total: file.size, startedAt: Date.now() });
     try {
       const url = await upload.mutateAsync({
@@ -222,7 +232,7 @@ function CourseEditor({ course }: { course: Course }) {
           <Row
             label="Video"
             htmlFor="videoUrl"
-            note="Paste a link or upload a file"
+            note={`Paste a link or upload a file up to ${COURSE_UPLOAD_MAX_MB} MB`}
             error={errors.videoUrl?.message}
           >
             <div className="flex gap-2 max-sm:flex-col">

@@ -252,6 +252,9 @@ export function useSetCourseStatus() {
 
 export type CourseAssetKind = "cover" | "video";
 
+/** The largest course upload the API accepts, matching Cloudinary's Free-plan video cap. */
+export const COURSE_UPLOAD_MAX_MB = 100;
+
 /** How far the browser has got sending a file to the API. */
 export interface UploadProgress {
   loaded: number;
@@ -275,7 +278,7 @@ export function useUploadCourseAsset() {
       onProgress?: (progress: UploadProgress) => void;
     }) => {
       const form = new FormData();
-      form.append("file", file);
+      form.append("courseAsset", file);
       const res = await api.post<Envelope<{ url: string }>>("/admin/course/upload", form, {
         params: { kind },
         onUploadProgress: (event) =>

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
-import logoWhite from "@/assets/inspectra-logo-white-lg.png";
+import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 
 /** The dark, chrome-free room the course is paid for and watched in. */
@@ -12,7 +12,7 @@ export function CourseShell({ aside, children }: { aside?: ReactNode; children: 
       <header className="border-b border-white/10">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-8 max-sm:px-5">
           <Link to="/" aria-label="INSPECTRA home">
-            <img src={logoWhite} alt="INSPECTRA" className="h-8 w-auto" />
+            <img src={logoPrimary} alt="INSPECTRA" className="h-8 w-auto" />
           </Link>
           {aside}
         </div>

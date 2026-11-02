@@ -250,14 +250,36 @@ export function useSetCourseStatus() {
   });
 }
 
-/** One file to the course's storage, answered with its URL for the form to save. */
+export type CourseAssetKind = "cover" | "video";
+
+/** How far the browser has got sending a file to the API. */
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+}
+
+/**
+ * One file to the course's storage, answered with its URL for the form to save.
+ * `onProgress` covers the browser-to-API leg only; the API's own hand-off to Cloudinary
+ * happens after the last byte arrives and reports nothing.
+ */
 export function useUploadCourseAsset() {
   return useMutation({
-    mutationFn: async ({ kind, file }: { kind: "cover" | "video"; file: File }) => {
+    mutationFn: async ({
+      kind,
+      file,
+      onProgress,
+    }: {
+      kind: CourseAssetKind;
+      file: File;
+      onProgress?: (progress: UploadProgress) => void;
+    }) => {
       const form = new FormData();
       form.append("file", file);
       const res = await api.post<Envelope<{ url: string }>>("/admin/course/upload", form, {
         params: { kind },
+        onUploadProgress: (event) =>
+          onProgress?.({ loaded: event.loaded, total: event.total ?? file.size }),
       });
       return res.data.data.url;
     },

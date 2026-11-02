@@ -61,6 +61,7 @@ function CourseEditor({ course }: { course: Course }) {
   const setStatus = useSetCourseStatus();
   const upload = useUploadCourseAsset();
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
+  const [uploading, setUploading] = useState<Uploading | null>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
@@ -82,14 +83,20 @@ function CourseEditor({ course }: { course: Course }) {
     if (!file) return;
 
     const kind = field === "cover" ? "cover" : "video";
+    setUploading({ kind, loaded: 0, total: file.size, startedAt: Date.now() });
     try {
-      const url = await toast.promise(upload.mutateAsync({ kind, file }), {
-        pending: kind === "cover" ? "Uploading the cover" : "Uploading the video",
-        success: "Uploaded. Save changes to use it.",
+      const url = await upload.mutateAsync({
+        kind,
+        file,
+        onProgress: ({ loaded, total }) =>
+          setUploading((prev) => (prev ? { ...prev, loaded, total } : prev)),
       });
       setValue(field, url, { shouldDirty: true, shouldValidate: true });
+      toast.success("Uploaded. Save changes to use it.");
     } catch (error) {
       toast.error(apiMessage(error, "The upload did not finish. Try again."));
+    } finally {
+      setUploading(null);
     }
   }
 
@@ -160,6 +167,7 @@ function CourseEditor({ course }: { course: Course }) {
         values={live}
         onReplaceCover={() => coverRef.current?.click()}
         onReplaceVideo={() => videoRef.current?.click()}
+        uploading={uploading}
       />
       <input
         ref={coverRef}
@@ -221,21 +229,25 @@ function CourseEditor({ course }: { course: Course }) {
               <Input id="videoUrl" placeholder="https://" {...register("videoUrl")} />
               <button
                 type="button"
+                disabled={uploading !== null}
                 onClick={() => videoRef.current?.click()}
                 className={cn(buttonClasses("outline", "md"), "shrink-0")}
               >
                 <Upload className="size-4" aria-hidden /> Upload
               </button>
             </div>
+            {uploading?.kind === "video" && <UploadStatus uploading={uploading} />}
           </Row>
           <Row label="Cover image" note="Shown before the video plays" error={errors.cover?.message}>
             <button
               type="button"
+              disabled={uploading !== null}
               onClick={() => coverRef.current?.click()}
               className={buttonClasses("outline", "md")}
             >
               <ImagePlus className="size-4" aria-hidden /> {live.cover ? "Replace cover" : "Upload cover"}
             </button>
+            {uploading?.kind === "cover" && <UploadStatus uploading={uploading} />}
           </Row>
           <Row label="Length" htmlFor="minutes" note="In minutes" error={errors.minutes?.message}>
             <Input
@@ -281,10 +293,12 @@ function Stage({
   values,
   onReplaceCover,
   onReplaceVideo,
+  uploading,
 }: {
   values: CourseValues;
   onReplaceCover: () => void;
   onReplaceVideo: () => void;
+  uploading: Uploading | null;
 }) {
   const [playing, setPlaying] = useState(false);
   const price = Number.isFinite(values.price) ? formatPriceFull(values.price) : "₦";
@@ -352,11 +366,13 @@ function Stage({
           </div>
 
           <div className="absolute right-5 top-5 flex gap-2 max-sm:right-4 max-sm:top-4">
-            <StageChip onClick={onReplaceCover}>
-              <ImagePlus className="size-3.5" aria-hidden /> Cover
+            <StageChip onClick={onReplaceCover} disabled={uploading !== null}>
+              <ImagePlus className="size-3.5" aria-hidden />
+              {uploading?.kind === "cover" ? chipLabel(uploading) : "Cover"}
             </StageChip>
-            <StageChip onClick={onReplaceVideo}>
-              <Upload className="size-3.5" aria-hidden /> Video
+            <StageChip onClick={onReplaceVideo} disabled={uploading !== null}>
+              <Upload className="size-3.5" aria-hidden />
+              {uploading?.kind === "video" ? chipLabel(uploading) : "Video"}
             </StageChip>
           </div>
         </div>
@@ -393,12 +409,21 @@ function PlayButton({ disabled, onClick }: { disabled: boolean; onClick: () => v
   );
 }
 
-function StageChip({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function StageChip({
+  onClick,
+  disabled,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20 backdrop-blur-md transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      disabled={disabled}
+      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold tabular-nums text-white ring-1 ring-white/20 backdrop-blur-md transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-80"
     >
       {children}
     </button>
@@ -516,5 +541,79 @@ function SaveBar({ dirty, saving, onDiscard }: { dirty: boolean; saving: boolean
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/* Upload progress ------------------------------------------------------------ */
+
+/** A file on its way up. `loaded` and `total` are bytes, browser to API. */
+interface Uploading {
+  kind: "cover" | "video";
+  loaded: number;
+  total: number;
+  startedAt: number;
+}
+
+const percentOf = ({ loaded, total }: Uploading) =>
+  total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+
+// Once every byte has reached the API it is still handing the file to Cloudinary,
+// which reports nothing, so the bar says so instead of sitting at 100%.
+const sent = (u: Uploading) => u.total > 0 && u.loaded >= u.total;
+
+const chipLabel = (u: Uploading) => (sent(u) ? "Processing" : `${percentOf(u)}%`);
+
+const megabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+/** Time left from the average speed so far. Quiet for the first two seconds, while it is noise. */
+function timeLeft(u: Uploading): string | null {
+  const elapsed = (Date.now() - u.startedAt) / 1000;
+  if (elapsed < 2 || u.loaded === 0) return null;
+
+  const seconds = Math.ceil((u.total - u.loaded) / (u.loaded / elapsed));
+  if (seconds < 60) return `about ${Math.max(1, seconds)} sec left`;
+  return `about ${Math.ceil(seconds / 60)} min left`;
+}
+
+function UploadStatus({ uploading }: { uploading: Uploading }) {
+  const pct = percentOf(uploading);
+  const done = sent(uploading);
+  const left = timeLeft(uploading);
+
+  return (
+    <div className="mt-3" role="status" aria-live="polite">
+      <div
+        className="h-2 overflow-hidden rounded-full bg-surface-2"
+        role="progressbar"
+        aria-label={uploading.kind === "video" ? "Video upload" : "Cover upload"}
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className={cn(
+            "h-full rounded-full bg-brand transition-[width] duration-300",
+            done && "animate-pulse",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-1.5 flex items-center gap-1.5 text-xs tabular-nums text-muted">
+        {done ? (
+          <>
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            Processing on the server. This can take a little longer for a large video.
+          </>
+        ) : (
+          <>
+            <span className="font-semibold text-ink">{pct}%</span>
+            <span>
+              {megabytes(uploading.loaded)} of {megabytes(uploading.total)}
+            </span>
+            {left && <span>· {left}</span>}
+          </>
+        )}
+      </p>
+    </div>
   );
 }

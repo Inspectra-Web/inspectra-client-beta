@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { ArrowLeft, LayoutDashboard, ShieldAlert } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import logoWhite from "@/assets/inspectra-logo-white-lg.png";
+import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 import { homeFor, useAuthUser } from "@/lib/auth";
 
 // Same architectural backdrop as the 404, kept dim so the copy stays legible.
@@ -44,7 +44,7 @@ export function Unauthorized() {
 
       <div className="relative z-10 px-10 py-8 max-lg:px-6 max-sm:px-5">
         <Link to="/" className="inline-flex items-center" aria-label="INSPECTRA home">
-          <img src={logoWhite} alt="INSPECTRA" className="h-9 w-auto" />
+          <img src={logoPrimary} alt="INSPECTRA" className="h-9 w-auto" />
         </Link>
       </div>
 

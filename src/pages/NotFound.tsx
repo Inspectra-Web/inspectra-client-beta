@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { ArrowLeft, ClipboardList, MapPinOff } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import logoWhite from "@/assets/inspectra-logo-white-lg.png";
+import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 
 // Architectural backdrop, kept present but dimmed so the copy stays legible.
 const BG_IMAGE =
@@ -48,7 +48,7 @@ export function NotFound() {
       {/* minimal top bar: just the logo home */}
       <div className="relative z-10 px-10 py-8 max-lg:px-6 max-sm:px-5">
         <Link to="/" className="inline-flex items-center" aria-label="INSPECTRA home">
-          <img src={logoWhite} alt="INSPECTRA" className="h-9 w-auto" />
+          <img src={logoPrimary} alt="INSPECTRA" className="h-9 w-auto" />
         </Link>
       </div>
 

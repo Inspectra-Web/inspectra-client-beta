@@ -784,7 +784,7 @@ function PendingNote({ picked }: { picked: Picked }) {
   return (
     <p className="mt-2 text-xs text-muted">
       <span className="font-semibold text-ink">{picked.file.name}</span> ·{" "}
-      {megabytes(picked.file.size)}. It uploads when you save.
+      {megabytes(picked.file.size)}
     </p>
   );
 }

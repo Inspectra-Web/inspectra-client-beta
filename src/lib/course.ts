@@ -236,9 +236,41 @@ function useAdminCourseWrite<V>(write: (vars: V) => Promise<Course>) {
   });
 }
 
+export type CourseAssetKind = "cover" | "video";
+
+/** The largest course upload the API accepts, matching Cloudinary's Free-plan video cap. */
+export const COURSE_UPLOAD_MAX_MB = 100;
+
+/** How far the browser has got sending a save to the API. */
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+}
+
+export interface SaveCourseInput {
+  body: CourseBody;
+  /** New files picked since the last save. They reach storage only as part of this save. */
+  files?: Partial<Record<CourseAssetKind, File>>;
+  onProgress?: (progress: UploadProgress) => void;
+}
+
+/**
+ * Saves the course with any new cover or video in one request. Files are not uploaded
+ * when picked, so a reload or discard never leaves one in storage; the API deletes a file
+ * it uploaded if the save then fails, and deletes a replaced one once it succeeds.
+ * `onProgress` covers the browser-to-API leg; the API's hand-off to storage reports nothing.
+ */
 export function useSaveCourse() {
-  return useAdminCourseWrite(async (body: CourseBody) => {
-    const res = await api.put<Envelope<{ course: Course }>>("/admin/course", body);
+  return useAdminCourseWrite(async ({ body, files = {}, onProgress }: SaveCourseInput) => {
+    const form = new FormData();
+    form.append("course", JSON.stringify(body));
+    if (files.cover) form.append("courseCover", files.cover);
+    if (files.video) form.append("courseVideo", files.video);
+
+    const res = await api.put<Envelope<{ course: Course }>>("/admin/course", form, {
+      onUploadProgress: (event) =>
+        onProgress?.({ loaded: event.loaded, total: event.total ?? 0 }),
+    });
     return res.data.data.course;
   });
 }
@@ -247,45 +279,6 @@ export function useSetCourseStatus() {
   return useAdminCourseWrite(async (status: CourseStatus) => {
     const res = await api.patch<Envelope<{ course: Course }>>("/admin/course/status", { status });
     return res.data.data.course;
-  });
-}
-
-export type CourseAssetKind = "cover" | "video";
-
-/** The largest course upload the API accepts, matching Cloudinary's Free-plan video cap. */
-export const COURSE_UPLOAD_MAX_MB = 100;
-
-/** How far the browser has got sending a file to the API. */
-export interface UploadProgress {
-  loaded: number;
-  total: number;
-}
-
-/**
- * One file to the course's storage, answered with its URL for the form to save.
- * `onProgress` covers the browser-to-API leg only; the API's own hand-off to Cloudinary
- * happens after the last byte arrives and reports nothing.
- */
-export function useUploadCourseAsset() {
-  return useMutation({
-    mutationFn: async ({
-      kind,
-      file,
-      onProgress,
-    }: {
-      kind: CourseAssetKind;
-      file: File;
-      onProgress?: (progress: UploadProgress) => void;
-    }) => {
-      const form = new FormData();
-      form.append("courseAsset", file);
-      const res = await api.post<Envelope<{ url: string }>>("/admin/course/upload", form, {
-        params: { kind },
-        onUploadProgress: (event) =>
-          onProgress?.({ loaded: event.loaded, total: event.total ?? file.size }),
-      });
-      return res.data.data.url;
-    },
   });
 }
 

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
@@ -17,7 +17,6 @@ import {
   useAdminEnrollments,
   useSaveCourse,
   useSetCourseStatus,
-  useUploadCourseAsset,
   COURSE_UPLOAD_MAX_MB,
   type Course,
 } from "@/lib/course";
@@ -60,9 +59,10 @@ const valuesOf = (course: Course): CourseValues => ({
 function CourseEditor({ course }: { course: Course }) {
   const save = useSaveCourse();
   const setStatus = useSetCourseStatus();
-  const upload = useUploadCourseAsset();
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
   const [uploading, setUploading] = useState<Uploading | null>(null);
+  // Picked but not yet uploaded: each file is previewed from a local link until Save sends it.
+  const [pending, setPending] = useState<Partial<Record<"cover" | "video", Picked>>>({});
   const coverRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
@@ -71,15 +71,37 @@ function CourseEditor({ course }: { course: Course }) {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CourseValues>({ resolver: zodResolver(courseSchema), values: valuesOf(course) });
 
   const live = watch();
+
+  // The length is read off the video itself whenever the video changes.
+  // An uploaded video's length is read off the file; a pasted link's is typed in by the admin.
+  const uploadedVideo = isUploadedVideo(live.videoUrl);
+  const length = useVideoMinutes(uploadedVideo ? live.videoUrl : "", (minutes) => {
+    if (minutes !== getValues("minutes"))
+      setValue("minutes", minutes, { shouldDirty: true, shouldValidate: true });
+  });
   const published = course.status === "published";
 
-  // The file goes up straight away; the course only changes when the admin saves it.
-  async function pick(field: "cover" | "videoUrl", files: FileList | null) {
+  // Local previews hold memory until released; release whatever is left on the way out.
+  const pendingRef = useRef(pending);
+  useEffect(() => {
+    pendingRef.current = pending;
+  });
+  useEffect(() => () => releaseAll(pendingRef.current), []);
+
+  function clearPending() {
+    releaseAll(pending);
+    setPending({});
+  }
+
+  // Kept in the browser until Save: nothing reaches storage for an edit that is discarded
+  // or lost to a reload.
+  function pick(field: "cover" | "videoUrl", files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
 
@@ -93,29 +115,44 @@ function CourseEditor({ course }: { course: Course }) {
       return;
     }
 
-    setUploading({ kind, loaded: 0, total: file.size, startedAt: Date.now() });
-    try {
-      const url = await upload.mutateAsync({
-        kind,
-        file,
-        onProgress: ({ loaded, total }) =>
-          setUploading((prev) => (prev ? { ...prev, loaded, total } : prev)),
-      });
-      setValue(field, url, { shouldDirty: true, shouldValidate: true });
-      toast.success("Uploaded. Save changes to use it.");
-    } catch (error) {
-      toast.error(apiMessage(error, "The upload did not finish. Try again."));
-    } finally {
-      setUploading(null);
-    }
+    const preview = URL.createObjectURL(file);
+    const previous = pending[kind];
+    if (previous) URL.revokeObjectURL(previous.preview);
+
+    setPending((prev) => ({ ...prev, [kind]: { file, preview } }));
+    setValue(field, preview, { shouldDirty: true, shouldValidate: true });
   }
 
   async function onSubmit(values: CourseValues) {
+    // A picked file counts only while the field still shows it; a link pasted over it wins.
+    const cover = pending.cover && values.cover === pending.cover.preview ? pending.cover.file : undefined;
+    const video =
+      pending.video && values.videoUrl === pending.video.preview ? pending.video.file : undefined;
+
+    const body = {
+      ...values,
+      // The API fills these from the uploaded files; a local preview link means nothing to it.
+      cover: cover ? course.cover : values.cover,
+      videoUrl: video ? course.videoUrl : values.videoUrl,
+    };
+
+    const sending = video ?? cover;
+    if (sending)
+      setUploading({ kind: video ? "video" : "cover", loaded: 0, total: 0, startedAt: Date.now() });
+
     try {
-      await save.mutateAsync(values);
+      await save.mutateAsync({
+        body,
+        files: { cover, video },
+        onProgress: ({ loaded, total }) =>
+          setUploading((prev) => (prev ? { ...prev, loaded, total } : prev)),
+      });
+      clearPending();
       toast.success("Changes saved");
     } catch (error) {
       toast.error(apiMessage(error, "The changes were not saved. Try again."));
+    } finally {
+      setUploading(null);
     }
   }
 
@@ -246,7 +283,12 @@ function CourseEditor({ course }: { course: Course }) {
                 <Upload className="size-4" aria-hidden /> Upload
               </button>
             </div>
-            {uploading?.kind === "video" && <UploadStatus uploading={uploading} />}
+            {uploading?.kind === "video" ? (
+              <UploadStatus uploading={uploading} />
+            ) : (
+              pending.video &&
+              live.videoUrl === pending.video.preview && <PendingNote picked={pending.video} />
+            )}
           </Row>
           <Row label="Cover image" note="Shown before the video plays" error={errors.cover?.message}>
             <button
@@ -257,17 +299,52 @@ function CourseEditor({ course }: { course: Course }) {
             >
               <ImagePlus className="size-4" aria-hidden /> {live.cover ? "Replace cover" : "Upload cover"}
             </button>
-            {uploading?.kind === "cover" && <UploadStatus uploading={uploading} />}
+            {uploading?.kind === "cover" ? (
+              <UploadStatus uploading={uploading} />
+            ) : (
+              pending.cover &&
+              live.cover === pending.cover.preview && <PendingNote picked={pending.cover} />
+            )}
           </Row>
-          <Row label="Length" htmlFor="minutes" note="In minutes" error={errors.minutes?.message}>
-            <Input
-              id="minutes"
-              type="number"
-              min={1}
-              className="w-32"
-              {...register("minutes", { valueAsNumber: true })}
-            />
+          {live.videoUrl && !uploadedVideo ? (
+            <Row
+              label="Length"
+              htmlFor="minutes"
+              note="In minutes, for a linked video"
+              error={errors.minutes?.message}
+            >
+              <Input
+                id="minutes"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                className="w-32"
+                {...register("minutes", { valueAsNumber: true })}
+              />
+            </Row>
+          ) : (
+          <Row label="Length" note="Read from the video" error={errors.minutes?.message}>
+            <p className="flex min-h-11 items-center gap-2 text-sm" aria-live="polite">
+              {length === "reading" ? (
+                <>
+                  <Loader2 className="size-4 animate-spin text-muted" aria-hidden />
+                  <span className="text-muted">Reading the video</span>
+                </>
+              ) : length === "failed" ? (
+                <span className="text-gold">
+                  Could not read the length from this video. Check the link or upload it again.
+                </span>
+              ) : live.videoUrl ? (
+                <>
+                  <Clock className="size-4 text-muted" aria-hidden />
+                  <span className="font-semibold tabular-nums text-ink">{live.minutes} min</span>
+                </>
+              ) : (
+                <span className="text-muted">Add a video and its length appears here.</span>
+              )}
+            </p>
           </Row>
+          )}
           <Row label="Price" htmlFor="price" note="Paid once per realtor, in naira" error={errors.price?.message}>
             <Input
               id="price"
@@ -281,7 +358,10 @@ function CourseEditor({ course }: { course: Course }) {
         </dl>
       </section>
 
-      <SaveBar dirty={isDirty} saving={isSubmitting} onDiscard={() => reset(valuesOf(course))} />
+      <SaveBar dirty={isDirty} saving={isSubmitting} onDiscard={() => {
+          clearPending();
+          reset(valuesOf(course));
+        }} />
 
       <ConfirmDialog
         open={confirmUnpublish}
@@ -625,5 +705,86 @@ function UploadStatus({ uploading }: { uploading: Uploading }) {
         )}
       </p>
     </div>
+  );
+}
+
+/* Video length ----------------------------------------------------------------- */
+
+/** A file picked in this browser, or one stored in the course's own Cloudinary folder. */
+const isUploadedVideo = (url: string): boolean =>
+  url.startsWith("blob:") ||
+  /^https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/(?:v\d+\/)?inspectra\/course\//.test(url);
+
+type LengthState = "idle" | "reading" | "read" | "failed";
+
+/**
+ * Loads only the video's metadata and reports its length in whole minutes, rounded up so
+ * a 7:10 video reads "8 min". Duration needs no CORS, so a pasted link works as well as
+ * an upload.
+ */
+function useVideoMinutes(url: string, onMinutes: (minutes: number) => void): LengthState {
+  const [state, setState] = useState<LengthState>("idle");
+  const latest = useRef(onMinutes);
+
+  useEffect(() => {
+    latest.current = onMinutes;
+  });
+
+  useEffect(() => {
+    if (!url) {
+      setState("idle");
+      return;
+    }
+
+    let cancelled = false;
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+    probe.muted = true;
+
+    probe.onloadedmetadata = () => {
+      if (cancelled) return;
+      const seconds = probe.duration;
+      if (!Number.isFinite(seconds) || seconds <= 0) {
+        setState("failed");
+        return;
+      }
+      latest.current(Math.max(1, Math.ceil(seconds / 60)));
+      setState("read");
+    };
+    probe.onerror = () => {
+      if (!cancelled) setState("failed");
+    };
+
+    setState("reading");
+    probe.src = url;
+
+    return () => {
+      cancelled = true;
+      probe.removeAttribute("src");
+      probe.load();
+    };
+  }, [url]);
+
+  return state;
+}
+
+/* Picked files ------------------------------------------------------------------ */
+
+/** A file chosen in the browser, with the local link the preview and length read from. */
+interface Picked {
+  file: File;
+  preview: string;
+}
+
+const releaseAll = (pending: Partial<Record<"cover" | "video", Picked>>) => {
+  for (const picked of Object.values(pending)) if (picked) URL.revokeObjectURL(picked.preview);
+};
+
+function PendingNote({ picked }: { picked: Picked }) {
+  return (
+    <p className="mt-2 text-xs text-muted">
+      <span className="font-semibold text-ink">{picked.file.name}</span> ·{" "}
+      {megabytes(picked.file.size)}. It uploads when you save.
+    </p>
   );
 }

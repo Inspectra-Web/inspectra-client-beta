@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { ArrowRight, CircleCheck, Loader2, Mail, Play, TriangleAlert } from "lucide-react";
 
 import { apiMessage } from "@/lib/api";
+import { useMe } from "@/lib/auth";
 import { CourseShell } from "@/components/course/CourseShell";
 import { useVerifyEnrollment } from "@/lib/course";
 import { formatPriceFull } from "@/lib/format";
@@ -21,6 +22,7 @@ export function CourseCallback() {
   // Flutterwave says "cancelled" when someone backs out of the hosted page.
   const abandoned = declared === "cancelled" || (!transactionId && declared !== "successful");
   const verify = useVerifyEnrollment(abandoned ? "" : reference, transactionId);
+  const { data: user } = useMe();
 
   return (
     <CourseShell>
@@ -77,8 +79,11 @@ export function CourseCallback() {
               <Mail className="mt-0.5 size-5 shrink-0 text-[#38c0ff]" aria-hidden />
               <p className="text-sm leading-relaxed text-white/75">
                 Your course link is also on its way to{" "}
-                <span className="font-semibold text-white">{verify.data.email}</span>. Keep that email: the
-                link is how you come back to the video.
+                <span className="font-semibold text-white">{verify.data.email}</span>
+                {/* Someone who paid while signed in has already verified the address. */}
+                {user
+                  ? ". Keep that email: the link is how you come back to the video."
+                  : ", with a second email to verify the address. Verify it to sign in to your account; the course link works either way."}
               </p>
             </div>
 

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { passwordSchema } from "./authSchemas";
+
 export const courseSchema = z.object({
   title: z.string().trim().min(5, "Give the course a title"),
   subtitle: z.string().trim().min(5, "Add a one-line subtitle"),
@@ -18,10 +20,18 @@ export const courseSchema = z.object({
 
 export type CourseValues = z.infer<typeof courseSchema>;
 
-export const enrollSchema = z.object({
-  fullname: z.string().trim().min(3, "Enter your full name"),
-  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
-  phone: z.string().trim().min(7, "Enter a valid phone number"),
-});
+/** The course checkout, which opens the realtor account in the same submit. */
+export const joinCourseSchema = z
+  .object({
+    fullname: z.string().trim().min(3, "Enter your full name"),
+    email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+    phone: z.string().trim().min(7, "Enter a valid phone number"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password"),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  });
 
-export type EnrollValues = z.infer<typeof enrollSchema>;
+export type JoinCourseValues = z.infer<typeof joinCourseSchema>;

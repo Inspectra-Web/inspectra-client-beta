@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowLeft, ClipboardList, MapPinOff } from "lucide-react";
+import { ArrowLeft, House, MapPinOff } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import logoPrimary from "@/assets/inspectra-logo-primary-lg.png";
 
@@ -102,11 +102,11 @@ export function NotFound() {
             Back to home
           </Link>
           <Link
-            to="/request"
+            to="/listings"
             className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/15 max-sm:h-12"
           >
-            <ClipboardList className="size-4" aria-hidden />
-            Request a property
+            <House className="size-4" aria-hidden />
+            Browse homes
           </Link>
         </motion.div>
 

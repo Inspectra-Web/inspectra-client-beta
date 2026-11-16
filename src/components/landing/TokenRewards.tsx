@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { CalendarCheck, ClipboardList, Clock, Coins, Flame, Receipt, Tag } from "lucide-react";
+import { CalendarCheck, Clock, Coins, Flame, House, Receipt, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
@@ -36,7 +36,7 @@ const COPY = {
       title: "Book an inspection",
       body: "Pay for your viewing securely in-app, as you normally would.",
     },
-    cta: { to: "/request", label: "Request a property", Icon: ClipboardList },
+    cta: { to: "/listings", label: "Browse homes", Icon: House },
   },
   realtor: {
     title: "Earn crypto while you build your real estate business",

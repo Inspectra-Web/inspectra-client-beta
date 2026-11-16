@@ -151,8 +151,8 @@ export function Overview() {
               ) : (
                 <div className="py-6">
                   <p className="text-muted">No inspections scheduled yet.</p>
-                  <Link to="/dashboard/requests" className={buttonClasses("outline", "sm", "mt-4")}>
-                    View your requests
+                  <Link to="/listings" className={buttonClasses("outline", "sm", "mt-4")}>
+                    Browse homes
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>
                 </div>

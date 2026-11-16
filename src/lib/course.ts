@@ -1,11 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "./api";
+import { ME_KEY } from "./auth";
 
 /**
  * The paid realtor course: one teaser video on what INSPECTRA does for a realtor. The
- * admin uploads it, a prospective realtor pays for it as a guest, and finishing the video
- * issues the invite that unlocks realtor sign-up.
+ * admin uploads it, a prospective realtor opens their account and pays in one checkout,
+ * and finishing the video opens their realtor console. Guests who paid before accounts
+ * were opened at checkout still get a sign-up invite when the video ends.
  */
 
 export type CourseStatus = "draft" | "published";
@@ -45,7 +47,7 @@ export interface Enrollment {
   amount: number;
   paidAt?: string;
   completedAt?: string;
-  /** Set once the invite has been used to register. */
+  /** Has an account: opened at checkout, or by a guest's invite. */
   registered: boolean;
   createdAt: string;
 }
@@ -53,10 +55,18 @@ export interface Enrollment {
 /** What the player knows about the person watching. */
 export type LearnerEnrollment = Omit<Enrollment, "phone" | "reference" | "amount">;
 
-export interface EnrollBody {
+export interface JoinCourseBody {
   fullname: string;
   email: string;
   phone: string;
+  password: string;
+  confirmPassword: string;
+}
+
+/** The signed-in realtor's own enrollment. `access` is null until it is paid for. */
+export interface MyEnrollment {
+  enrollment: LearnerEnrollment | null;
+  access: string | null;
 }
 
 /** `link` is the Flutterwave checkout; `reference` our tx_ref. */
@@ -97,12 +107,13 @@ export interface EnrollmentsPage {
   total: number;
   pages: number;
   counts: Record<EnrollmentFilter, number>;
-  /** Of everyone, how many have used their invite. */
+  /** Of everyone, how many watched and have an account: realtors who have joined. */
   registered: number;
 }
 
 export const COURSE_KEY = ["course"];
 export const LEARN_KEY = ["course", "learn"];
+export const MY_ENROLLMENT_KEY = ["course", "me"];
 export const ADMIN_COURSE_KEY = ["admin", "course"];
 export const ENROLLMENTS_KEY = ["admin", "course", "enrollments"];
 
@@ -128,11 +139,33 @@ export function useCourse() {
   });
 }
 
-/** Starts a guest checkout. */
-export function useEnroll() {
+/** Opens the realtor account and the checkout in one submit. */
+export function useJoinCourse() {
   return useMutation({
-    mutationFn: async (body: EnrollBody) => {
-      const res = await api.post<Envelope<EnrollResult>>("/course/enroll", body);
+    mutationFn: async (body: JoinCourseBody) => {
+      const res = await api.post<Envelope<EnrollResult>>("/course/join", body);
+      return res.data.data;
+    },
+  });
+}
+
+/** A signed-in realtor whose console is still locked, paying from their account. */
+export function useCourseCheckout() {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post<Envelope<EnrollResult>>("/course/checkout");
+      return res.data.data;
+    },
+  });
+}
+
+/** Only asked for while the signed-in realtor's console is locked: that is who it serves. */
+export function useMyEnrollment(enabled: boolean) {
+  return useQuery({
+    queryKey: MY_ENROLLMENT_KEY,
+    enabled,
+    queryFn: async () => {
+      const res = await api.get<Envelope<MyEnrollment>>("/course/me");
       return res.data.data;
     },
   });
@@ -179,13 +212,17 @@ export function useLearnerCourse(access: string) {
   });
 }
 
-/** The video ended: marks it watched and answers with the invite. Safe to repeat. */
+/**
+ * The video ended: marks it watched. An enrollment with an account has that account's
+ * console unlocked and gets no invite; a guest's answers with its sign-up invite. Safe to
+ * repeat.
+ */
 export function useFinishCourse() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ access }: { access: string }) => {
-      const res = await api.post<Envelope<{ invite: string; enrollment: LearnerEnrollment }>>(
+      const res = await api.post<Envelope<{ invite: string | null; enrollment: LearnerEnrollment }>>(
         `/course/learn/${access}/finish`,
       );
       return res.data.data;
@@ -194,6 +231,9 @@ export function useFinishCourse() {
       queryClient.setQueryData<LearnerCourse>([...LEARN_KEY, access], (prev) =>
         prev ? { ...prev, enrollment } : prev,
       );
+      // The signed-in realtor's `courseLocked` has just changed on the server.
+      void queryClient.invalidateQueries({ queryKey: ME_KEY });
+      void queryClient.invalidateQueries({ queryKey: MY_ENROLLMENT_KEY });
     },
   });
 }

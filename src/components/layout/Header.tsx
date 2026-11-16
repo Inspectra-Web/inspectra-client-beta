@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Handshake,
   GraduationCap,
+  House,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import logo from "@/assets/inspectra-logo-primary-lg.png";
@@ -42,6 +43,12 @@ const REALTORS: NavGroup = {
   // "Find a realtor" returns with the /realtors directory when listings open.
   items: [
     {
+      label: "Realtor course",
+      to: "/course",
+      Icon: GraduationCap,
+      hint: "Start here: the course opens your realtor account",
+    },
+    {
       label: "Join as a realtor",
       to: "/for-realtors",
       Icon: Handshake,
@@ -64,8 +71,8 @@ const REALTORS: NavGroup = {
 
 // Icons are drawer-only in the top-level desktop nav, which is text.
 const NAV: (NavLinkItem | NavGroup)[] = [
+  { label: "Browse homes", to: "/listings", Icon: House },
   { label: "Request a property", to: "/request", Icon: ClipboardList },
-  { label: "Realtor course", to: "/course", Icon: GraduationCap },
   REALTORS,
   { label: "About", to: "/about", Icon: Info },
 ];
@@ -122,13 +129,13 @@ export function Header() {
         solid ? "bg-bg/85 backdrop-blur-xl" : "bg-transparent",
       )}
     >
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <Link to="/" className="flex items-center" aria-label="INSPECTRA home">
+      <Container className="flex h-16 max-w-7xl items-center justify-between gap-4">
+        <Link to="/" className="flex shrink-0 items-center" aria-label="INSPECTRA home">
           <img src={logo} alt="INSPECTRA" className="h-10 w-auto" />
         </Link>
 
         {/* desktop nav */}
-        <nav className="flex items-center gap-1 max-lg:hidden">
+        <nav className="flex items-center gap-1 whitespace-nowrap max-lg:hidden">
           {NAV.map((item) => {
             const pill = (isActive: boolean) =>
               cn(
@@ -209,7 +216,7 @@ export function Header() {
         </nav>
 
         {/* desktop actions */}
-        <div className="flex items-center gap-3 max-lg:hidden">
+        <div className="flex shrink-0 items-center gap-3 whitespace-nowrap max-lg:hidden">
           <ThemeToggle onDark={onDarkHero} />
           {!isPending &&
             (user ? (

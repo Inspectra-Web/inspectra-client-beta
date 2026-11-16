@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ClipboardList, Heart } from "lucide-react";
+import { Heart, House } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { PropertyCard } from "@/components/PropertyCard";
@@ -74,11 +74,11 @@ export function Saved() {
           <EmptyState
             icon={Heart}
             title="No saved homes yet"
-            message="Once verified homes go live, tap the heart on any listing to keep it here."
+            message="Tap the heart on any listing to keep it here."
             action={
-              <Link to="/dashboard/requests" className={buttonClasses("brand", "md")}>
-                <ClipboardList className="size-4" aria-hidden />
-                View your requests
+              <Link to="/listings" className={buttonClasses("brand", "md")}>
+                <House className="size-4" aria-hidden />
+                Browse homes
               </Link>
             }
           />

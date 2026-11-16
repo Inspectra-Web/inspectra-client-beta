@@ -3,7 +3,7 @@ import { Solutions } from "@/components/landing/Solutions";
 import { TrustLayers } from "@/components/landing/TrustLayers";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Partners } from "@/components/landing/Partners";
-// import { FeaturedListings } from "@/components/landing/FeaturedListings";
+import { FeaturedListings } from "@/components/landing/FeaturedListings";
 // import { Testimonial } from "@/components/landing/Testimonial";
 // import { CertifiedRealtors } from "@/components/landing/CertifiedRealtors";
 import { TokenRewards } from "@/components/landing/TokenRewards";
@@ -18,9 +18,8 @@ export function Landing() {
       <TrustLayers />
       <HowItWorks />
       <TokenRewards />
-      {/* Live on INSPECTRA. Commented out until real properties are listed: the
-          section promises a live marketplace and would render an empty grid. */}
-      {/* <FeaturedListings /> */}
+      {/* Renders nothing while the platform has no listings. */}
+      <FeaturedListings />
       {/* Testimonial. Commented out until a real buyer has said this: the quote and
           the person in it are invented. Put it back with a real review. */}
       {/* <Testimonial /> */}

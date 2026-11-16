@@ -328,7 +328,7 @@ function CourseEditor({ course }: { course: Course }) {
               {length === "reading" ? (
                 <>
                   <Loader2 className="size-4 animate-spin text-muted" aria-hidden />
-                  <span className="text-muted">Reading the video</span>
+                  <span className="text-muted">Checking the video length</span>
                 </>
               ) : length === "failed" ? (
                 <span className="text-gold">
@@ -527,12 +527,12 @@ function Funnel() {
 
   const paid = data ? data.counts.paid + data.counts.completed : null;
   const watched = data?.counts.completed ?? null;
-  const registered = data?.registered ?? null;
+  const joined = data?.registered ?? null;
 
   const steps = [
     { label: "Paid", value: paid, of: null, note: data ? `${data.counts.pending} started checkout` : "" },
-    { label: "Watched", value: watched, of: paid, note: "Invite unlocked" },
-    { label: "Registered", value: registered, of: watched, note: "Joined as a realtor" },
+    { label: "Watched", value: watched, of: paid, note: "Console opens at the end" },
+    { label: "Joined", value: joined, of: watched, note: "Realtor account open" },
   ];
 
   return (
@@ -651,7 +651,7 @@ const percentOf = ({ loaded, total }: Uploading) =>
 // which reports nothing, so the bar says so instead of sitting at 100%.
 const sent = (u: Uploading) => u.total > 0 && u.loaded >= u.total;
 
-const chipLabel = (u: Uploading) => (sent(u) ? "Processing" : `${percentOf(u)}%`);
+const chipLabel = (u: Uploading) => (sent(u) ? "Finishing" : `${percentOf(u)}%`);
 
 const megabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
@@ -692,7 +692,7 @@ function UploadStatus({ uploading }: { uploading: Uploading }) {
         {done ? (
           <>
             <Loader2 className="size-3.5 animate-spin" aria-hidden />
-            Processing on the server. This can take a little longer for a large video.
+            Almost done. Large videos take a little longer to finish.
           </>
         ) : (
           <>

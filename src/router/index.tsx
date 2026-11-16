@@ -1,8 +1,8 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "@/layouts/RootLayout";
 import { Landing } from "@/pages/Landing";
-// import { Listings } from "@/pages/Listings";
-// import { ListingDetail } from "@/pages/ListingDetail";
+import { Listings } from "@/pages/Listings";
+import { ListingDetail } from "@/pages/ListingDetail";
 // import { Realtors } from "@/pages/Realtors";
 // import { RealtorDetail } from "@/pages/RealtorDetail";
 import { GetCertified } from "@/pages/GetCertified";
@@ -74,6 +74,7 @@ import { AdminNotFound } from "@/pages/admin/AdminNotFound";
 import { AdminSignIn } from "@/pages/AdminSignIn";
 import { VerifyEmail } from "@/pages/VerifyEmail";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequireCourse } from "@/components/auth/RequireCourse";
 
 export const router = createBrowserRouter([
   {
@@ -81,11 +82,10 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Landing /> },
-      // Hidden for the waitlist launch: nothing is listed yet, so seekers file a request
-      // at /request instead. Unrouted rather than deleted; they fall through to NotFound
-      // until listings open. The pages and their imports stay.
-      // { path: "listings", element: <Listings /> },
-      // { path: "listings/:slug", element: <ListingDetail /> },
+      { path: "listings", element: <Listings /> },
+      { path: "listings/:slug", element: <ListingDetail /> },
+      // The realtor directory stays hidden until something writes Profile.certified:
+      // every realtor would read "Not certified". The pages and their imports stay.
       // { path: "realtors", element: <Realtors /> },
       // { path: "realtors/:id", element: <RealtorDetail /> },
       { path: "enablement", element: <GetCertified /> },
@@ -132,36 +132,42 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth roles={["realtor"]} />,
     children: [
-      // Realtor dashboard: its own shell (grouped sidebar + topbar), outside the marketing chrome.
       {
-        path: "/realtor",
-        element: <RealtorDashboardLayout />,
+        // An account opened at the course checkout sees only the step left to take.
+        element: <RequireCourse />,
         children: [
-          { index: true, element: <RealtorOverview /> },
-          { path: "listings", element: <RealtorListings /> },
-          { path: "listings/new", element: <RealtorListingNew /> },
-          { path: "listings/:id", element: <RealtorListingDetail /> },
-          { path: "listings/:id/edit", element: <RealtorListingEdit /> },
-          { path: "leads", element: <RealtorLeads /> },
-          { path: "leads/:id", element: <RealtorLeadDetail /> },
-          { path: "inspections", element: <RealtorInspections /> },
-          { path: "inspections/:id", element: <RealtorInspectionDetail /> },
-          { path: "verification", element: <RealtorVerification /> },
-          // Certification is coming soon and the program has not been built, so the
-          // page is unrouted rather than deleted. /realtor/certification falls through
-          // to the in-shell NotFound until it ships.
-          // { path: "certification", element: <RealtorCertification /> },
-          { path: "subscription", element: <RealtorSubscription /> },
-          // Where Flutterwave returns. Inside the realtor branch on purpose: the jwt
-          // cookie has to ride along, and it only does on our own origin.
+          // Realtor dashboard: its own shell (grouped sidebar + topbar), outside the marketing chrome.
           {
-            path: "subscription/callback",
-            element: <RealtorSubscriptionCallback />,
+            path: "/realtor",
+            element: <RealtorDashboardLayout />,
+            children: [
+              { index: true, element: <RealtorOverview /> },
+              { path: "listings", element: <RealtorListings /> },
+              { path: "listings/new", element: <RealtorListingNew /> },
+              { path: "listings/:id", element: <RealtorListingDetail /> },
+              { path: "listings/:id/edit", element: <RealtorListingEdit /> },
+              { path: "leads", element: <RealtorLeads /> },
+              { path: "leads/:id", element: <RealtorLeadDetail /> },
+              { path: "inspections", element: <RealtorInspections /> },
+              { path: "inspections/:id", element: <RealtorInspectionDetail /> },
+              { path: "verification", element: <RealtorVerification /> },
+              // Certification is coming soon and the program has not been built, so the
+              // page is unrouted rather than deleted. /realtor/certification falls through
+              // to the in-shell NotFound until it ships.
+              // { path: "certification", element: <RealtorCertification /> },
+              { path: "subscription", element: <RealtorSubscription /> },
+              // Where Flutterwave returns. Inside the realtor branch on purpose: the jwt
+              // cookie has to ride along, and it only does on our own origin.
+              {
+                path: "subscription/callback",
+                element: <RealtorSubscriptionCallback />,
+              },
+              { path: "virtual-account", element: <RealtorVirtualAccount /> },
+              { path: "wallet", element: <RealtorWallet /> },
+              { path: "account", element: <RealtorAccount /> },
+              { path: "*", element: <RealtorNotFound /> },
+            ],
           },
-          { path: "virtual-account", element: <RealtorVirtualAccount /> },
-          { path: "wallet", element: <RealtorWallet /> },
-          { path: "account", element: <RealtorAccount /> },
-          { path: "*", element: <RealtorNotFound /> },
         ],
       },
     ],

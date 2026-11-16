@@ -193,13 +193,14 @@ export function AdminCourseEnrollments() {
   );
 }
 
-/** The same three steps as the funnel on the course page, filled as far as this realtor got. */
+/**
+ * The same three steps as the funnel on the course page, filled as far as this realtor got.
+ * An account alone is not the last step: one opened at checkout exists before paying, so
+ * joining means watched with an account.
+ */
 function Progress({ enrollment }: { enrollment: Enrollment }) {
-  const reached = [
-    enrollment.status !== "pending",
-    enrollment.status === "completed",
-    enrollment.registered,
-  ];
+  const watched = enrollment.status === "completed";
+  const reached = [enrollment.status !== "pending", watched, watched && enrollment.registered];
   const step = reached.lastIndexOf(true);
 
   const label =
@@ -209,7 +210,7 @@ function Progress({ enrollment }: { enrollment: Enrollment }) {
         ? "Paid, not watched"
         : step === 1
           ? `Watched ${formatDate(enrollment.completedAt ?? enrollment.createdAt)}`
-          : "Registered";
+          : "Joined";
 
   return (
     <div className="flex items-center gap-3">

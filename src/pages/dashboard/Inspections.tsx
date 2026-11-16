@@ -4,7 +4,7 @@ import {
   CalendarCheck,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
+  House,
   SearchX,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -107,14 +107,14 @@ export function Inspections() {
             title={upcoming ? "No upcoming inspections" : "No past inspections"}
             message={
               upcoming
-                ? "Once verified homes go live, viewings you book will show up here."
+                ? "Book a viewing from any listing and it will show up here."
                 : "Once a viewing is done, declined or called off, it is archived here."
             }
             action={
               upcoming ? (
-                <Link to="/dashboard/requests" className={buttonClasses("brand", "md")}>
-                  <ClipboardList className="size-4" aria-hidden />
-                  View your requests
+                <Link to="/listings" className={buttonClasses("brand", "md")}>
+                  <House className="size-4" aria-hidden />
+                  Browse homes
                 </Link>
               ) : undefined
             }

@@ -67,7 +67,7 @@ export function CourseHero({ course }: { course: PublicCourse }) {
                 <ArrowDown className="size-4" aria-hidden />
               </a>
               <p className="text-sm text-white/60">
-                One payment. Watch it, then register as a realtor.
+                One payment. Watch it, and your realtor console opens.
               </p>
             </motion.div>
           </div>

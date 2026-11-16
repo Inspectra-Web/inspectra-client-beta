@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, ClipboardList } from "lucide-react";
+import { ArrowRight, House } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { CtaBand } from "@/components/landing/CtaBand";
@@ -15,23 +15,23 @@ export function FinalCTA() {
           <CtaBand image={IMAGE} className="py-24 text-center max-sm:py-16">
             <div className="mx-auto max-w-2xl">
             <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/60">
-              Join the waitlist
+              Find your next home
             </span>
             <h2 className="display mt-5 text-[3.25rem] text-white text-balance max-lg:text-4xl max-sm:text-3xl">
-              Tell us the home you want. Be first when it's verified.
+              Every home here is verified. Find yours.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75 max-sm:text-base">
-              We're opening in Lagos, Abuja and Port Harcourt. File your request now, or list
-              your property with buyers who trust what they see.
+              Browse verified homes in Lagos, Abuja and Port Harcourt, or list your property
+              with buyers who trust what they see.
             </p>
 
             <div className="mt-9 flex items-center justify-center gap-3 max-sm:flex-col">
               <Link
-                to="/request"
+                to="/listings"
                 className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand px-8 text-base font-semibold text-[#04121f] transition-transform hover:-translate-y-0.5 max-sm:w-full"
               >
-                <ClipboardList className="size-4" aria-hidden />
-                Request a property
+                <House className="size-4" aria-hidden />
+                Browse homes
               </Link>
               <Link
                 to="/for-realtors"
@@ -42,7 +42,13 @@ export function FinalCTA() {
               </Link>
             </div>
 
-            <p className="mt-6 text-sm text-white/60">
+            <p className="mt-6 text-sm text-white/65">
+              Can't find it?{" "}
+              <Link to="/request" className="font-semibold text-white underline-offset-4 hover:underline">
+                Request a property
+              </Link>
+            </p>
+            <p className="mt-3 text-sm text-white/60">
               Lagos · Abuja · Port Harcourt · No listing goes live unverified
             </p>
           </div>

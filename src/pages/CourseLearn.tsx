@@ -5,6 +5,7 @@ import { ArrowRight, Clock, KeyRound, Loader2, Lock, MailWarning, RotateCcw } fr
 import { toast } from "react-toastify";
 
 import { apiMessage } from "@/lib/api";
+import { useMe } from "@/lib/auth";
 import { CourseShell } from "@/components/course/CourseShell";
 import { useFinishCourse, useLearnerCourse, type Course, type LearnerEnrollment } from "@/lib/course";
 import { displayName } from "@/lib/format";
@@ -144,7 +145,11 @@ function Screening({ course, enrollment, access }: { course: Course; enrollment:
   );
 }
 
-/** The registration key: fills as the video plays, and opens into the invite at the end. */
+/**
+ * The key: fills as the video plays and opens at the end. An enrollment with an account
+ * (`registered`) opens into the realtor console; a guest's from before accounts were opened
+ * at checkout opens into its sign-up invite.
+ */
 function KeyCard({
   progress,
   unlocked,
@@ -158,24 +163,34 @@ function KeyCard({
   unlocked: boolean;
   finishing: boolean;
   registered: boolean;
-  invite?: string;
+  invite?: string | null;
   access: string;
   onReplay: () => void;
 }) {
   const reduced = useReducedMotion();
   const navigate = useNavigate();
   const finish = useFinishCourse();
+  const { data: user } = useMe();
   const pct = Math.round(progress * 100);
 
-  // A returning learner has no invite in memory; finishing again is safe and hands it back.
+  // A returning guest has no invite in memory; finishing again is safe and hands it back.
   async function register() {
     try {
       const key = invite ?? (await finish.mutateAsync({ access })).invite;
-      navigate(`/register?role=realtor&invite=${encodeURIComponent(key)}`);
+      // No invite means the enrollment has an account by now: sign in to it instead.
+      navigate(key ? `/register?role=realtor&invite=${encodeURIComponent(key)}` : "/login");
     } catch {
       toast.error("Your registration link did not open. Try again.");
     }
   }
+
+  const heading = registered
+    ? unlocked
+      ? { title: "Your console is open", body: "Everything a realtor needs is ready" }
+      : { title: "Your realtor console", body: "Opens when the video ends" }
+    : unlocked
+      ? { title: "Registration unlocked", body: "Create your realtor account" }
+      : { title: "Registration link", body: "Unlocks when the video ends" };
 
   return (
     <div
@@ -194,16 +209,8 @@ function KeyCard({
           {unlocked ? <KeyRound className="size-5" aria-hidden /> : <Lock className="size-5" aria-hidden />}
         </span>
         <div>
-          <p className="text-sm font-semibold">
-            {registered ? "You are registered" : unlocked ? "Registration unlocked" : "Registration link"}
-          </p>
-          <p className="text-xs text-white/60">
-            {registered
-              ? "Sign in to your realtor account"
-              : unlocked
-                ? "Create your realtor account"
-                : "Unlocks when the video ends"}
-          </p>
+          <p className="text-sm font-semibold">{heading.title}</p>
+          <p className="text-xs text-white/60">{heading.body}</p>
         </div>
       </div>
 
@@ -224,13 +231,16 @@ function KeyCard({
       <p className="mt-2 text-xs tabular-nums text-white/50">{pct}% watched</p>
 
       <AnimatePresence mode="wait" initial={false}>
-        {registered ? (
+        {unlocked && registered ? (
           <motion.div key="registered" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+            {/* Signed out (or as someone else), sign-in carries them on to the console. */}
             <Link
-              to="/login"
-              className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white font-semibold text-[#04121f] transition-transform hover:-translate-y-0.5"
+              to={user?.role === "realtor" ? "/realtor" : "/login"}
+              state={user?.role === "realtor" ? undefined : { from: "/realtor" }}
+              className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5"
             >
-              Sign in <ArrowRight className="size-4" aria-hidden />
+              {user?.role === "realtor" ? "Go to your console" : "Sign in to your console"}
+              <ArrowRight className="size-4" aria-hidden />
             </Link>
           </motion.div>
         ) : unlocked ? (
@@ -268,7 +278,7 @@ function KeyCard({
         )}
       </AnimatePresence>
 
-      {unlocked && !registered && (
+      {unlocked && (
         <button
           type="button"
           onClick={onReplay}

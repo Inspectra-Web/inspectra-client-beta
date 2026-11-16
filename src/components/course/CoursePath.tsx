@@ -1,4 +1,4 @@
-import { CreditCard, PlayCircle, UserPlus, Building2, type LucideIcon } from "lucide-react";
+import { CreditCard, PlayCircle, KeyRound, Building2, type LucideIcon } from "lucide-react";
 
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
@@ -8,8 +8,8 @@ import { formatPriceFull } from "@/lib/format";
 export function CoursePath({ price }: { price: number }) {
   const steps: { title: string; body: string; Icon: LucideIcon }[] = [
     {
-      title: `Pay ${formatPriceFull(price)}`,
-      body: "One payment by card or bank transfer. Your course link arrives by email.",
+      title: `Create your account and pay ${formatPriceFull(price)}`,
+      body: "One form and one payment by card or bank transfer. Your course link arrives by email.",
       Icon: CreditCard,
     },
     {
@@ -18,9 +18,9 @@ export function CoursePath({ price }: { price: number }) {
       Icon: PlayCircle,
     },
     {
-      title: "Register as a realtor",
-      body: "Your registration link unlocks the moment the video ends.",
-      Icon: UserPlus,
+      title: "Open your realtor console",
+      body: "It opens the moment the video ends. Verify your identity, then list.",
+      Icon: KeyRound,
     },
     {
       title: "Sell on INSPECTRA",

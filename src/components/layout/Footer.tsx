@@ -6,6 +6,7 @@ const COLUMNS = [
   {
     title: "Explore",
     links: [
+      { label: "Browse homes", to: "/listings" },
       { label: "Request a property", to: "/request" },
       { label: "Pricing", to: "/pricing" },
     ],

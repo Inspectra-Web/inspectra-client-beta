@@ -186,8 +186,8 @@ function KeyCard({
 
   const heading = registered
     ? unlocked
-      ? { title: "Your console is open", body: "Everything a realtor needs is ready" }
-      : { title: "Your realtor console", body: "Opens when the video ends" }
+      ? { title: "Your dashboard is open", body: "Everything a realtor needs is ready" }
+      : { title: "Your realtor dashboard", body: "Opens when the video ends" }
     : unlocked
       ? { title: "Registration unlocked", body: "Create your realtor account" }
       : { title: "Registration link", body: "Unlocks when the video ends" };
@@ -239,7 +239,7 @@ function KeyCard({
               state={user?.role === "realtor" ? undefined : { from: "/realtor" }}
               className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand font-semibold text-[#04121f] shadow-[0_10px_30px_-12px_rgba(26,172,240,0.8)] transition-transform hover:-translate-y-0.5"
             >
-              {user?.role === "realtor" ? "Go to your console" : "Sign in to your console"}
+              {user?.role === "realtor" ? "Go to your dashboard" : "Sign in to your dashboard"}
               <ArrowRight className="size-4" aria-hidden />
             </Link>
           </motion.div>

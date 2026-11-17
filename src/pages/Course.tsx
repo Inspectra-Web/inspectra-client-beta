@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { CourseHero } from "@/components/course/CourseHero";
 import { CoursePath } from "@/components/course/CoursePath";
 import { CourseEnrol } from "@/components/course/CourseEnrol";
+import { CourseMentorship } from "@/components/course/CourseMentorship";
 import { useCourse } from "@/lib/course";
 
 export function Course() {
@@ -18,6 +19,7 @@ export function Course() {
     <>
       <CourseHero course={course} />
       <CoursePath price={course.price} />
+      <CourseMentorship />
       <CourseEnrol course={course} />
     </>
   );

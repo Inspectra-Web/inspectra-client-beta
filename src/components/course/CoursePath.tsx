@@ -1,4 +1,4 @@
-import { CreditCard, PlayCircle, KeyRound, Building2, type LucideIcon } from "lucide-react";
+import { Coins, CreditCard, PlayCircle, Sparkles, type LucideIcon } from "lucide-react";
 
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
@@ -8,24 +8,24 @@ import { formatPriceFull } from "@/lib/format";
 export function CoursePath({ price }: { price: number }) {
   const steps: { title: string; body: string; Icon: LucideIcon }[] = [
     {
-      title: `Create your account and pay ${formatPriceFull(price)}`,
-      body: "One form and one payment by card or bank transfer. Your course link arrives by email.",
+      title: `Enrol for ${formatPriceFull(price)}`,
+      body: "One form, one payment. Your course link arrives by email.",
       Icon: CreditCard,
     },
     {
-      title: "Watch the video",
-      body: "A short video on how INSPECTRA works for you and how the reward is earned.",
+      title: "Take the masterclasses",
+      body: "Blockchain, then AI storytelling that turns viewers into buyers.",
+      Icon: Sparkles,
+    },
+    {
+      title: "How INSPECTRA works",
+      body: "Learn how rewards are earned. Your dashboard opens at the end.",
       Icon: PlayCircle,
     },
     {
-      title: "Open your realtor console",
-      body: "It opens the moment the video ends. Verify your identity, then list.",
-      Icon: KeyRound,
-    },
-    {
-      title: "Sell on INSPECTRA",
-      body: "Close sales on the platform with your clients and earn your reward on each one.",
-      Icon: Building2,
+      title: "Earn on every deal",
+      body: "A $USD digital asset on every INSPECTRA transaction you close.",
+      Icon: Coins,
     },
   ];
 
@@ -34,26 +34,30 @@ export function CoursePath({ price }: { price: number }) {
       <Container>
         <SectionHeading
           eyebrow="How it works"
-          title="From one video to your first sale"
-          intro="Four steps, in this order. Nothing to download and no exam."
+          title="From one video to earning your first deflationary digital asset in $USD"
+          intro="Deflationary means that as you earn, scarcity sets in: the total supply of the asset decreases."
         />
 
-        <ol className="relative mt-16 grid grid-cols-4 gap-8 max-lg:grid-cols-2 max-lg:gap-y-12 max-sm:mt-12 max-sm:grid-cols-1">
-          <span
-            aria-hidden
-            className="absolute left-0 right-0 top-6 h-px bg-line max-lg:hidden"
-          />
+        {/* Each card spans three shared rows (head, title, body), so they line up across
+            the row even when one title wraps. */}
+        <ol className="mt-16 grid grid-cols-4 gap-x-5 gap-y-5 max-lg:grid-cols-2 max-sm:mt-12 max-sm:grid-cols-1">
           {steps.map(({ title, body, Icon }, i) => (
-            <li key={title} className="relative">
-              <Reveal y={16} delay={i * 0.06}>
-                <span className="relative grid size-12 place-items-center rounded-full border border-line bg-bg text-ink">
-                  <Icon className="size-5" aria-hidden />
-                  <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-brand text-[0.68rem] font-semibold tabular-nums text-[#04121f]">
-                    {i + 1}
+            <li key={title} className="row-span-3 grid grid-rows-subgrid">
+              <Reveal
+                y={16}
+                delay={i * 0.06}
+                className="row-span-3 grid grid-rows-subgrid gap-y-0 rounded-2xl border border-line bg-surface p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="grid size-11 place-items-center rounded-full bg-brand/10 text-brand-ink">
+                    <Icon className="size-5" aria-hidden />
                   </span>
-                </span>
-                <h3 className="mt-6 text-lg font-semibold text-ink">{title}</h3>
-                <p className="mt-2 leading-relaxed text-muted">{body}</p>
+                  <span className="display text-3xl tabular-nums text-line">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <h3 className="mt-6 text-lg font-semibold leading-snug text-ink">{title}</h3>
+                <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">{body}</p>
               </Reveal>
             </li>
           ))}

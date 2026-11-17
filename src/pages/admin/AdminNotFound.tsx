@@ -11,7 +11,7 @@ export function AdminNotFound() {
       </span>
       <h1 className="display mt-5 text-3xl text-ink">Page not found</h1>
       <p className="mt-2 max-w-sm text-muted">
-        That console page doesn't exist. Let's get you back to the trust desk.
+        That admin page doesn't exist. Let's get you back to the trust desk.
       </p>
       <Link to="/admin" className={buttonClasses("brand", "md", "mt-7")}>
         <ArrowLeft className="size-4" aria-hidden />

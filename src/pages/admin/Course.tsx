@@ -531,7 +531,7 @@ function Funnel() {
 
   const steps = [
     { label: "Paid", value: paid, of: null, note: data ? `${data.counts.pending} started checkout` : "" },
-    { label: "Watched", value: watched, of: paid, note: "Console opens at the end" },
+    { label: "Watched", value: watched, of: paid, note: "Dashboard opens at the end" },
     { label: "Joined", value: joined, of: watched, note: "Realtor account open" },
   ];
 

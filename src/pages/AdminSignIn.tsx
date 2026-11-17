@@ -49,7 +49,7 @@ export function AdminSignIn() {
   return (
     <AuthShell
       side={{
-        eyebrow: "Admin console",
+        eyebrow: "Admin dashboard",
         headline: (
           <>
             The desk where trust

@@ -1,7 +1,8 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { ArrowDown, Clock, Lock } from "lucide-react";
+import { ArrowDown, Blocks, Clock, Coins, Lock, Sparkles, type LucideIcon } from "lucide-react";
 
 import { Container } from "@/components/ui/Container";
+import { cn } from "@/lib/cn";
 import type { PublicCourse } from "@/lib/course";
 import { formatPriceFull } from "@/lib/format";
 
@@ -13,6 +14,21 @@ const item: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
 };
+
+const PROOF: { label: string; Icon: LucideIcon }[] = [
+  { label: "Blockchain masterclass", Icon: Blocks },
+  { label: "AI storytelling masterclass", Icon: Sparkles },
+  { label: "Rewards on every transaction", Icon: Coins },
+];
+
+// The admin can save a title of up to 200 characters, so the heading steps down as it grows.
+function titleSize(title: string) {
+  if (title.length <= 40)
+    return "text-[3.4rem] leading-[1.05] max-xl:text-5xl max-sm:text-[2.35rem]";
+  if (title.length <= 80)
+    return "text-[2.6rem] leading-[1.1] max-xl:text-[2.35rem] max-sm:text-[1.9rem]";
+  return "text-[2.1rem] leading-[1.15] max-xl:text-[1.9rem] max-sm:text-[1.6rem]";
+}
 
 export function CourseHero({ course }: { course: PublicCourse }) {
   const reduced = useReducedMotion();
@@ -37,16 +53,19 @@ export function CourseHero({ course }: { course: PublicCourse }) {
           <div>
             <motion.p
               variants={item}
-              className="flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-white/70"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-white/70"
             >
-              <span className="text-[#38c0ff]">Realtor course</span>
+              <span className="whitespace-nowrap text-[#38c0ff]">Realtor course</span>
               <span className="h-px w-8 bg-white/30" aria-hidden />
-              <span>{course.minutes} min video</span>
+              <span className="whitespace-nowrap">Blockchain and AI storytelling</span>
             </motion.p>
 
             <motion.h1
               variants={item}
-              className="display mt-5 text-[3.4rem] leading-[1.05] text-white text-balance max-xl:text-5xl max-sm:text-[2.35rem]"
+              className={cn(
+                "display mt-5 text-white text-balance wrap-break-word hyphens-auto",
+                titleSize(course.title),
+              )}
             >
               {course.title}
             </motion.h1>
@@ -67,9 +86,21 @@ export function CourseHero({ course }: { course: PublicCourse }) {
                 <ArrowDown className="size-4" aria-hidden />
               </a>
               <p className="text-sm text-white/60">
-                One payment. Watch it, and your realtor console opens.
+                One payment. Your first digital asset reward starts here.
               </p>
             </motion.div>
+
+            <motion.ul
+              variants={item}
+              className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-sm text-white/80"
+            >
+              {PROOF.map(({ label, Icon }) => (
+                <li key={label} className="flex items-center gap-2">
+                  <Icon className="size-4 text-[#38c0ff]" aria-hidden />
+                  {label}
+                </li>
+              ))}
+            </motion.ul>
           </div>
 
           <motion.div variants={item}>

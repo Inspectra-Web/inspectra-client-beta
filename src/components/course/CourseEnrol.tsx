@@ -4,12 +4,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowRight,
-  Clock,
+  Blocks,
+  Coins,
   KeyRound,
   LayoutDashboard,
   Loader2,
   Play,
   Smartphone,
+  Sparkles,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -44,18 +47,22 @@ export function CourseEnrol({ course }: { course: PublicCourse }) {
   }, [hash]);
 
   const facts: { label: string; Icon: LucideIcon }[] = [
-    { label: `${course.minutes}-minute video`, Icon: Clock },
+    { label: "Blockchain technology masterclass", Icon: Blocks },
+    { label: "Advanced AI storytelling masterclass", Icon: Sparkles },
+    { label: "How INSPECTRA works and how rewards are earned", Icon: Play },
+    { label: "Your realtor dashboard, open when the video ends", Icon: KeyRound },
+    { label: "A $USD digital asset on every transaction", Icon: Coins },
+    { label: "Paid-for mentorship for the first 100 realtors", Icon: Users },
     { label: "Watch on your phone or laptop", Icon: Smartphone },
-    { label: "Your realtor console opens when it ends", Icon: KeyRound },
   ];
 
   return (
     <section ref={sectionRef} id="enrol" className="scroll-mt-24 border-t border-line bg-surface/40 py-28 max-lg:py-20 max-sm:py-16">
       <Container className="grid grid-cols-[minmax(0,1fr)_26rem] items-start gap-16 max-lg:grid-cols-1 max-lg:gap-12">
         <Reveal y={16}>
-          <span className="eyebrow">About the video</span>
+          <span className="eyebrow">What you get</span>
           <h2 className="display mt-4 text-[2.6rem] leading-[1.08] text-ink text-balance max-lg:text-4xl max-sm:text-[2rem]">
-            What INSPECTRA does for the realtor who closes here
+            Everything one payment opens for you
           </h2>
           <p className="mt-6 max-w-xl text-[1.05rem] leading-relaxed text-muted">{course.description}</p>
 
@@ -267,10 +274,10 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
   if (!locked)
     return (
       <>
-        <Note>Your realtor console is already open.</Note>
+        <Note>Your realtor dashboard is already open.</Note>
         <Link to="/realtor" className={cn("mt-6", PAY_BUTTON)}>
           <LayoutDashboard className="size-4" aria-hidden />
-          Go to your console
+          Go to your dashboard
         </Link>
       </>
     );
@@ -280,7 +287,7 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
   if (mine.data?.access)
     return (
       <>
-        <Note>You have paid for the course. Your console opens when the video ends.</Note>
+        <Note>You have paid for the course. Your dashboard opens when the video ends.</Note>
         <Link
           to={`/course/learn?access=${encodeURIComponent(mine.data.access)}`}
           className={cn("mt-6", PAY_BUTTON)}

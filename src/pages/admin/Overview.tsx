@@ -91,7 +91,7 @@ export function AdminOverview() {
         <Reveal y={16}>
           <EmptyState
             icon={ShieldCheck}
-            title="Could not load the console"
+            title="Could not load the dashboard"
             message={apiMessage(error)}
           />
         </Reveal>

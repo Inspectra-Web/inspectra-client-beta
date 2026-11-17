@@ -36,7 +36,7 @@ function CourseLock() {
         <span className="mx-auto grid size-16 place-items-center rounded-full bg-white/10 ring-1 ring-white/20">
           <Lock className="size-6" aria-hidden />
         </span>
-        <h1 className="display mt-6 text-4xl max-sm:text-3xl">Finish the course to open your console</h1>
+        <h1 className="display mt-6 text-4xl max-sm:text-3xl">Finish the course to open your dashboard</h1>
 
         {mine.isPending ? (
           <Loader2 className="mx-auto mt-8 size-6 animate-spin text-white/60" aria-label="Loading" />
@@ -45,7 +45,7 @@ function CourseLock() {
         ) : access ? (
           <>
             <p className="mx-auto mt-4 max-w-md text-white/70">
-              Your payment is in. Watch the video to the end and your realtor console opens.
+              Your payment is in. Watch the video to the end and your realtor dashboard opens.
             </p>
             <Link to={`/course/learn?access=${encodeURIComponent(access)}`} className={PRIMARY}>
               <Play className="size-4 fill-current" aria-hidden /> Watch the course
@@ -55,7 +55,7 @@ function CourseLock() {
           <>
             <p className="mx-auto mt-4 max-w-md text-white/70">
               Your account is ready. Complete your payment for the course, watch it to the end, and
-              your realtor console opens.
+              your realtor dashboard opens.
             </p>
             <Link to="/course#enrol" className={PRIMARY}>
               Complete your payment <ArrowRight className="size-4" aria-hidden />

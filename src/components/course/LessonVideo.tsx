@@ -1,5 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import ReactPlayer from "react-player";
+import { RotateCcw, RotateCw } from "lucide-react";
+import {
+  MediaControlBar,
+  MediaController,
+  MediaFullscreenButton,
+  MediaLoadingIndicator,
+  MediaMuteButton,
+  MediaPlayButton,
+  MediaPlaybackRateButton,
+  MediaSeekBackwardButton,
+  MediaSeekForwardButton,
+  MediaTimeDisplay,
+  MediaTimeRange,
+  MediaVolumeRange,
+} from "media-chrome/react";
 
 import { cn } from "@/lib/cn";
 
@@ -61,24 +76,89 @@ function Player({
     latest.current?.(seconds);
   }
 
+  // One set of INSPECTRA controls (Media Chrome) over every source, so an uploaded file and
+  // a YouTube lesson look and work alike. The source's own controls are switched off.
   // YouTube and Vimeo only load, and so only know the length, once played; a file knows it
   // as soon as its metadata arrives.
   return (
-    <ReactPlayer
-      src={src}
-      poster={poster || undefined}
-      controls
-      controlsList="nodownload"
-      playsInline
-      width="100%"
-      height="100%"
-      style={{ position: "absolute", inset: 0 }}
-      config={{ youtube: { rel: 0 } }}
-      onDurationChange={(event) => report(event.currentTarget.duration)}
-      onLoadedMetadata={(event) => report(event.currentTarget.duration)}
-    />
+    <MediaController className="absolute inset-0 size-full" style={CHROME}>
+      <ReactPlayer
+        slot="media"
+        src={src}
+        poster={poster || undefined}
+        controls={false}
+        playsInline
+        width="100%"
+        height="100%"
+        style={{ width: "100%", height: "100%", "--controls": "none" } as CSSProperties}
+        config={{ youtube: { rel: 0 } }}
+        onDurationChange={(event) => report(event.currentTarget.duration)}
+        onLoadedMetadata={(event) => report(event.currentTarget.duration)}
+      />
+      <MediaLoadingIndicator slot="centered-chrome" noAutohide />
+      {/* YouTube and Vimeo show their own play button until first played; two would stack. */}
+      {!EMBEDDED.has(videoSource(src)) && <MediaPlayButton slot="centered-chrome" style={BIG_PLAY} />}
+      <MediaControlBar
+        style={{ background: "linear-gradient(to top, rgba(4, 18, 31, 0.85), transparent)", gap: "6px", padding: "0 8px" }}
+      >
+        <MediaPlayButton />
+        {/* Plain arrows instead of Media Chrome's icons, which squeeze a tiny "10" inside. */}
+        <MediaSeekBackwardButton seekOffset={10} title="Back 10 seconds">
+          <RotateCcw slot="icon" strokeWidth={2.25} style={OUTLINE_ICON} aria-hidden />
+        </MediaSeekBackwardButton>
+        <MediaSeekForwardButton seekOffset={10} title="Forward 10 seconds">
+          <RotateCw slot="icon" strokeWidth={2.25} style={OUTLINE_ICON} aria-hidden />
+        </MediaSeekForwardButton>
+        <MediaTimeRange />
+        <MediaTimeDisplay showDuration />
+        <MediaMuteButton />
+        <MediaVolumeRange />
+        <MediaPlaybackRateButton rates={[1, 1.25, 1.5, 2]} />
+        <MediaFullscreenButton />
+      </MediaControlBar>
+    </MediaController>
   );
 }
+
+/** Media Chrome reads its look from CSS custom properties: brand blue on a dark scrim. */
+const CHROME = {
+  "--media-primary-color": "#ffffff",
+  "--media-secondary-color": "transparent",
+  "--media-control-background": "transparent",
+  "--media-control-hover-background": "rgba(255, 255, 255, 0.12)",
+  "--media-range-bar-color": "#1AACF0",
+  "--media-range-track-background": "rgba(255, 255, 255, 0.25)",
+  "--media-range-thumb-background": "#1AACF0",
+  "--media-time-range-buffered-color": "rgba(255, 255, 255, 0.45)",
+  "--media-font-family": "inherit",
+  // Readable without crowding the picture.
+  "--media-font-size": "13px",
+  "--media-button-icon-width": "22px",
+  "--media-button-icon-height": "22px",
+  "--media-control-padding": "8px",
+  "--media-button-padding": "8px 6px",
+  "--media-range-track-height": "4px",
+  "--media-range-thumb-width": "12px",
+  "--media-range-thumb-height": "12px",
+} as CSSProperties;
+
+/** Media Chrome fills its icons; lucide icons are outlines, so they keep no fill. */
+const OUTLINE_ICON: CSSProperties = { fill: "none", stroke: "currentColor" };
+
+/** Sources whose own player shows a play button before the first play. */
+const EMBEDDED = new Set<VideoSource>(["youtube", "vimeo", "wistia"]);
+
+/** The play button in the middle of the frame, before playback and while paused. */
+const BIG_PLAY = {
+  "--media-primary-color": "#04121f",
+  "--media-control-background": "#1AACF0",
+  "--media-control-hover-background": "#38c0ff",
+  "--media-button-icon-width": "22px",
+  "--media-button-icon-height": "22px",
+  padding: "14px",
+  borderRadius: "9999px",
+  boxShadow: "0 12px 30px -10px rgba(26, 172, 240, 0.9)",
+} as CSSProperties;
 
 /** A Google Drive file's embeddable player address, or null for any other link. */
 export function driveEmbedUrl(url: string): string | null {

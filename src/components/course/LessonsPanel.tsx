@@ -33,13 +33,12 @@ import { cn } from "@/lib/cn";
 import {
   PendingNote,
   UploadStatus,
-  isUploadedVideo,
   startUpload,
   tooLarge,
-  useVideoMinutes,
   type Picked,
   type Uploading,
 } from "./courseUpload";
+import { LessonVideo, videoSource } from "./LessonVideo";
 
 /** Matches MAX_LESSONS on the server. */
 const MAX_LESSONS = 12;
@@ -230,14 +229,25 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
       : blank,
   });
 
-  const videoUrl = watch("videoUrl");
-  const minutes = watch("minutes");
-  const uploaded = isUploadedVideo(videoUrl);
+  const videoUrl = watch("videoUrl").trim();
+  const source = videoSource(videoUrl);
 
-  // An uploaded video's length is read off the file; a pasted link's is typed in.
-  const length = useVideoMinutes(uploaded ? videoUrl : "", (read) => {
+  // The preview follows the link once typing pauses, so a YouTube player is not rebuilt
+  // on every keystroke. A picked file shows at once.
+  const [previewUrl, setPreviewUrl] = useState(videoUrl);
+  useEffect(() => {
+    const timer = setTimeout(() => setPreviewUrl(videoUrl), videoUrl.startsWith("blob:") ? 0 : 600);
+    return () => clearTimeout(timer);
+  }, [videoUrl]);
+
+  // Whatever plays the video reports its length, uploads and links alike; the field stays
+  // editable for a player that does not.
+  const [lengthRead, setLengthRead] = useState(false);
+  function onDuration(seconds: number) {
+    const read = Math.max(1, Math.ceil(seconds / 60));
+    setLengthRead(true);
     if (read !== getValues("minutes")) setValue("minutes", read, { shouldValidate: true });
-  });
+  }
 
   // The local preview holds memory until released.
   useEffect(() => () => {
@@ -309,11 +319,11 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
           <Field
             label="Video"
             htmlFor="lesson-video"
-            note={`Paste a link or upload a file up to ${COURSE_UPLOAD_MAX_MB} MB`}
+            note={`A YouTube, Vimeo or video link, or a file up to ${COURSE_UPLOAD_MAX_MB} MB`}
             error={errors.videoUrl?.message}
           >
             <div className="flex gap-2 max-sm:flex-col">
-              <Input id="lesson-video" placeholder="https://" {...register("videoUrl")} />
+              <Input id="lesson-video" placeholder="https://youtu.be/…" {...register("videoUrl")} />
               <button
                 type="button"
                 disabled={busy}
@@ -338,19 +348,37 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
             ) : (
               picked && videoUrl === picked.preview && <PendingNote picked={picked} />
             )}
-            {videoUrl && !uploading && (
-              <video
-                key={videoUrl}
-                src={videoUrl}
-                controls
-                preload="metadata"
-                className="mt-3 aspect-video w-full rounded-xl bg-black"
-              />
+            {source === "drive" ? (
+              <p className="mt-3 rounded-xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-ink">
+                Google Drive links cannot play here: Drive does not let the course see where a
+                realtor is in the video, so it could not keep the lessons in order. Upload the
+                video to YouTube as <span className="font-semibold">Unlisted</span> and paste that
+                link, or upload the file.
+              </p>
+            ) : (
+              videoUrl &&
+              !uploading && (
+                <>
+                  {source === "unknown" && (
+                    <p className="mt-3 text-xs text-gold">
+                      This link may not play. A YouTube, Vimeo or direct video link works best.
+                    </p>
+                  )}
+                  {previewUrl === videoUrl && (
+                    <LessonVideo key={previewUrl} src={previewUrl} onDuration={onDuration} className="mt-3 rounded-xl" />
+                  )}
+                </>
+              )
             )}
           </Field>
 
-          {videoUrl && !uploaded ? (
-            <Field label="Length" htmlFor="lesson-minutes" note="In minutes, for a linked video" error={errors.minutes?.message}>
+          <Field
+            label="Length"
+            htmlFor="lesson-minutes"
+            note={lengthRead ? "Read from the video" : "In minutes"}
+            error={errors.minutes?.message}
+          >
+            <div className="flex items-center gap-3">
               <Input
                 id="lesson-minutes"
                 type="number"
@@ -359,28 +387,17 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
                 className="w-32"
                 {...register("minutes", { valueAsNumber: true })}
               />
-            </Field>
-          ) : (
-            <Field label="Length" note="Read from the video" error={errors.minutes?.message}>
-              <p className="flex min-h-11 items-center gap-2 text-sm" aria-live="polite">
-                {length === "reading" ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin text-muted" aria-hidden />
-                    <span className="text-muted">Checking the video length</span>
-                  </>
-                ) : length === "failed" ? (
-                  <span className="text-gold">Could not read the length. Check the link or upload it again.</span>
-                ) : videoUrl ? (
-                  <>
-                    <Clock className="size-4 text-muted" aria-hidden />
-                    <span className="font-semibold tabular-nums text-ink">{minutes} min</span>
-                  </>
-                ) : (
-                  <span className="text-muted">Add a video and its length appears here.</span>
-                )}
-              </p>
-            </Field>
-          )}
+              {videoUrl && !lengthRead && source !== "drive" && (
+                <span className="flex items-center gap-1.5 text-xs text-muted">
+                  <Clock className="size-3.5" aria-hidden />
+                  {/* YouTube, Vimeo and Wistia only load, and so only know the length, once played. */}
+                  {source === "youtube" || source === "vimeo" || source === "wistia"
+                    ? "Press play on the preview to fill this in, or type it"
+                    : "Filled in once the video loads"}
+                </span>
+              )}
+            </div>
+          </Field>
 
           <div className="flex justify-end gap-2 border-t border-line pt-5">
             <button type="button" disabled={busy} onClick={onClose} className={buttonClasses("ghost", "md")}>

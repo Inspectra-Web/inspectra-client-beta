@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import { apiMessage } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import { CourseShell } from "@/components/course/CourseShell";
+import { LessonVideo } from "@/components/course/LessonVideo";
 import {
   useFinishLesson,
   useLearnerCourse,
@@ -29,6 +30,8 @@ import { cn } from "@/lib/cn";
 
 /** Within this many seconds of the end counts as the end: players stop a hair short. */
 const END_SLACK = 1.5;
+/** How far ahead of the furthest point watched a time update may land without being a skip. */
+const SKIP_SLACK = 2;
 
 export function CourseLearn() {
   const [params] = useSearchParams();
@@ -119,23 +122,23 @@ function Classroom({
     setCurrent(index);
   }
 
-  function onTimeUpdate() {
-    const video = videoRef.current;
-    if (!video || !video.duration) return;
+  // Rewinding is fine; jumping past what has been watched is not, until the lesson is done.
+  // Checked on every time update as well as on seeking: an embedded YouTube or Vimeo
+  // player does not always report the seek itself, but its next time update shows the jump.
+  function holdBack(video: HTMLVideoElement): boolean {
+    if (lesson?.watched || video.currentTime <= furthest.current + SKIP_SLACK) return false;
+    video.currentTime = furthest.current;
+    return true;
+  }
+
+  function onTimeUpdate(video: HTMLVideoElement) {
+    if (!video.duration || holdBack(video)) return;
     furthest.current = Math.max(furthest.current, video.currentTime);
     if (!lesson?.watched) setProgress(furthest.current / video.duration);
   }
 
-  // Rewinding is fine; jumping past what has been watched is not, until the lesson is done.
-  function onSeeking() {
-    const video = videoRef.current;
-    if (!video || lesson?.watched) return;
-    if (video.currentTime > furthest.current + 1) video.currentTime = furthest.current;
-  }
-
-  function onEnded() {
-    const video = videoRef.current;
-    if (!video || !lesson || lesson.watched || finish.isPending) return;
+  function onEnded(video: HTMLVideoElement) {
+    if (!lesson || lesson.watched || finish.isPending) return;
     if (furthest.current < video.duration - END_SLACK) return;
     setProgress(1);
 
@@ -159,18 +162,14 @@ function Classroom({
   return (
     <div className="space-y-8">
       <div className="overflow-hidden rounded-2xl bg-black shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
-        <video
+        <LessonVideo
           key={lesson.id}
-          ref={videoRef}
+          playerRef={videoRef}
           src={lesson.videoUrl}
-          poster={course.cover || undefined}
-          controls
-          playsInline
-          controlsList="nodownload noplaybackrate"
+          poster={course.cover}
           onTimeUpdate={onTimeUpdate}
-          onSeeking={onSeeking}
+          onSeeking={holdBack}
           onEnded={onEnded}
-          className="aspect-video w-full"
         />
       </div>
 

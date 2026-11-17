@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { COURSE_UPLOAD_MAX_MB } from "@/lib/course";
@@ -103,64 +102,4 @@ export function PendingNote({ picked }: { picked: Picked }) {
       {megabytes(picked.file.size)}
     </p>
   );
-}
-
-/* Video length ----------------------------------------------------------------- */
-
-/** A file picked in this browser, or one stored in the course's own Cloudinary folder. */
-export const isUploadedVideo = (url: string): boolean =>
-  url.startsWith("blob:") ||
-  /^https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/(?:v\d+\/)?inspectra\/course\//.test(url);
-
-export type LengthState = "idle" | "reading" | "read" | "failed";
-
-/**
- * Loads only the video's metadata and reports its length in whole minutes, rounded up so
- * a 7:10 video reads "8 min". Duration needs no CORS, so a pasted link works as well as
- * an upload.
- */
-export function useVideoMinutes(url: string, onMinutes: (minutes: number) => void): LengthState {
-  const [state, setState] = useState<LengthState>("idle");
-  const latest = useRef(onMinutes);
-
-  useEffect(() => {
-    latest.current = onMinutes;
-  });
-
-  useEffect(() => {
-    if (!url) {
-      setState("idle");
-      return;
-    }
-
-    let cancelled = false;
-    const probe = document.createElement("video");
-    probe.preload = "metadata";
-    probe.muted = true;
-
-    probe.onloadedmetadata = () => {
-      if (cancelled) return;
-      const seconds = probe.duration;
-      if (!Number.isFinite(seconds) || seconds <= 0) {
-        setState("failed");
-        return;
-      }
-      latest.current(Math.max(1, Math.ceil(seconds / 60)));
-      setState("read");
-    };
-    probe.onerror = () => {
-      if (!cancelled) setState("failed");
-    };
-
-    setState("reading");
-    probe.src = url;
-
-    return () => {
-      cancelled = true;
-      probe.removeAttribute("src");
-      probe.load();
-    };
-  }, [url]);
-
-  return state;
 }

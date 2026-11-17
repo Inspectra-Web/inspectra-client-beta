@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Clock, Film, Info, Play } from "lucide-react";
 
 import { CourseTabs } from "@/components/course/CourseTabs";
+import { LessonVideo } from "@/components/course/LessonVideo";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { apiMessage } from "@/lib/api";
 import { useAdminCourse } from "@/lib/course";
@@ -47,15 +48,7 @@ export function AdminCourseWatch() {
           <div className="min-w-0">
             <div className="overflow-hidden rounded-2xl bg-black ring-1 ring-line">
               {lesson.videoUrl ? (
-                <video
-                  key={lesson.id}
-                  src={lesson.videoUrl}
-                  poster={course.cover || undefined}
-                  controls
-                  playsInline
-                  controlsList="nodownload"
-                  className="aspect-video w-full"
-                />
+                <LessonVideo key={lesson.id} src={lesson.videoUrl} poster={course.cover} />
               ) : (
                 <div className="grid aspect-video place-items-center text-sm text-white/60">
                   This lesson has no video yet.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, type ComponentRef, type CSSProperties } from "react";
 import ReactPlayer from "react-player";
 import { RotateCcw, RotateCw } from "lucide-react";
 import {
@@ -76,12 +76,30 @@ function Player({
     latest.current?.(seconds);
   }
 
+  // A lesson in fullscreen on a phone turns to landscape, and back on leaving. Android
+  // Chrome allows the lock only while fullscreen; iPhones rotate their own fullscreen
+  // video and have no lock, so the call is tried and its refusal ignored.
+  const frame = useRef<ComponentRef<typeof MediaController> | null>(null);
+  useEffect(() => {
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (to: "landscape") => Promise<void>;
+    };
+    const onChange = () => {
+      const full = document.fullscreenElement;
+      if (full && frame.current && (full === frame.current || frame.current.contains(full)))
+        orientation.lock?.("landscape").catch(() => undefined);
+      else if (!full) orientation.unlock?.();
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
   // One set of INSPECTRA controls (Media Chrome) over every source, so an uploaded file and
   // a YouTube lesson look and work alike. The source's own controls are switched off.
   // YouTube and Vimeo only load, and so only know the length, once played; a file knows it
   // as soon as its metadata arrives.
   return (
-    <MediaController className="absolute inset-0 size-full" style={CHROME}>
+    <MediaController ref={frame} className="absolute inset-0 size-full" style={CHROME}>
       <ReactPlayer
         slot="media"
         src={src}
@@ -95,7 +113,8 @@ function Player({
         onDurationChange={(event) => report(event.currentTarget.duration)}
         onLoadedMetadata={(event) => report(event.currentTarget.duration)}
       />
-      <MediaLoadingIndicator slot="centered-chrome" noAutohide />
+      {/* Laid over the play button, not beside it, so the button stays dead centre. */}
+      <MediaLoadingIndicator slot="centered-chrome" noAutohide style={{ position: "absolute" }} />
       {/* YouTube and Vimeo show their own play button until first played; two would stack. */}
       {!EMBEDDED.has(videoSource(src)) && <MediaPlayButton slot="centered-chrome" style={BIG_PLAY} />}
       <MediaControlBar
@@ -112,8 +131,9 @@ function Player({
         <MediaTimeRange />
         <MediaTimeDisplay showDuration />
         <MediaMuteButton />
-        <MediaVolumeRange />
-        <MediaPlaybackRateButton rates={[1, 1.25, 1.5, 2]} />
+        {/* Phones have volume buttons, and a narrow bar needs the room for the progress bar. */}
+        <MediaVolumeRange className="max-sm:hidden" />
+        <MediaPlaybackRateButton rates={[1, 1.25, 1.5, 2]} className="max-sm:hidden" />
         <MediaFullscreenButton />
       </MediaControlBar>
     </MediaController>

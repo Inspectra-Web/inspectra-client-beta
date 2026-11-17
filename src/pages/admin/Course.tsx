@@ -428,17 +428,16 @@ function Funnel() {
   const { data } = useAdminEnrollments(ALL_ENROLLMENTS);
 
   const paid = data ? data.counts.paid + data.counts.completed : null;
-  const watched = data?.counts.completed ?? null;
   const joined = data?.registered ?? null;
 
+  // Watching is not tracked, so the path ends at the dashboard opening.
   const steps = [
     { label: "Paid", value: paid, of: null, note: data ? `${data.counts.pending} started checkout` : "" },
     { label: "Joined", value: joined, of: paid, note: "Dashboard open, from the payment" },
-    { label: "Finished", value: watched, of: paid, note: "Every lesson watched" },
   ];
 
   return (
-    <ol className="grid grid-cols-3 overflow-hidden rounded-2xl border border-line bg-surface max-md:grid-cols-1">
+    <ol className="grid grid-cols-2 overflow-hidden rounded-2xl border border-line bg-surface max-md:grid-cols-1">
       {steps.map((step, i) => {
         const rate = step.of && step.value !== null ? Math.round((step.value / step.of) * 100) : null;
         return (

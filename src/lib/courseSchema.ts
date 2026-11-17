@@ -18,11 +18,8 @@ export type CourseValues = z.infer<typeof courseSchema>;
 export const lessonSchema = z.object({
   title: z.string().trim().min(3, "Give the lesson a title").max(200),
   summary: z.string().trim().max(500, "Keep it to a line or two"),
-  videoUrl: z
-    .string()
-    .trim()
-    .min(1, "Add the video")
-    .refine((url) => !/(drive|docs)\.google\.com/.test(url), "Google Drive links cannot play here"),
+  /** The link, when the lesson plays from one. Checked by the dialog, which knows the mode. */
+  videoUrl: z.string().trim(),
   minutes: z
     .number({ error: "Enter the length" })
     .int("Whole minutes only")

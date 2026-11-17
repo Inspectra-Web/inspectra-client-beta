@@ -21,7 +21,7 @@ const FILTERS: { value: EnrollmentFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "pending", label: "Awaiting payment" },
   { value: "paid", label: "Paid" },
-  { value: "completed", label: "Finished" },
+  { value: "completed", label: "Opened by a guest" },
 ];
 
 export function AdminCourseEnrollments() {
@@ -194,24 +194,16 @@ export function AdminCourseEnrollments() {
 }
 
 /**
- * The same three steps as the funnel on the course page, filled as far as this realtor got:
- * paid, joined (paid with an account, which is what opens the dashboard), finished. An
- * account alone is not joining: one opened at checkout exists before paying.
+ * The same two steps as the funnel on the course page, filled as far as this realtor got:
+ * paid, then joined (paid with an account, which is what opens the dashboard). An account
+ * alone is not joining: one opened at checkout exists before paying.
  */
 function Progress({ enrollment }: { enrollment: Enrollment }) {
   const paid = enrollment.status !== "pending";
-  const finished = enrollment.status === "completed";
-  const reached = [paid, paid && enrollment.registered, finished];
+  const reached = [paid, paid && enrollment.registered];
   const step = reached.lastIndexOf(true);
 
-  const label =
-    step === -1
-      ? "Awaiting payment"
-      : step === 0
-        ? "Paid, no account yet"
-        : step === 1
-          ? "Joined, watching"
-          : `Finished ${formatDate(enrollment.completedAt ?? enrollment.createdAt)}`;
+  const label = step === -1 ? "Awaiting payment" : step === 0 ? "Paid, no account yet" : "Joined";
 
   return (
     <div className="flex items-center gap-3">
@@ -221,7 +213,7 @@ function Progress({ enrollment }: { enrollment: Enrollment }) {
             key={i}
             className={cn(
               "h-1.5 w-6 rounded-full",
-              on ? (i === 2 ? "bg-verified" : "bg-brand") : "bg-surface-2 ring-1 ring-inset ring-line",
+              on ? (i === 1 ? "bg-verified" : "bg-brand") : "bg-surface-2 ring-1 ring-inset ring-line",
             )}
           />
         ))}
@@ -229,7 +221,7 @@ function Progress({ enrollment }: { enrollment: Enrollment }) {
       <span
         className={cn(
           "text-sm",
-          step === 2 ? "font-semibold text-verified" : step === -1 ? "text-gold" : "text-ink",
+          step === 1 ? "font-semibold text-verified" : step === -1 ? "text-gold" : "text-ink",
         )}
       >
         {label}

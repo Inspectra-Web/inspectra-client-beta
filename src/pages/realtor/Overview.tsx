@@ -19,7 +19,6 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { ListingGate } from "@/components/realtor/ListingGate";
-import { CourseBanner } from "@/components/realtor/CourseBanner";
 import {
   VerificationBar,
   VerificationLegend,
@@ -86,7 +85,6 @@ export function RealtorOverview() {
     return (
       <div className="space-y-8">
         {header}
-        <CourseBanner />
         {gate}
         <Reveal y={16}>
           <EmptyState
@@ -102,7 +100,6 @@ export function RealtorOverview() {
     return (
       <div className="space-y-8">
         {header}
-        <CourseBanner />
         {gate}
         <OverviewSkeleton />
       </div>
@@ -122,7 +119,6 @@ export function RealtorOverview() {
     return (
       <div className="space-y-8">
         {header}
-        <CourseBanner />
         {gate}
         <Reveal y={16}>
           <EmptyState
@@ -150,7 +146,6 @@ export function RealtorOverview() {
   return (
     <div className="space-y-8">
       {header}
-      <CourseBanner />
       {gate}
 
       {/* stats */}

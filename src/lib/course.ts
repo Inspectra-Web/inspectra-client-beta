@@ -37,23 +37,26 @@ export interface PublicCourse {
   lessons: LessonOutline[];
 }
 
-/** A lesson as the admin sees it, video included. */
+/**
+ * A lesson as the admin sees it. Its video is an uploaded file (`stored`) or a `link`;
+ * `videoUrl` is where it plays from right now (an uploaded file's address expires within
+ * the hour). A lesson with no video is hidden from realtors.
+ */
 export interface AdminLesson extends LessonOutline {
+  hasVideo: boolean;
+  stored: boolean;
+  link: string;
   videoUrl: string;
 }
 
-/** The admin's view: every lesson with its video. */
+/** The admin's view: every lesson, and whether uploads can go to video storage. */
 export interface AdminCourse extends Omit<PublicCourse, "lessons"> {
   lessons: AdminLesson[];
+  videoStorage: boolean;
 }
 
-/**
- * A lesson as a paid learner sees it. `videoUrl` is empty while the lesson is locked: the
- * API keeps a locked lesson's video back until the ones before it are watched.
- */
+/** A lesson as a paid realtor sees it. An uploaded file's address expires within the hour. */
 export interface LearnerLesson extends LessonOutline {
-  watched: boolean;
-  unlocked: boolean;
   videoUrl: string;
 }
 
@@ -64,8 +67,16 @@ export interface LearnerCourseView extends Omit<PublicCourse, "lessons"> {
 /** The course's own details, saved whole. Status and lessons have their own writes. */
 export type CourseBody = Pick<AdminCourse, "title" | "subtitle" | "description" | "cover" | "price">;
 
-/** One lesson's details, saved whole. A new video file rides beside them. */
-export type LessonBody = Omit<AdminLesson, "id">;
+/**
+ * One lesson's details, saved whole. `videoUrl` is its link; empty keeps an uploaded file.
+ * An uploaded file goes up separately, through `uploadLessonVideo`.
+ */
+export interface LessonBody {
+  title: string;
+  summary: string;
+  videoUrl: string;
+  minutes: number;
+}
 
 /** A row in the admin table. */
 export interface Enrollment {
@@ -84,9 +95,7 @@ export interface Enrollment {
 }
 
 /** What the player knows about the person watching. */
-export type LearnerEnrollment = Omit<Enrollment, "phone" | "reference" | "amount"> & {
-  watchedLessons: string[];
-};
+export type LearnerEnrollment = Omit<Enrollment, "phone" | "reference" | "amount">;
 
 export interface JoinCourseBody {
   fullname: string;
@@ -123,6 +132,8 @@ export interface VerifiedEnrollment {
 export interface LearnerCourse {
   course: LearnerCourseView;
   enrollment: LearnerEnrollment;
+  /** An old guest buyer's sign-up invite; null for everyone with an account. */
+  invite: string | null;
 }
 
 /** Who a registration invite belongs to, so sign-up can fill and lock their details. */
@@ -256,34 +267,7 @@ export function useLearnerCourse(access: string) {
   });
 }
 
-/**
- * A lesson ended: marks it watched and answers with the course as it now stands, so the
- * next lesson arrives open with its video. The last one completes the enrollment, which
- * opens the dashboard of an account, or hands an old guest row its sign-up invite. Safe to
- * repeat.
- */
-export function useFinishLesson() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ access, lessonId }: { access: string; lessonId: string }) => {
-      const res = await api.post<Envelope<LearnerCourse & { invite: string | null }>>(
-        `/course/learn/${access}/lessons/${lessonId}/finish`,
-      );
-      return res.data.data;
-    },
-    onSuccess: ({ course, enrollment }, { access }) => {
-      queryClient.setQueryData<LearnerCourse>([...LEARN_KEY, access], { course, enrollment });
-      if (enrollment.status === "completed") {
-        // The signed-in realtor's `courseLocked` may just have changed on the server.
-        void queryClient.invalidateQueries({ queryKey: ME_KEY });
-        void queryClient.invalidateQueries({ queryKey: MY_ENROLLMENT_KEY });
-      }
-    },
-  });
-}
-
-/** Valid only once the video is watched, and only until used. */
+/** An old guest buyer's sign-up invite, valid until used. */
 export function useInvite(invite: string) {
   return useQuery({
     queryKey: ["course", "invite", invite],
@@ -361,26 +345,129 @@ export interface SaveLessonInput {
   /** Absent for a new lesson. */
   id?: string;
   body: LessonBody;
-  /** A video picked in the browser, sent with this save and only then. */
-  video?: File;
-  onProgress?: (progress: UploadProgress) => void;
 }
 
-/** Adds a lesson, or saves one whole, with any new video in the same request. */
+/** Adds a lesson, or saves one whole. Answers with the course, the saved lesson last if new. */
 export function useSaveLesson() {
-  return useAdminCourseWrite(async ({ id, body, video, onProgress }: SaveLessonInput) => {
-    const form = new FormData();
-    form.append("lesson", JSON.stringify(body));
-    if (video) form.append("lessonVideo", video);
-
-    const res = await api.request<Envelope<{ course: AdminCourse }>>({
-      method: id ? "put" : "post",
-      url: id ? `/admin/course/lessons/${id}` : "/admin/course/lessons",
-      data: form,
-      onUploadProgress: (event) =>
-        onProgress?.({ loaded: event.loaded, total: event.total ?? 0 }),
-    });
+  return useAdminCourseWrite(async ({ id, body }: SaveLessonInput) => {
+    const res = id
+      ? await api.put<Envelope<{ course: AdminCourse }>>(`/admin/course/lessons/${id}`, body)
+      : await api.post<Envelope<{ course: AdminCourse }>>("/admin/course/lessons", body);
     return res.data.data.course;
+  });
+}
+
+/** The largest lesson video the API accepts. */
+export const LESSON_VIDEO_MAX_BYTES = 5 * 1024 * 1024 * 1024;
+/** Parts sent at once. More would not be faster on a slow connection, only flakier. */
+const PARALLEL_PARTS = 3;
+/** Tries per part before the upload gives up. */
+const PART_TRIES = 4;
+
+export interface LessonUploadProgress {
+  loaded: number;
+  total: number;
+}
+
+/**
+ * Uploads a lesson's video straight from this browser to video storage, in parts, so a
+ * large file never passes through the API. A part that fails is sent again on its own,
+ * with a growing pause between tries; `signal` cancels the upload, and storage drops the
+ * parts already sent. Resolves with the course once the file is the lesson's video.
+ */
+export async function uploadLessonVideo({
+  lessonId,
+  file,
+  minutes,
+  onProgress,
+  signal,
+}: {
+  lessonId: string;
+  file: File;
+  minutes: number;
+  onProgress: (progress: LessonUploadProgress) => void;
+  signal: AbortSignal;
+}): Promise<AdminCourse> {
+  const base = `/admin/course/lessons/${lessonId}/upload`;
+  const start = await api.post<Envelope<{ uploadId: string; partSize: number; partCount: number }>>(base, {
+    fileName: file.name,
+    contentType: file.type || "video/mp4",
+    size: file.size,
+  });
+  const { uploadId, partSize, partCount } = start.data.data;
+
+  const sent = new Map<number, number>();
+  const report = () =>
+    onProgress({ loaded: [...sent.values()].reduce((sum, n) => sum + n, 0), total: file.size });
+
+  const sendPart = async (partNumber: number): Promise<{ partNumber: number; etag: string }> => {
+    const blob = file.slice((partNumber - 1) * partSize, partNumber * partSize);
+
+    for (let attempt = 1; ; attempt++) {
+      if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
+      try {
+        // Signed per try: a slow retry must not outlive its address.
+        const signed = await api.post<Envelope<{ parts: { partNumber: number; url: string }[] }>>(
+          `${base}/parts`,
+          { uploadId, partNumbers: [partNumber] },
+        );
+        const url = signed.data.data.parts[0]?.url;
+        if (!url) throw new Error("No address for the part");
+
+        const etag = await putPart(url, blob, signal, (loaded) => {
+          sent.set(partNumber, loaded);
+          report();
+        });
+        sent.set(partNumber, blob.size);
+        report();
+        return { partNumber, etag };
+      } catch (error) {
+        if (signal.aborted || attempt >= PART_TRIES) throw error;
+        sent.set(partNumber, 0);
+        report();
+        await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+      }
+    }
+  };
+
+  try {
+    const queue = Array.from({ length: partCount }, (_, i) => i + 1);
+    const parts: { partNumber: number; etag: string }[] = [];
+    await Promise.all(
+      Array.from({ length: Math.min(PARALLEL_PARTS, partCount) }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) parts.push(await sendPart(next));
+      }),
+    );
+
+    const done = await api.post<Envelope<{ course: AdminCourse }>>(`${base}/complete`, { uploadId, parts, minutes });
+    return done.data.data.course;
+  } catch (error) {
+    // Best effort: storage also clears an abandoned upload on its own after a week.
+    void api.post(`${base}/cancel`, { uploadId }).catch(() => undefined);
+    throw error;
+  }
+}
+
+/** PUTs one part to its signed address and answers with the ETag storage gives it. */
+function putPart(
+  url: string,
+  blob: Blob,
+  signal: AbortSignal,
+  onLoaded: (loaded: number) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.upload.onprogress = (event) => onLoaded(event.loaded);
+    xhr.onload = () => {
+      const etag = xhr.getResponseHeader("ETag");
+      if (xhr.status >= 200 && xhr.status < 300 && etag) resolve(etag);
+      else reject(new Error(`Part upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Part upload failed"));
+    xhr.onabort = () => reject(new DOMException("Cancelled", "AbortError"));
+    signal.addEventListener("abort", () => xhr.abort(), { once: true });
+    xhr.send(blob);
   });
 }
 

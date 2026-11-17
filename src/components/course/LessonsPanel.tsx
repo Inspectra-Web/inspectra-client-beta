@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
   ArrowDown,
@@ -8,6 +9,8 @@ import {
   CircleAlert,
   Clock,
   Film,
+  HardDrive,
+  Link2,
   Loader2,
   Pencil,
   Plus,
@@ -20,7 +23,10 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import {
-  COURSE_UPLOAD_MAX_MB,
+  ADMIN_COURSE_KEY,
+  COURSE_KEY,
+  LESSON_VIDEO_MAX_BYTES,
+  uploadLessonVideo,
   useDeleteLesson,
   useReorderLessons,
   useSaveLesson,
@@ -30,25 +36,27 @@ import {
 import { apiMessage } from "@/lib/api";
 import { lessonSchema, type LessonValues } from "@/lib/courseSchema";
 import { cn } from "@/lib/cn";
-import {
-  PendingNote,
-  UploadStatus,
-  startUpload,
-  tooLarge,
-  type Picked,
-  type Uploading,
-} from "./courseUpload";
-import { LessonVideo, videoSource } from "./LessonVideo";
+import { UploadStatus, megabytes, startUpload, type Uploading } from "./courseUpload";
+import { LessonVideo, videoSource, type VideoSource } from "./LessonVideo";
 
 /** Matches MAX_LESSONS on the server. */
 const MAX_LESSONS = 12;
+
+const SOURCE_LABEL: Record<VideoSource, string> = {
+  youtube: "YouTube link",
+  vimeo: "Vimeo link",
+  wistia: "Wistia link",
+  drive: "Google Drive link",
+  file: "Video link",
+  unknown: "Link",
+};
 
 /** Which lesson the dialog is open on: a new one, or an existing one by value. */
 type Editing = { lesson: AdminLesson | null } | null;
 
 /**
- * The course's lessons, in the order realtors watch them. Each write saves straight away,
- * separate from the course details above, so there is nothing here for the save bar.
+ * The course's lessons, in the order realtors see them. Each write saves straight away,
+ * separate from the course details, so there is nothing here for the save bar.
  */
 export function LessonsPanel({ course }: { course: AdminCourse }) {
   const reorder = useReorderLessons();
@@ -61,10 +69,9 @@ export function LessonsPanel({ course }: { course: AdminCourse }) {
 
   function move(index: number, step: -1 | 1) {
     const ids = lessons.map((lesson) => lesson.id);
-    const target = index + step;
     const [moved] = ids.splice(index, 1);
     if (!moved) return;
-    ids.splice(target, 0, moved);
+    ids.splice(index + step, 0, moved);
 
     reorder.mutate(ids, {
       onError: (error) => toast.error(apiMessage(error, "The order did not change. Try again.")),
@@ -88,7 +95,8 @@ export function LessonsPanel({ course }: { course: AdminCourse }) {
         <div>
           <h2 className="text-base font-semibold text-ink">Lessons</h2>
           <p className="mt-0.5 text-xs text-faint">
-            Realtors watch them in this order, each one to the end.
+            Realtors see them in this order and can watch any of them. A lesson shows once it
+            has a video.
           </p>
         </div>
         <button
@@ -124,13 +132,17 @@ export function LessonsPanel({ course }: { course: AdminCourse }) {
                   <span className="inline-flex items-center gap-1 tabular-nums">
                     <Clock className="size-3.5" aria-hidden /> {lesson.minutes} min
                   </span>
-                  {lesson.videoUrl ? (
+                  {lesson.stored ? (
                     <span className="inline-flex items-center gap-1">
-                      <Film className="size-3.5" aria-hidden /> Video added
+                      <HardDrive className="size-3.5" aria-hidden /> Uploaded file
+                    </span>
+                  ) : lesson.link ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Link2 className="size-3.5" aria-hidden /> {SOURCE_LABEL[videoSource(lesson.link)]}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-gold">
-                      <CircleAlert className="size-3.5" aria-hidden /> No video yet
+                      <CircleAlert className="size-3.5" aria-hidden /> No video yet, hidden from realtors
                     </span>
                   )}
                   {lesson.summary && <span className="min-w-0 truncate">{lesson.summary}</span>}
@@ -138,11 +150,7 @@ export function LessonsPanel({ course }: { course: AdminCourse }) {
               </div>
 
               <div className="flex shrink-0 items-center gap-1">
-                <IconButton
-                  label="Move up"
-                  disabled={i === 0 || reorder.isPending}
-                  onClick={() => move(i, -1)}
-                >
+                <IconButton label="Move up" disabled={i === 0 || reorder.isPending} onClick={() => move(i, -1)}>
                   <ArrowUp className="size-4" aria-hidden />
                 </IconButton>
                 <IconButton
@@ -164,13 +172,15 @@ export function LessonsPanel({ course }: { course: AdminCourse }) {
         </ol>
       )}
 
-      {editing && <LessonDialog lesson={editing.lesson} onClose={() => setEditing(null)} />}
+      {editing && (
+        <LessonDialog lesson={editing.lesson} storage={course.videoStorage} onClose={() => setEditing(null)} />
+      )}
 
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title="Delete this lesson?"
-        description={`"${deleting?.title || "Untitled lesson"}" is removed, and its video too if it was uploaded here. Realtors who already watched it keep their place.`}
+        description={`"${deleting?.title || "Untitled lesson"}" is removed, and its video too if it was uploaded here.`}
         confirmLabel="Delete lesson"
         destructive
         pending={remove.isPending}
@@ -189,7 +199,7 @@ function IconButton({
   label: string;
   disabled?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
@@ -207,12 +217,24 @@ function IconButton({
 
 /* Add or edit one lesson --------------------------------------------------------- */
 
-const blank: LessonValues = { title: "", summary: "", videoUrl: "", minutes: 0 };
+type Mode = "upload" | "link";
+const MODES: Mode[] = ["upload", "link"];
 
-function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose: () => void }) {
+function LessonDialog({
+  lesson,
+  storage,
+  onClose,
+}: {
+  lesson: AdminLesson | null;
+  storage: boolean;
+  onClose: () => void;
+}) {
   const save = useSaveLesson();
-  const [picked, setPicked] = useState<Picked | null>(null);
+  const queryClient = useQueryClient();
+  const [mode, setMode] = useState<Mode>(lesson?.link || !storage ? "link" : "upload");
+  const [file, setFile] = useState<{ file: File; preview: string } | null>(null);
   const [uploading, setUploading] = useState<Uploading | null>(null);
+  const abort = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -221,27 +243,34 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
     watch,
     setValue,
     getValues,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<LessonValues>({
     resolver: zodResolver(lessonSchema),
-    defaultValues: lesson
-      ? { title: lesson.title, summary: lesson.summary, videoUrl: lesson.videoUrl, minutes: lesson.minutes }
-      : blank,
+    defaultValues: {
+      title: lesson?.title ?? "",
+      summary: lesson?.summary ?? "",
+      videoUrl: lesson?.link ?? "",
+      minutes: lesson?.minutes ?? 0,
+    },
   });
 
-  const videoUrl = watch("videoUrl").trim();
-  const source = videoSource(videoUrl);
+  const link = watch("videoUrl").trim();
+  const source = videoSource(link);
 
-  // The preview follows the link once typing pauses, so a YouTube player is not rebuilt
-  // on every keystroke. A picked file shows at once.
-  const [previewUrl, setPreviewUrl] = useState(videoUrl);
+  // The link preview follows once typing pauses, so a YouTube player is not rebuilt on
+  // every keystroke.
+  const [previewLink, setPreviewLink] = useState(link);
   useEffect(() => {
-    const timer = setTimeout(() => setPreviewUrl(videoUrl), videoUrl.startsWith("blob:") ? 0 : 600);
+    const timer = setTimeout(() => setPreviewLink(link), 600);
     return () => clearTimeout(timer);
-  }, [videoUrl]);
+  }, [link]);
 
-  // Whatever plays the video reports its length, uploads and links alike; the field stays
-  // editable for a player that does not.
+  // The local preview holds memory until released.
+  useEffect(() => () => {
+    if (file) URL.revokeObjectURL(file.preview);
+  }, [file]);
+
   const [lengthRead, setLengthRead] = useState(false);
   function onDuration(seconds: number) {
     const read = Math.max(1, Math.ceil(seconds / 60));
@@ -249,45 +278,66 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
     if (read !== getValues("minutes")) setValue("minutes", read, { shouldValidate: true });
   }
 
-  // The local preview holds memory until released.
-  useEffect(() => () => {
-    if (picked) URL.revokeObjectURL(picked.preview);
-  }, [picked]);
-
   function pick(files: FileList | null) {
-    const file = files?.[0];
-    if (!file) return;
-
-    const problem = tooLarge(file, "video");
-    if (problem) {
-      toast.error(problem);
+    const picked = files?.[0];
+    if (!picked) return;
+    if (!picked.type.startsWith("video/")) {
+      toast.error("Pick a video file.");
       return;
     }
-
-    const preview = URL.createObjectURL(file);
-    setPicked({ file, preview });
-    setValue("videoUrl", preview, { shouldValidate: true });
+    if (picked.size > LESSON_VIDEO_MAX_BYTES) {
+      toast.error(`This video is ${megabytes(picked.size)}. The limit is 5 GB, so compress it first.`);
+      return;
+    }
+    setLengthRead(false);
+    setFile({ file: picked, preview: URL.createObjectURL(picked) });
   }
 
   async function onSubmit(values: LessonValues) {
-    // A picked file counts only while the field still shows it; a link pasted over it wins.
-    const video = picked && values.videoUrl === picked.preview ? picked.file : undefined;
+    if (mode === "link" && !values.videoUrl) {
+      setError("videoUrl", { message: "Paste the link, or switch to Upload a file" });
+      return;
+    }
+    if (mode === "upload" && !file && !lesson?.stored) {
+      toast.error("Choose a video file to upload, or use a link.");
+      return;
+    }
 
-    if (video) setUploading(startUpload());
     try {
-      await save.mutateAsync({
+      // The details first; an upload then attaches its file to the saved lesson. Uploading
+      // over a link keeps the link playing until the file is in.
+      const course = await save.mutateAsync({
         id: lesson?.id,
-        // The API fills the link from the uploaded file; a local preview means nothing to it.
-        body: { ...values, videoUrl: video ? (lesson?.videoUrl ?? "") : values.videoUrl },
-        video,
-        onProgress: ({ loaded, total }) =>
-          setUploading((prev) => (prev ? { ...prev, loaded, total } : prev)),
+        body: { ...values, videoUrl: mode === "link" ? values.videoUrl : (lesson?.link ?? "") },
       });
+
+      if (mode === "upload" && file) {
+        const lessonId = lesson?.id ?? course.lessons.at(-1)?.id;
+        if (!lessonId) throw new Error("The lesson was not saved.");
+
+        const controller = new AbortController();
+        abort.current = controller;
+        setUploading(startUpload());
+        const updated = await uploadLessonVideo({
+          lessonId,
+          file: file.file,
+          minutes: Math.max(1, values.minutes || 1),
+          signal: controller.signal,
+          onProgress: ({ loaded, total }) =>
+            setUploading((prev) => (prev ? { ...prev, loaded, total } : prev)),
+        });
+        queryClient.setQueryData(ADMIN_COURSE_KEY, updated);
+        void queryClient.invalidateQueries({ queryKey: COURSE_KEY, exact: true });
+      }
+
       toast.success(lesson ? "Lesson saved" : "Lesson added");
       onClose();
     } catch (error) {
-      toast.error(apiMessage(error, "The lesson was not saved. Try again."));
+      if (abort.current?.signal.aborted) toast.info("Upload cancelled. The lesson details are saved.");
+      else toast.error(apiMessage(error, "The video did not upload. Check your connection and try again."));
+      void queryClient.invalidateQueries({ queryKey: ADMIN_COURSE_KEY });
     } finally {
+      abort.current = null;
       setUploading(null);
     }
   }
@@ -299,78 +349,126 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
       <DialogContent closeLabel="Close" className="max-w-xl">
         <DialogTitle>{lesson ? "Edit lesson" : "Add a lesson"}</DialogTitle>
         <DialogDescription>
-          Each lesson is one video. Realtors cannot skip ahead within it or past it.
+          Upload the video, or link to one. An uploaded video can only be watched inside
+          INSPECTRA; a link can be opened anywhere.
         </DialogDescription>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
           <Field label="Title" htmlFor="lesson-title" error={errors.title?.message}>
-            <Input id="lesson-title" placeholder="Blockchain technology" {...register("title")} />
+            <Input id="lesson-title" placeholder="Blockchain technology" disabled={busy} {...register("title")} />
           </Field>
 
           <Field label="Summary" htmlFor="lesson-summary" note="Optional, a line or two" error={errors.summary?.message}>
             <textarea
               id="lesson-summary"
               rows={2}
+              disabled={busy}
               className="w-full resize-y rounded-2xl border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-ink focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
               {...register("summary")}
             />
           </Field>
 
-          <Field
-            label="Video"
-            htmlFor="lesson-video"
-            note={`A YouTube, Vimeo or video link, or a file up to ${COURSE_UPLOAD_MAX_MB} MB`}
-            error={errors.videoUrl?.message}
-          >
-            <div className="flex gap-2 max-sm:flex-col">
-              <Input id="lesson-video" placeholder="https://youtu.be/…" {...register("videoUrl")} />
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => fileRef.current?.click()}
-                className={cn(buttonClasses("outline", "md"), "shrink-0")}
-              >
-                <Upload className="size-4" aria-hidden /> Upload
-              </button>
+          <div>
+            <div role="tablist" aria-label="Video source" className="inline-flex rounded-full bg-surface-2 p-1">
+              {MODES.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === value}
+                  disabled={busy || (value === "upload" && !storage)}
+                  onClick={() => {
+                    setMode(value);
+                    setLengthRead(false);
+                  }}
+                  className={cn(
+                    "inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors disabled:opacity-50",
+                    mode === value ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink",
+                  )}
+                >
+                  {value === "upload" ? <Upload className="size-4" aria-hidden /> : <Link2 className="size-4" aria-hidden />}
+                  {value === "upload" ? "Upload a file" : "Use a link"}
+                </button>
+              ))}
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="video/*"
-              className="sr-only"
-              onChange={(e) => {
-                pick(e.target.files);
-                e.target.value = "";
-              }}
-            />
-            {uploading ? (
-              <UploadStatus uploading={uploading} label="Video upload" />
+            {!storage && <p className="mt-2 text-xs text-faint">Uploads are not set up on this server, so use a link.</p>}
+
+            {mode === "upload" ? (
+              <div className="mt-4">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="video/*"
+                  className="sr-only"
+                  onChange={(e) => {
+                    pick(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => fileRef.current?.click()}
+                    className={buttonClasses("outline", "md")}
+                  >
+                    <Upload className="size-4" aria-hidden />
+                    {file || lesson?.stored ? "Choose another file" : "Choose a video"}
+                  </button>
+                  <span className="text-xs text-faint">Up to 5 GB. Smaller files upload far faster.</span>
+                </div>
+
+                {file ? (
+                  <p className="mt-2 text-xs text-muted">
+                    <span className="font-semibold text-ink">{file.file.name}</span> · {megabytes(file.file.size)}
+                  </p>
+                ) : (
+                  lesson?.stored && (
+                    <p className="mt-2 text-xs text-muted">This lesson has an uploaded video. Choose a file to replace it.</p>
+                  )
+                )}
+
+                {uploading ? (
+                  <div className="mt-3">
+                    <UploadStatus uploading={uploading} label="Video upload" />
+                    <p className="mt-1 text-xs text-faint">Keep this window open until it finishes.</p>
+                  </div>
+                ) : file ? (
+                  <LessonVideo key={file.preview} src={file.preview} onDuration={onDuration} className="mt-3 rounded-xl" />
+                ) : (
+                  lesson?.stored && lesson.videoUrl && <LessonVideo src={lesson.videoUrl} className="mt-3 rounded-xl" />
+                )}
+              </div>
             ) : (
-              picked && videoUrl === picked.preview && <PendingNote picked={picked} />
+              <div className="mt-4">
+                <Field
+                  label="Link"
+                  htmlFor="lesson-video"
+                  note="YouTube, Vimeo, Google Drive or a video file"
+                  error={errors.videoUrl?.message}
+                >
+                  <Input id="lesson-video" placeholder="https://youtu.be/…" disabled={busy} {...register("videoUrl")} />
+                </Field>
+                {link && source === "drive" && (
+                  <p className="mt-2 text-xs text-muted">
+                    Share the Drive file as <span className="font-semibold text-ink">Anyone with the link</span>, or
+                    realtors will be asked to request access.
+                  </p>
+                )}
+                {link && source === "unknown" && (
+                  <p className="mt-2 text-xs text-gold">
+                    This link may not play. A YouTube, Vimeo, Drive or video file link works best.
+                  </p>
+                )}
+                {link && previewLink === link && (
+                  <LessonVideo key={previewLink} src={previewLink} onDuration={onDuration} className="mt-3 rounded-xl" />
+                )}
+                {lesson?.stored && (
+                  <p className="mt-2 text-xs text-gold">Saving a link replaces this lesson&apos;s uploaded video.</p>
+                )}
+              </div>
             )}
-            {source === "drive" ? (
-              <p className="mt-3 rounded-xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-ink">
-                Google Drive links cannot play here: Drive does not let the course see where a
-                realtor is in the video, so it could not keep the lessons in order. Upload the
-                video to YouTube as <span className="font-semibold">Unlisted</span> and paste that
-                link, or upload the file.
-              </p>
-            ) : (
-              videoUrl &&
-              !uploading && (
-                <>
-                  {source === "unknown" && (
-                    <p className="mt-3 text-xs text-gold">
-                      This link may not play. A YouTube, Vimeo or direct video link works best.
-                    </p>
-                  )}
-                  {previewUrl === videoUrl && (
-                    <LessonVideo key={previewUrl} src={previewUrl} onDuration={onDuration} className="mt-3 rounded-xl" />
-                  )}
-                </>
-              )
-            )}
-          </Field>
+          </div>
 
           <Field
             label="Length"
@@ -384,25 +482,35 @@ function LessonDialog({ lesson, onClose }: { lesson: AdminLesson | null; onClose
                 type="number"
                 min={1}
                 inputMode="numeric"
+                disabled={busy}
                 className="w-32"
                 {...register("minutes", { valueAsNumber: true })}
               />
-              {videoUrl && !lengthRead && source !== "drive" && (
+              {!lengthRead && (
                 <span className="flex items-center gap-1.5 text-xs text-muted">
                   <Clock className="size-3.5" aria-hidden />
-                  {/* YouTube, Vimeo and Wistia only load, and so only know the length, once played. */}
-                  {source === "youtube" || source === "vimeo" || source === "wistia"
-                    ? "Press play on the preview to fill this in, or type it"
-                    : "Filled in once the video loads"}
+                  {mode === "upload"
+                    ? file
+                      ? "Reading it from the file"
+                      : "Filled in from the file you choose"
+                    : source === "drive"
+                      ? "Drive does not report it, so type it"
+                      : "Press play on the preview to fill this in, or type it"}
                 </span>
               )}
             </div>
           </Field>
 
           <div className="flex justify-end gap-2 border-t border-line pt-5">
-            <button type="button" disabled={busy} onClick={onClose} className={buttonClasses("ghost", "md")}>
-              Cancel
-            </button>
+            {uploading ? (
+              <button type="button" onClick={() => abort.current?.abort()} className={buttonClasses("outline", "md")}>
+                Cancel upload
+              </button>
+            ) : (
+              <button type="button" disabled={busy} onClick={onClose} className={buttonClasses("ghost", "md")}>
+                Cancel
+              </button>
+            )}
             <button type="submit" disabled={busy} className={cn(buttonClasses("brand", "md"), "min-w-32")}>
               {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : lesson ? "Save lesson" : "Add lesson"}
             </button>
@@ -424,7 +532,7 @@ function Field({
   htmlFor?: string;
   note?: string;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div>

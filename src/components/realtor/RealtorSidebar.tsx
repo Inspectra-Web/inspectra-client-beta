@@ -13,6 +13,7 @@ import {
   Building2,
   CalendarCheck,
   CreditCard,
+  GraduationCap,
   Inbox,
   Landmark,
   LayoutDashboard,
@@ -48,6 +49,7 @@ const navGroups = (newLeads: number, requested: number): NavGroup[] => [
     label: "Standing",
     items: [
       { label: "Verification", to: "/realtor/verification", Icon: ShieldCheck },
+      { label: "Realtor course", to: "/realtor/course", Icon: GraduationCap },
       // Certification is coming soon: hidden until the program exists.
       // { label: "Certification", to: "/realtor/certification", Icon: BadgeCheck },
     ],

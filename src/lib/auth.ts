@@ -14,7 +14,7 @@ export interface AuthUser {
   avatar: string;
   phone?: string;
   emailVerified: boolean;
-  /** A realtor who opened their account at the course checkout, until the video ends. */
+  /** A realtor who opened their account at the course checkout, until they pay for it. */
   courseLocked: boolean;
   createdAt: string;
 }

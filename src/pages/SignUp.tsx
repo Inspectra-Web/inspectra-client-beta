@@ -78,7 +78,7 @@ export function SignUp() {
   const [emailFailed, setEmailFailed] = useState(false);
   const [resending, setResending] = useState(false);
   const [searchParams] = useSearchParams();
-  // Realtor accounts are opened by the invite the course hands out when the video ends.
+  // Old guest buyers open their realtor account with the invite the course hands out at the end.
   const invite = searchParams.get("invite") ?? "";
   const inviteQuery = useInvite(invite);
 

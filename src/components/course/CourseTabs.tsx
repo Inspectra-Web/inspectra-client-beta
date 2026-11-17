@@ -4,10 +4,11 @@ import { cn } from "@/lib/cn";
 
 const TABS = [
   { label: "Course", to: "/admin/course", end: true },
+  { label: "Watch", to: "/admin/course/watch", end: false },
   { label: "Enrollments", to: "/admin/course/enrollments", end: false },
 ];
 
-/** Switches between the course editor and the people who bought it. */
+/** Switches between the course editor, watching it, and the people who bought it. */
 export function CourseTabs() {
   return (
     <nav aria-label="Course sections" className="flex gap-6 border-b border-line">

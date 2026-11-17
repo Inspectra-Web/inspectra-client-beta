@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
-import { ArrowRight, CircleCheck, Loader2, Mail, Play, TriangleAlert } from "lucide-react";
+import { toast } from "react-toastify";
+import { ArrowRight, CircleCheck, LayoutDashboard, Loader2, Mail, Play, TriangleAlert } from "lucide-react";
 
-import { apiMessage } from "@/lib/api";
+import { apiMessage, resendVerification } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import { CourseShell } from "@/components/course/CourseShell";
 import { useVerifyEnrollment } from "@/lib/course";
@@ -79,24 +80,94 @@ export function CourseCallback() {
               <Mail className="mt-0.5 size-5 shrink-0 text-[#38c0ff]" aria-hidden />
               <p className="text-sm leading-relaxed text-white/75">
                 Your course link is also on its way to{" "}
-                <span className="font-semibold text-white">{verify.data.email}</span>
-                {/* Someone who paid while signed in has already verified the address. */}
-                {user
-                  ? ". Keep that email: the link is how you come back to the video."
-                  : ", with a second email to verify the address. Verify it to sign in to your account; the course link works either way."}
+                <span className="font-semibold text-white">{verify.data.email}</span>. Keep that
+                email: the link is how you come back to the lessons.
               </p>
             </div>
+
+            {/* Someone who paid while signed in has verified the address and is in already. */}
+            {!user && <SignInSteps email={verify.data.email} />}
 
             <Actions>
               <PrimaryLink to={`/course/learn?access=${encodeURIComponent(verify.data.access)}`}>
                 <Play className="size-4 fill-current" aria-hidden /> Watch now
               </PrimaryLink>
+              {user?.role === "realtor" && (
+                <Link
+                  to="/realtor"
+                  className="inline-flex h-12 items-center gap-2 rounded-full border border-white/30 px-7 font-semibold transition-colors hover:bg-white/10"
+                >
+                  <LayoutDashboard className="size-4" aria-hidden /> Go to your dashboard
+                </Link>
+              )}
             </Actions>
 
           </>
         )}
       </div>
     </CourseShell>
+  );
+}
+
+/**
+ * Paying opened the dashboard, but signing in still needs the address verified: paying
+ * does not prove the email is theirs, the link in it does. Two plain steps, and the resend
+ * right here rather than a trip to sign in to discover it.
+ */
+function SignInSteps({ email }: { email: string }) {
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+
+  async function resend() {
+    setState("sending");
+    try {
+      await resendVerification(email);
+      setState("sent");
+    } catch (error) {
+      toast.error(apiMessage(error, "The email did not send. Try again."));
+      setState("idle");
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl bg-brand/10 p-5 text-left ring-1 ring-brand/30">
+      <p className="flex items-center gap-2 font-semibold text-white">
+        <LayoutDashboard className="size-4 text-[#38c0ff]" aria-hidden /> Your realtor dashboard is open
+      </p>
+      <ol className="mt-3 space-y-2 text-sm leading-relaxed text-white/75">
+        <li className="flex gap-3">
+          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/10 text-[0.7rem] font-semibold text-white">1</span>
+          <span>
+            Open the verification email we sent to{" "}
+            <span className="font-semibold text-white">{email}</span> and confirm your address.
+          </span>
+        </li>
+        <li className="flex gap-3">
+          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/10 text-[0.7rem] font-semibold text-white">2</span>
+          <span>Sign in with that email and the password you chose.</span>
+        </li>
+      </ol>
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+        <Link
+          to="/login"
+          state={{ from: "/realtor" }}
+          className="inline-flex items-center gap-1.5 font-semibold text-[#7ad4ff] hover:underline"
+        >
+          Sign in <ArrowRight className="size-4" aria-hidden />
+        </Link>
+        {state === "sent" ? (
+          <span className="text-white/60">Sent. Check your inbox and spam folder.</span>
+        ) : (
+          <button
+            type="button"
+            onClick={resend}
+            disabled={state === "sending"}
+            className="font-medium text-white/70 hover:text-white disabled:opacity-60"
+          >
+            {state === "sending" ? "Sending..." : "Resend the verification email"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

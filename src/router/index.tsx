@@ -49,6 +49,7 @@ import { RealtorSubscriptionCallback } from "@/pages/realtor/SubscriptionCallbac
 import { RealtorAccount } from "@/pages/realtor/Account";
 import { RealtorVirtualAccount } from "@/pages/realtor/VirtualAccount";
 import { RealtorWallet } from "@/pages/realtor/Wallet";
+import { RealtorCourse } from "@/pages/realtor/Course";
 import { RealtorNotFound } from "@/pages/realtor/RealtorNotFound";
 import { AdminDashboardLayout } from "@/layouts/AdminDashboardLayout";
 import { AdminOverview } from "@/pages/admin/Overview";
@@ -68,6 +69,7 @@ import { AdminDisputes } from "@/pages/admin/Disputes";
 import { AdminDisputeDetail } from "@/pages/admin/DisputeDetail";
 import { AdminWallets } from "@/pages/admin/Wallets";
 import { AdminCourse } from "@/pages/admin/Course";
+import { AdminCourseWatch } from "@/pages/admin/CourseWatch";
 import { AdminCourseEnrollments } from "@/pages/admin/CourseEnrollments";
 import { AdminAccount } from "@/pages/admin/Account";
 import { AdminNotFound } from "@/pages/admin/AdminNotFound";
@@ -164,6 +166,7 @@ export const router = createBrowserRouter([
               },
               { path: "virtual-account", element: <RealtorVirtualAccount /> },
               { path: "wallet", element: <RealtorWallet /> },
+              { path: "course", element: <RealtorCourse /> },
               { path: "account", element: <RealtorAccount /> },
               { path: "*", element: <RealtorNotFound /> },
             ],
@@ -203,6 +206,7 @@ export const router = createBrowserRouter([
           { path: "virtual-accounts", element: <AdminVirtualAccounts /> },
           { path: "wallets", element: <AdminWallets /> },
           { path: "course", element: <AdminCourse /> },
+          { path: "course/watch", element: <AdminCourseWatch /> },
           { path: "course/enrollments", element: <AdminCourseEnrollments /> },
           { path: "account", element: <AdminAccount /> },
           { path: "*", element: <AdminNotFound /> },

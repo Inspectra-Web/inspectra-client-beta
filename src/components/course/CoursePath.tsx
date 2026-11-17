@@ -9,7 +9,7 @@ export function CoursePath({ price }: { price: number }) {
   const steps: { title: string; body: string; Icon: LucideIcon }[] = [
     {
       title: `Enrol for ${formatPriceFull(price)}`,
-      body: "One form, one payment. Your course link arrives by email.",
+      body: "One form, one payment. Your dashboard opens straight away.",
       Icon: CreditCard,
     },
     {
@@ -19,7 +19,7 @@ export function CoursePath({ price }: { price: number }) {
     },
     {
       title: "How INSPECTRA works",
-      body: "Learn how rewards are earned. Your dashboard opens at the end.",
+      body: "How your rewards are earned, and how to make the most of it.",
       Icon: PlayCircle,
     },
     {

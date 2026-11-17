@@ -21,7 +21,7 @@ const FILTERS: { value: EnrollmentFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "pending", label: "Awaiting payment" },
   { value: "paid", label: "Paid" },
-  { value: "completed", label: "Watched" },
+  { value: "completed", label: "Finished" },
 ];
 
 export function AdminCourseEnrollments() {
@@ -194,23 +194,24 @@ export function AdminCourseEnrollments() {
 }
 
 /**
- * The same three steps as the funnel on the course page, filled as far as this realtor got.
- * An account alone is not the last step: one opened at checkout exists before paying, so
- * joining means watched with an account.
+ * The same three steps as the funnel on the course page, filled as far as this realtor got:
+ * paid, joined (paid with an account, which is what opens the dashboard), finished. An
+ * account alone is not joining: one opened at checkout exists before paying.
  */
 function Progress({ enrollment }: { enrollment: Enrollment }) {
-  const watched = enrollment.status === "completed";
-  const reached = [enrollment.status !== "pending", watched, watched && enrollment.registered];
+  const paid = enrollment.status !== "pending";
+  const finished = enrollment.status === "completed";
+  const reached = [paid, paid && enrollment.registered, finished];
   const step = reached.lastIndexOf(true);
 
   const label =
     step === -1
       ? "Awaiting payment"
       : step === 0
-        ? "Paid, not watched"
+        ? "Paid, no account yet"
         : step === 1
-          ? `Watched ${formatDate(enrollment.completedAt ?? enrollment.createdAt)}`
-          : "Joined";
+          ? "Joined, watching"
+          : `Finished ${formatDate(enrollment.completedAt ?? enrollment.createdAt)}`;
 
   return (
     <div className="flex items-center gap-3">

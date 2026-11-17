@@ -50,7 +50,7 @@ export function CourseEnrol({ course }: { course: PublicCourse }) {
     { label: "Blockchain technology masterclass", Icon: Blocks },
     { label: "Advanced AI storytelling masterclass", Icon: Sparkles },
     { label: "How INSPECTRA works and how rewards are earned", Icon: Play },
-    { label: "Your realtor dashboard, open when the video ends", Icon: KeyRound },
+    { label: "Your realtor dashboard, open as soon as you pay", Icon: KeyRound },
     { label: "A $USD digital asset on every transaction", Icon: Coins },
     { label: "Paid-for mentorship for the first 100 realtors", Icon: Users },
     { label: "Watch on your phone or laptop", Icon: Smartphone },
@@ -252,15 +252,28 @@ function JoinForm({ course }: { course: PublicCourse }) {
 }
 
 /**
- * Signed in, the card answers for the account: pay in one click, watch what is paid for,
- * or go to the console the course already opened. A seeker or admin is told the course
- * opens a realtor account of its own.
+ * Signed in, the card answers for the account. Any realtor pays in one click, whether
+ * their dashboard is waiting on the payment or was open before the course existed; once
+ * paid, they watch. A seeker is told the course opens a realtor account of its own, and
+ * an admin is sent to watch it free.
  */
 function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }) {
-  const locked = user.role === "realtor" && user.courseLocked;
-  const mine = useMyEnrollment(locked);
+  const realtor = user.role === "realtor";
+  const locked = realtor && user.courseLocked;
+  const mine = useMyEnrollment(realtor);
   const checkout = useCourseCheckout();
   const [problem, setProblem] = useState<string | null>(null);
+
+  if (user.role === "admin")
+    return (
+      <>
+        <Note>Admins watch the course free, from the admin dashboard.</Note>
+        <Link to="/admin/course/watch" className={cn("mt-6", PAY_BUTTON)}>
+          <Play className="size-4 fill-current" aria-hidden />
+          Watch the course
+        </Link>
+      </>
+    );
 
   if (user.role !== "realtor")
     return (
@@ -271,23 +284,12 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
       </Note>
     );
 
-  if (!locked)
-    return (
-      <>
-        <Note>Your realtor dashboard is already open.</Note>
-        <Link to="/realtor" className={cn("mt-6", PAY_BUTTON)}>
-          <LayoutDashboard className="size-4" aria-hidden />
-          Go to your dashboard
-        </Link>
-      </>
-    );
-
   if (mine.isPending) return <div className="mt-8 h-13 animate-pulse rounded-full bg-surface-2" />;
 
   if (mine.data?.access)
     return (
       <>
-        <Note>You have paid for the course. Your dashboard opens when the video ends.</Note>
+        <Note>You have paid for the course, and your realtor dashboard is open.</Note>
         <Link
           to={`/course/learn?access=${encodeURIComponent(mine.data.access)}`}
           className={cn("mt-6", PAY_BUTTON)}
@@ -295,6 +297,7 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
           <Play className="size-4 fill-current" aria-hidden />
           Watch the course
         </Link>
+        <DashboardLink />
       </>
     );
 
@@ -311,8 +314,10 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
   return (
     <>
       <Note>
-        Complete your payment to watch the course. Your course link goes to{" "}
-        <span className="font-semibold text-ink">{user.email}</span>.
+        {locked
+          ? "Complete your payment and your realtor dashboard opens straight away."
+          : "Your dashboard is open. Add the masterclasses and the digital asset rewards."}{" "}
+        Your course link goes to <span className="font-semibold text-ink">{user.email}</span>.
       </Note>
       <button type="button" onClick={pay} disabled={checkout.isPending} className={cn("mt-6", PAY_BUTTON)}>
         {checkout.isPending ? (
@@ -325,7 +330,19 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
       </button>
       <p className="mt-3 text-center text-xs text-faint">Card, bank transfer or USSD</p>
       {problem && <Problem>{problem}</Problem>}
+      {!locked && <DashboardLink />}
     </>
+  );
+}
+
+function DashboardLink() {
+  return (
+    <Link
+      to="/realtor"
+      className="mt-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-ink hover:underline"
+    >
+      <LayoutDashboard className="size-4" aria-hidden /> Go to your dashboard
+    </Link>
   );
 }
 

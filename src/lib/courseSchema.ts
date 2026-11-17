@@ -7,11 +7,6 @@ export const courseSchema = z.object({
   subtitle: z.string().trim().min(5, "Add a one-line subtitle"),
   description: z.string().trim().min(20, "Describe what the realtor gets from it"),
   cover: z.string().min(1, "Add a cover image"),
-  videoUrl: z.string().trim().min(1, "Add the video"),
-  minutes: z
-    .number({ error: "Enter the length" })
-    .int("Whole minutes only")
-    .min(1, "At least 1 minute"),
   price: z
     .number({ error: "Enter a price" })
     .int("Whole naira only")
@@ -19,6 +14,19 @@ export const courseSchema = z.object({
 });
 
 export type CourseValues = z.infer<typeof courseSchema>;
+
+export const lessonSchema = z.object({
+  title: z.string().trim().min(3, "Give the lesson a title").max(200),
+  summary: z.string().trim().max(500, "Keep it to a line or two"),
+  videoUrl: z.string().trim().min(1, "Add the video"),
+  minutes: z
+    .number({ error: "Enter the length" })
+    .int("Whole minutes only")
+    .min(1, "At least 1 minute")
+    .max(600),
+});
+
+export type LessonValues = z.infer<typeof lessonSchema>;
 
 /** The course checkout, which opens the realtor account in the same submit. */
 export const joinCourseSchema = z

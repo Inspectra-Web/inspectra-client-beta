@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Clock, Eye, EyeOff, ImagePlus, Loader2, Play, Upload, X } from "lucide-react";
+import { Clock, Eye, EyeOff, ImagePlus, ListVideo, Loader2, Play } from "lucide-react";
 
 import { buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -11,14 +12,23 @@ import { Panel } from "@/components/dashboard/Panel";
 import { StatusPill } from "@/components/dashboard/StatusPill";
 import { Input } from "@/components/ui/Input";
 import { CourseTabs } from "@/components/course/CourseTabs";
+import { LessonsPanel } from "@/components/course/LessonsPanel";
+import {
+  PendingNote,
+  UploadStatus,
+  chipLabel,
+  startUpload,
+  tooLarge,
+  type Picked,
+  type Uploading,
+} from "@/components/course/courseUpload";
 import {
   ALL_ENROLLMENTS,
   useAdminCourse,
   useAdminEnrollments,
   useSaveCourse,
   useSetCourseStatus,
-  COURSE_UPLOAD_MAX_MB,
-  type Course,
+  type AdminCourse as Course,
 } from "@/lib/course";
 import { apiMessage } from "@/lib/api";
 import { courseSchema, type CourseValues } from "@/lib/courseSchema";
@@ -51,8 +61,6 @@ const valuesOf = (course: Course): CourseValues => ({
   subtitle: course.subtitle,
   description: course.description,
   cover: course.cover,
-  videoUrl: course.videoUrl,
-  minutes: course.minutes,
   price: course.price,
 });
 
@@ -61,93 +69,61 @@ function CourseEditor({ course }: { course: Course }) {
   const setStatus = useSetCourseStatus();
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
   const [uploading, setUploading] = useState<Uploading | null>(null);
-  // Picked but not yet uploaded: each file is previewed from a local link until Save sends it.
-  const [pending, setPending] = useState<Partial<Record<"cover" | "video", Picked>>>({});
+  // Picked but not yet uploaded: previewed from a local link until Save sends it.
+  const [pendingCover, setPendingCover] = useState<Picked | null>(null);
   const coverRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    getValues,
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CourseValues>({ resolver: zodResolver(courseSchema), values: valuesOf(course) });
 
   const live = watch();
-
-  // The length is read off the video itself whenever the video changes.
-  // An uploaded video's length is read off the file; a pasted link's is typed in by the admin.
-  const uploadedVideo = isUploadedVideo(live.videoUrl);
-  const length = useVideoMinutes(uploadedVideo ? live.videoUrl : "", (minutes) => {
-    if (minutes !== getValues("minutes"))
-      setValue("minutes", minutes, { shouldDirty: true, shouldValidate: true });
-  });
   const published = course.status === "published";
+  const playable = course.lessons.some((lesson) => lesson.videoUrl);
 
-  // Local previews hold memory until released; release whatever is left on the way out.
-  const pendingRef = useRef(pending);
-  useEffect(() => {
-    pendingRef.current = pending;
-  });
-  useEffect(() => () => releaseAll(pendingRef.current), []);
-
-  function clearPending() {
-    releaseAll(pending);
-    setPending({});
-  }
+  // The local preview holds memory until released.
+  useEffect(() => () => {
+    if (pendingCover) URL.revokeObjectURL(pendingCover.preview);
+  }, [pendingCover]);
 
   // Kept in the browser until Save: nothing reaches storage for an edit that is discarded
   // or lost to a reload.
-  function pick(field: "cover" | "videoUrl", files: FileList | null) {
+  function pickCover(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
 
-    const kind = field === "cover" ? "cover" : "video";
-
-    // Refused before a byte is sent: a long upload that fails at the end wastes the wait.
-    if (file.size > COURSE_UPLOAD_MAX_MB * 1024 * 1024) {
-      toast.error(
-        `This ${kind} is ${Math.ceil(file.size / (1024 * 1024))} MB. The limit is ${COURSE_UPLOAD_MAX_MB} MB, so compress it or upload a shorter cut.`,
-      );
+    const problem = tooLarge(file, "cover");
+    if (problem) {
+      toast.error(problem);
       return;
     }
 
     const preview = URL.createObjectURL(file);
-    const previous = pending[kind];
-    if (previous) URL.revokeObjectURL(previous.preview);
-
-    setPending((prev) => ({ ...prev, [kind]: { file, preview } }));
-    setValue(field, preview, { shouldDirty: true, shouldValidate: true });
+    setPendingCover({ file, preview });
+    setValue("cover", preview, { shouldDirty: true, shouldValidate: true });
   }
 
   async function onSubmit(values: CourseValues) {
-    // A picked file counts only while the field still shows it; a link pasted over it wins.
-    const cover = pending.cover && values.cover === pending.cover.preview ? pending.cover.file : undefined;
-    const video =
-      pending.video && values.videoUrl === pending.video.preview ? pending.video.file : undefined;
+    // A picked file counts only while the field still shows it.
+    const cover = pendingCover && values.cover === pendingCover.preview ? pendingCover.file : undefined;
 
-    const body = {
-      ...values,
-      // The API fills these from the uploaded files; a local preview link means nothing to it.
-      cover: cover ? course.cover : values.cover,
-      videoUrl: video ? course.videoUrl : values.videoUrl,
-    };
+    // The API fills the link from the uploaded file; a local preview link means nothing to it.
+    const body = { ...values, cover: cover ? course.cover : values.cover };
 
-    const sending = video ?? cover;
-    if (sending)
-      setUploading({ kind: video ? "video" : "cover", loaded: 0, total: 0, startedAt: Date.now() });
-
+    if (cover) setUploading(startUpload());
     try {
       await save.mutateAsync({
         body,
-        files: { cover, video },
+        cover,
         onProgress: ({ loaded, total }) =>
           setUploading((prev) => (prev ? { ...prev, loaded, total } : prev)),
       });
-      clearPending();
+      setPendingCover(null);
       toast.success("Changes saved");
     } catch (error) {
       toast.error(apiMessage(error, "The changes were not saved. Try again."));
@@ -166,7 +142,7 @@ function CourseEditor({ course }: { course: Course }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <div className="space-y-6">
       {/* Header ----------------------------------------------------------- */}
       <header className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
@@ -189,8 +165,14 @@ function CourseEditor({ course }: { course: Course }) {
           ) : (
             <button
               type="button"
-              disabled={!course.videoUrl || isDirty || setStatus.isPending}
-              title={isDirty ? "Save your changes before publishing" : undefined}
+              disabled={course.lessons.length === 0 || isDirty || setStatus.isPending}
+              title={
+                isDirty
+                  ? "Save your changes before publishing"
+                  : course.lessons.length === 0
+                    ? "Add a lesson before publishing"
+                    : undefined
+              }
               onClick={() => changeStatus("published")}
               className={cn(buttonClasses("brand", "md"), "min-w-32")}
             >
@@ -208,12 +190,13 @@ function CourseEditor({ course }: { course: Course }) {
 
       <CourseTabs />
 
-
       {/* Stage: the course as a realtor will see it ----------------------- */}
       <Stage
         values={live}
+        lessons={course.lessons.length}
+        minutes={course.minutes}
+        playable={playable}
         onReplaceCover={() => coverRef.current?.click()}
-        onReplaceVideo={() => videoRef.current?.click()}
         uploading={uploading}
       />
       <input
@@ -222,146 +205,81 @@ function CourseEditor({ course }: { course: Course }) {
         accept="image/*"
         className="sr-only"
         onChange={(e) => {
-          pick("cover", e.target.files);
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={videoRef}
-        type="file"
-        accept="video/*"
-        className="sr-only"
-        onChange={(e) => {
-          pick("videoUrl", e.target.files);
+          pickCover(e.target.files);
           e.target.value = "";
         }}
       />
 
       <Funnel />
 
-      {/* Spec sheet ------------------------------------------------------- */}
-      <section className="rounded-2xl border border-line bg-surface">
-        <div className="flex items-baseline justify-between gap-4 border-b border-line px-6 py-4 max-sm:px-5">
-          <h2 className="text-base font-semibold text-ink">What the realtor sees</h2>
-          <p className="text-xs text-faint max-sm:hidden">The preview above updates as you type</p>
-        </div>
+      {/* Lessons: saved one at a time, apart from the details below -------- */}
+      <LessonsPanel course={course} />
 
-        <dl className="divide-y divide-line">
-          <Row label="Title" htmlFor="title" error={errors.title?.message}>
-            <Input id="title" {...register("title")} />
-          </Row>
-          <Row label="Subtitle" htmlFor="subtitle" note="One line under the title" error={errors.subtitle?.message}>
-            <Input id="subtitle" {...register("subtitle")} />
-          </Row>
-          <Row
-            label="Description"
-            htmlFor="description"
-            note={`${live.description.length} characters`}
-            error={errors.description?.message}
-          >
-            <textarea
-              id="description"
-              rows={4}
-              className="w-full resize-y rounded-2xl border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-ink focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
-              {...register("description")}
-            />
-          </Row>
-          <Row
-            label="Video"
-            htmlFor="videoUrl"
-            note={`Paste a link or upload a file up to ${COURSE_UPLOAD_MAX_MB} MB`}
-            error={errors.videoUrl?.message}
-          >
-            <div className="flex gap-2 max-sm:flex-col">
-              <Input id="videoUrl" placeholder="https://" {...register("videoUrl")} />
+      {/* Spec sheet ------------------------------------------------------- */}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <section className="rounded-2xl border border-line bg-surface">
+          <div className="flex items-baseline justify-between gap-4 border-b border-line px-6 py-4 max-sm:px-5">
+            <h2 className="text-base font-semibold text-ink">What the realtor sees</h2>
+            <p className="text-xs text-faint max-sm:hidden">The preview above updates as you type</p>
+          </div>
+
+          <dl className="divide-y divide-line">
+            <Row label="Title" htmlFor="title" error={errors.title?.message}>
+              <Input id="title" {...register("title")} />
+            </Row>
+            <Row label="Subtitle" htmlFor="subtitle" note="One line under the title" error={errors.subtitle?.message}>
+              <Input id="subtitle" {...register("subtitle")} />
+            </Row>
+            <Row
+              label="Description"
+              htmlFor="description"
+              note={`${live.description.length} characters`}
+              error={errors.description?.message}
+            >
+              <textarea
+                id="description"
+                rows={4}
+                className="w-full resize-y rounded-2xl border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-ink focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                {...register("description")}
+              />
+            </Row>
+            <Row label="Cover image" note="Shown on the course page" error={errors.cover?.message}>
               <button
                 type="button"
                 disabled={uploading !== null}
-                onClick={() => videoRef.current?.click()}
-                className={cn(buttonClasses("outline", "md"), "shrink-0")}
+                onClick={() => coverRef.current?.click()}
+                className={buttonClasses("outline", "md")}
               >
-                <Upload className="size-4" aria-hidden /> Upload
+                <ImagePlus className="size-4" aria-hidden /> {live.cover ? "Replace cover" : "Upload cover"}
               </button>
-            </div>
-            {uploading?.kind === "video" ? (
-              <UploadStatus uploading={uploading} />
-            ) : (
-              pending.video &&
-              live.videoUrl === pending.video.preview && <PendingNote picked={pending.video} />
-            )}
-          </Row>
-          <Row label="Cover image" note="Shown before the video plays" error={errors.cover?.message}>
-            <button
-              type="button"
-              disabled={uploading !== null}
-              onClick={() => coverRef.current?.click()}
-              className={buttonClasses("outline", "md")}
-            >
-              <ImagePlus className="size-4" aria-hidden /> {live.cover ? "Replace cover" : "Upload cover"}
-            </button>
-            {uploading?.kind === "cover" ? (
-              <UploadStatus uploading={uploading} />
-            ) : (
-              pending.cover &&
-              live.cover === pending.cover.preview && <PendingNote picked={pending.cover} />
-            )}
-          </Row>
-          {live.videoUrl && !uploadedVideo ? (
-            <Row
-              label="Length"
-              htmlFor="minutes"
-              note="In minutes, for a linked video"
-              error={errors.minutes?.message}
-            >
+              {uploading ? (
+                <UploadStatus uploading={uploading} label="Cover upload" />
+              ) : (
+                pendingCover && live.cover === pendingCover.preview && <PendingNote picked={pendingCover} />
+              )}
+            </Row>
+            <Row label="Price" htmlFor="price" note="Paid once per realtor, in naira" error={errors.price?.message}>
               <Input
-                id="minutes"
+                id="price"
                 type="number"
-                min={1}
-                inputMode="numeric"
-                className="w-32"
-                {...register("minutes", { valueAsNumber: true })}
+                min={100}
+                step={100}
+                className="w-44"
+                {...register("price", { valueAsNumber: true })}
               />
             </Row>
-          ) : (
-          <Row label="Length" note="Read from the video" error={errors.minutes?.message}>
-            <p className="flex min-h-11 items-center gap-2 text-sm" aria-live="polite">
-              {length === "reading" ? (
-                <>
-                  <Loader2 className="size-4 animate-spin text-muted" aria-hidden />
-                  <span className="text-muted">Checking the video length</span>
-                </>
-              ) : length === "failed" ? (
-                <span className="text-gold">
-                  Could not read the length from this video. Check the link or upload it again.
-                </span>
-              ) : live.videoUrl ? (
-                <>
-                  <Clock className="size-4 text-muted" aria-hidden />
-                  <span className="font-semibold tabular-nums text-ink">{live.minutes} min</span>
-                </>
-              ) : (
-                <span className="text-muted">Add a video and its length appears here.</span>
-              )}
-            </p>
-          </Row>
-          )}
-          <Row label="Price" htmlFor="price" note="Paid once per realtor, in naira" error={errors.price?.message}>
-            <Input
-              id="price"
-              type="number"
-              min={100}
-              step={100}
-              className="w-44"
-              {...register("price", { valueAsNumber: true })}
-            />
-          </Row>
-        </dl>
-      </section>
+          </dl>
+        </section>
 
-      <SaveBar dirty={isDirty} saving={isSubmitting} onDiscard={() => {
-          clearPending();
-          reset(valuesOf(course));
-        }} />
+        <SaveBar
+          dirty={isDirty}
+          saving={isSubmitting}
+          onDiscard={() => {
+            setPendingCover(null);
+            reset(valuesOf(course));
+          }}
+        />
+      </form>
 
       <ConfirmDialog
         open={confirmUnpublish}
@@ -373,7 +291,7 @@ function CourseEditor({ course }: { course: Course }) {
         pending={setStatus.isPending}
         onConfirm={() => changeStatus("draft")}
       />
-    </form>
+    </div>
   );
 }
 
@@ -381,108 +299,84 @@ function CourseEditor({ course }: { course: Course }) {
 
 function Stage({
   values,
+  lessons,
+  minutes,
+  playable,
   onReplaceCover,
-  onReplaceVideo,
   uploading,
 }: {
   values: CourseValues;
+  lessons: number;
+  minutes: number;
+  playable: boolean;
   onReplaceCover: () => void;
-  onReplaceVideo: () => void;
   uploading: Uploading | null;
 }) {
-  const [playing, setPlaying] = useState(false);
   const price = Number.isFinite(values.price) ? formatPriceFull(values.price) : "₦";
-  const minutes = Number.isFinite(values.minutes) ? values.minutes : 0;
 
   return (
     <section
       aria-label="Course preview"
       className="relative isolate overflow-hidden rounded-3xl bg-[#05121c] text-white"
     >
-      {playing && values.videoUrl ? (
-        <div className="relative aspect-[21/9] w-full bg-black max-lg:aspect-video">
-          <video
-            key={values.videoUrl}
-            src={values.videoUrl}
-            poster={values.cover}
-            controls
-            autoPlay
-            className="size-full"
-          />
-          <button
-            type="button"
-            onClick={() => setPlaying(false)}
-            aria-label="Close the video"
-            className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-black/60 text-white backdrop-blur transition-colors hover:bg-black/80"
-          >
-            <X className="size-4" aria-hidden />
-          </button>
+      <div className="relative grid min-h-[26rem] grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] items-end gap-10 p-10 max-lg:grid-cols-1 max-lg:gap-8 max-sm:min-h-0 max-sm:p-6">
+        {values.cover && (
+          <img src={values.cover} alt="" className="absolute inset-0 -z-20 size-full object-cover" />
+        )}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,#05121c_8%,rgba(5,18,28,0.88)_45%,rgba(5,18,28,0.35)_100%)] max-lg:bg-[linear-gradient(0deg,#05121c_30%,rgba(5,18,28,0.6)_100%)]"
+        />
+
+        <div className="max-w-2xl">
+          <p className="flex flex-wrap items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#7ad4ff]">
+            <span>Realtor course</span>
+            <span className="h-px w-6 bg-white/30" aria-hidden />
+            <span className="inline-flex items-center gap-1 text-white/70">
+              <ListVideo className="size-3.5" aria-hidden /> {lessons} {lessons === 1 ? "lesson" : "lessons"}
+            </span>
+            <span className="inline-flex items-center gap-1 text-white/70">
+              <Clock className="size-3.5" aria-hidden /> {minutes} min
+            </span>
+          </p>
+          <h2 className="display mt-4 text-[2.6rem] leading-[1.04] tracking-[-0.02em] text-balance max-xl:text-4xl max-sm:text-[1.75rem]">
+            {values.title || "Untitled course"}
+          </h2>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-white/75 max-sm:text-sm">
+            {values.subtitle}
+          </p>
         </div>
-      ) : (
-        <div className="relative grid min-h-[26rem] grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] items-end gap-10 p-10 max-lg:grid-cols-1 max-lg:gap-8 max-sm:min-h-0 max-sm:p-6">
-          {values.cover && (
-            <img src={values.cover} alt="" className="absolute inset-0 -z-20 size-full object-cover" />
-          )}
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,#05121c_8%,rgba(5,18,28,0.88)_45%,rgba(5,18,28,0.35)_100%)] max-lg:bg-[linear-gradient(0deg,#05121c_30%,rgba(5,18,28,0.6)_100%)]"
-          />
 
-          <div className="max-w-2xl">
-            <p className="flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#7ad4ff]">
-              <span>Realtor course</span>
-              <span className="h-px w-6 bg-white/30" aria-hidden />
-              <span className="inline-flex items-center gap-1 text-white/70">
-                <Clock className="size-3.5" aria-hidden /> {minutes} min video
-              </span>
+        <div className="flex flex-col items-start gap-6 justify-self-end max-lg:justify-self-start">
+          <WatchButton playable={playable} />
+          <div>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/55">
+              One payment
             </p>
-            <h2 className="display mt-4 text-[2.6rem] leading-[1.04] tracking-[-0.02em] text-balance max-xl:text-4xl max-sm:text-[1.75rem]">
-              {values.title || "Untitled course"}
-            </h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-white/75 max-sm:text-sm">
-              {values.subtitle}
-            </p>
-          </div>
-
-          <div className="flex flex-col items-start gap-6 justify-self-end max-lg:justify-self-start">
-            <PlayButton disabled={!values.videoUrl} onClick={() => setPlaying(true)} />
-            <div>
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/55">
-                One payment
-              </p>
-              <p className="display mt-1 text-5xl tabular-nums tracking-[-0.03em] max-sm:text-4xl">{price}</p>
-              <p className="mt-2 text-sm text-white/60">Watch to the end to unlock registration</p>
-            </div>
-          </div>
-
-          <div className="absolute right-5 top-5 flex gap-2 max-sm:right-4 max-sm:top-4">
-            <StageChip onClick={onReplaceCover} disabled={uploading !== null}>
-              <ImagePlus className="size-3.5" aria-hidden />
-              {uploading?.kind === "cover" ? chipLabel(uploading) : "Cover"}
-            </StageChip>
-            <StageChip onClick={onReplaceVideo} disabled={uploading !== null}>
-              <Upload className="size-3.5" aria-hidden />
-              {uploading?.kind === "video" ? chipLabel(uploading) : "Video"}
-            </StageChip>
+            <p className="display mt-1 text-5xl tabular-nums tracking-[-0.03em] max-sm:text-4xl">{price}</p>
+            <p className="mt-2 text-sm text-white/60">Paying opens the realtor dashboard</p>
           </div>
         </div>
-      )}
+
+        <div className="absolute right-5 top-5 flex gap-2 max-sm:right-4 max-sm:top-4">
+          <StageChip onClick={onReplaceCover} disabled={uploading !== null}>
+            <ImagePlus className="size-3.5" aria-hidden />
+            {uploading ? chipLabel(uploading) : "Cover"}
+          </StageChip>
+        </div>
+      </div>
     </section>
   );
 }
 
-function PlayButton({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
+/** Goes to the Watch tab, where every lesson plays without the realtor's no-skip rule. */
+function WatchButton({ playable }: { playable: boolean }) {
   const reduce = useReducedMotion();
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="group flex items-center gap-4 text-left disabled:opacity-40"
-    >
+  const inner = (
+    <>
       <span className="relative grid size-16 place-items-center rounded-full bg-brand text-[#04121f] shadow-[0_12px_40px_-10px_rgba(26,172,240,0.9)] transition-transform duration-300 group-hover:scale-105">
-        {!reduce && !disabled && (
+        {!reduce && playable && (
           <motion.span
             aria-hidden
             className="absolute inset-0 rounded-full border border-brand"
@@ -493,9 +387,17 @@ function PlayButton({ disabled, onClick }: { disabled: boolean; onClick: () => v
         <Play className="ml-0.5 size-6 fill-current" aria-hidden />
       </span>
       <span className="text-sm font-semibold text-white">
-        {disabled ? "Add a video to preview" : "Preview the video"}
+        {playable ? "Watch the lessons" : "Add a lesson video to watch"}
       </span>
-    </button>
+    </>
+  );
+
+  return playable ? (
+    <Link to="/admin/course/watch" className="group flex items-center gap-4 text-left">
+      {inner}
+    </Link>
+  ) : (
+    <span className="flex items-center gap-4 opacity-40">{inner}</span>
   );
 }
 
@@ -531,8 +433,8 @@ function Funnel() {
 
   const steps = [
     { label: "Paid", value: paid, of: null, note: data ? `${data.counts.pending} started checkout` : "" },
-    { label: "Watched", value: watched, of: paid, note: "Dashboard opens at the end" },
-    { label: "Joined", value: joined, of: watched, note: "Realtor account open" },
+    { label: "Joined", value: joined, of: paid, note: "Dashboard open, from the payment" },
+    { label: "Finished", value: watched, of: paid, note: "Every lesson watched" },
   ];
 
   return (
@@ -615,7 +517,7 @@ function SaveBar({ dirty, saving, onDiscard }: { dirty: boolean; saving: boolean
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 24, opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="sticky bottom-6 z-20 mx-auto flex w-fit items-center gap-4 rounded-full border border-line bg-surface/95 py-2 pl-5 pr-2 shadow-[0_18px_40px_-20px_rgba(10,30,45,0.35)] backdrop-blur-xl max-sm:w-full max-sm:justify-between"
+          className="sticky bottom-6 z-20 mx-auto mt-6 flex w-fit items-center gap-4 rounded-full border border-line bg-surface/95 py-2 pl-5 pr-2 shadow-[0_18px_40px_-20px_rgba(10,30,45,0.35)] backdrop-blur-xl max-sm:w-full max-sm:justify-between"
         >
           <span className="flex items-center gap-2 text-sm font-medium text-ink">
             <span className="size-2 rounded-full bg-gold" aria-hidden /> Unsaved changes
@@ -631,160 +533,5 @@ function SaveBar({ dirty, saving, onDiscard }: { dirty: boolean; saving: boolean
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-/* Upload progress ------------------------------------------------------------ */
-
-/** A file on its way up. `loaded` and `total` are bytes, browser to API. */
-interface Uploading {
-  kind: "cover" | "video";
-  loaded: number;
-  total: number;
-  startedAt: number;
-}
-
-const percentOf = ({ loaded, total }: Uploading) =>
-  total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
-
-// Once every byte has reached the API it is still handing the file to Cloudinary,
-// which reports nothing, so the bar says so instead of sitting at 100%.
-const sent = (u: Uploading) => u.total > 0 && u.loaded >= u.total;
-
-const chipLabel = (u: Uploading) => (sent(u) ? "Finishing" : `${percentOf(u)}%`);
-
-const megabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-
-/** Time left from the average speed so far. Quiet for the first two seconds, while it is noise. */
-function timeLeft(u: Uploading): string | null {
-  const elapsed = (Date.now() - u.startedAt) / 1000;
-  if (elapsed < 2 || u.loaded === 0) return null;
-
-  const seconds = Math.ceil((u.total - u.loaded) / (u.loaded / elapsed));
-  if (seconds < 60) return `about ${Math.max(1, seconds)} sec left`;
-  return `about ${Math.ceil(seconds / 60)} min left`;
-}
-
-function UploadStatus({ uploading }: { uploading: Uploading }) {
-  const pct = percentOf(uploading);
-  const done = sent(uploading);
-  const left = timeLeft(uploading);
-
-  return (
-    <div className="mt-3" role="status" aria-live="polite">
-      <div
-        className="h-2 overflow-hidden rounded-full bg-surface-2"
-        role="progressbar"
-        aria-label={uploading.kind === "video" ? "Video upload" : "Cover upload"}
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div
-          className={cn(
-            "h-full rounded-full bg-brand transition-[width] duration-300",
-            done && "animate-pulse",
-          )}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <p className="mt-1.5 flex items-center gap-1.5 text-xs tabular-nums text-muted">
-        {done ? (
-          <>
-            <Loader2 className="size-3.5 animate-spin" aria-hidden />
-            Almost done. Large videos take a little longer to finish.
-          </>
-        ) : (
-          <>
-            <span className="font-semibold text-ink">{pct}%</span>
-            <span>
-              {megabytes(uploading.loaded)} of {megabytes(uploading.total)}
-            </span>
-            {left && <span>· {left}</span>}
-          </>
-        )}
-      </p>
-    </div>
-  );
-}
-
-/* Video length ----------------------------------------------------------------- */
-
-/** A file picked in this browser, or one stored in the course's own Cloudinary folder. */
-const isUploadedVideo = (url: string): boolean =>
-  url.startsWith("blob:") ||
-  /^https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/(?:v\d+\/)?inspectra\/course\//.test(url);
-
-type LengthState = "idle" | "reading" | "read" | "failed";
-
-/**
- * Loads only the video's metadata and reports its length in whole minutes, rounded up so
- * a 7:10 video reads "8 min". Duration needs no CORS, so a pasted link works as well as
- * an upload.
- */
-function useVideoMinutes(url: string, onMinutes: (minutes: number) => void): LengthState {
-  const [state, setState] = useState<LengthState>("idle");
-  const latest = useRef(onMinutes);
-
-  useEffect(() => {
-    latest.current = onMinutes;
-  });
-
-  useEffect(() => {
-    if (!url) {
-      setState("idle");
-      return;
-    }
-
-    let cancelled = false;
-    const probe = document.createElement("video");
-    probe.preload = "metadata";
-    probe.muted = true;
-
-    probe.onloadedmetadata = () => {
-      if (cancelled) return;
-      const seconds = probe.duration;
-      if (!Number.isFinite(seconds) || seconds <= 0) {
-        setState("failed");
-        return;
-      }
-      latest.current(Math.max(1, Math.ceil(seconds / 60)));
-      setState("read");
-    };
-    probe.onerror = () => {
-      if (!cancelled) setState("failed");
-    };
-
-    setState("reading");
-    probe.src = url;
-
-    return () => {
-      cancelled = true;
-      probe.removeAttribute("src");
-      probe.load();
-    };
-  }, [url]);
-
-  return state;
-}
-
-/* Picked files ------------------------------------------------------------------ */
-
-/** A file chosen in the browser, with the local link the preview and length read from. */
-interface Picked {
-  file: File;
-  preview: string;
-}
-
-const releaseAll = (pending: Partial<Record<"cover" | "video", Picked>>) => {
-  for (const picked of Object.values(pending)) if (picked) URL.revokeObjectURL(picked.preview);
-};
-
-function PendingNote({ picked }: { picked: Picked }) {
-  return (
-    <p className="mt-2 text-xs text-muted">
-      <span className="font-semibold text-ink">{picked.file.name}</span> ·{" "}
-      {megabytes(picked.file.size)}
-    </p>
   );
 }

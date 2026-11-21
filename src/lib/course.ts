@@ -92,10 +92,23 @@ export interface Enrollment {
   /** Has an account: opened at checkout, or by a guest's invite. */
   registered: boolean;
   createdAt: string;
+  /** The LambaCard payout. Absent before payment, and on courses paid before payouts began. */
+  incentive?: EnrollmentIncentive;
+}
+
+export type IncentiveStatus = "due" | "sending" | "sent";
+
+export interface EnrollmentIncentive {
+  status: IncentiveStatus;
+  amount: number;
+  sentAt?: string;
+  transferRef: string;
+  /** Whether it went out is unknown; only Flutterwave's dashboard can say. */
+  needsCheck: boolean;
 }
 
 /** What the player knows about the person watching. */
-export type LearnerEnrollment = Omit<Enrollment, "phone" | "reference" | "amount">;
+export type LearnerEnrollment = Omit<Enrollment, "phone" | "reference" | "amount" | "incentive">;
 
 export interface JoinCourseBody {
   fullname: string;

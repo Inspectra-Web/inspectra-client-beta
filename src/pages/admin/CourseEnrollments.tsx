@@ -14,7 +14,7 @@ import {
   type EnrollmentFilter,
   type EnrollmentsQuery,
 } from "@/lib/course";
-import { formatDate, formatPhone } from "@/lib/format";
+import { formatDate, formatPhone, formatPriceFull } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const FILTERS: { value: EnrollmentFilter; label: string }[] = [
@@ -118,7 +118,7 @@ export function AdminCourseEnrollments() {
       ) : (
         <div className={cn("transition-opacity", isPlaceholderData && "opacity-60")}>
           <DataTable
-            minWidthClass="sm:min-w-[880px]"
+            minWidthClass="sm:min-w-[1040px]"
             head={
               <tr>
                 <th className={cn(thCls, "w-14")}>S/N</th>
@@ -126,6 +126,7 @@ export function AdminCourseEnrollments() {
                 <th className={cn(thCls, "max-md:hidden")}>Phone</th>
                 <th className={cn(thCls, "max-md:hidden")}>Paid on</th>
                 <th className={thCls}>Progress</th>
+                <th className={cn(thCls, "max-md:hidden")}>LambaCard payout</th>
               </tr>
             }
           >
@@ -151,6 +152,9 @@ export function AdminCourseEnrollments() {
                 </td>
                 <td className={tdCls}>
                   <Progress enrollment={enrollment} />
+                </td>
+                <td className={cn(tdCls, "max-md:hidden")}>
+                  <Payout enrollment={enrollment} />
                 </td>
               </tr>
             ))}
@@ -190,6 +194,42 @@ export function AdminCourseEnrollments() {
         </div>
       )}
     </div>
+  );
+}
+
+/** The ₦10,000 sent to LambaCard for this realtor's token incentive. */
+function Payout({ enrollment }: { enrollment: Enrollment }) {
+  const { incentive } = enrollment;
+
+  if (!incentive)
+    return (
+      <span className="text-sm text-faint">
+        {enrollment.status === "pending" ? "After payment" : "None for this course"}
+      </span>
+    );
+
+  if (incentive.needsCheck)
+    return (
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-gold">Check this transfer in Flutterwave</p>
+        <p className="truncate text-xs tabular-nums text-faint">{incentive.transferRef}</p>
+      </div>
+    );
+
+  if (incentive.status === "sent")
+    return (
+      <div>
+        <p className="text-sm font-semibold text-verified">
+          Sent {formatPriceFull(incentive.amount)}
+        </p>
+        {incentive.sentAt && <p className="text-xs text-faint">{formatDate(incentive.sentAt)}</p>}
+      </div>
+    );
+
+  return (
+    <span className="text-sm text-muted">
+      {incentive.status === "sending" ? "On its way" : "Waiting to send"}
+    </span>
   );
 }
 

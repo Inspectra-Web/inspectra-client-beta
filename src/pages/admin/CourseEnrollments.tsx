@@ -118,12 +118,12 @@ export function AdminCourseEnrollments() {
       ) : (
         <div className={cn("transition-opacity", isPlaceholderData && "opacity-60")}>
           <DataTable
-            minWidthClass="sm:min-w-[1040px]"
+            minWidthClass="sm:min-w-[880px]"
             head={
               <tr>
                 <th className={cn(thCls, "w-14")}>S/N</th>
                 <th className={thCls}>Realtor</th>
-                <th className={cn(thCls, "max-md:hidden")}>Phone</th>
+                <th className={cn(thCls, "max-xl:hidden")}>Phone</th>
                 <th className={cn(thCls, "max-md:hidden")}>Paid on</th>
                 <th className={thCls}>Progress</th>
                 <th className={cn(thCls, "max-md:hidden")}>LambaCard payout</th>
@@ -144,7 +144,7 @@ export function AdminCourseEnrollments() {
                     </div>
                   </div>
                 </td>
-                <td className={cn(tdCls, "tabular-nums text-muted max-md:hidden")}>
+                <td className={cn(tdCls, "tabular-nums text-muted max-xl:hidden")}>
                   {formatPhone(enrollment.phone)}
                 </td>
                 <td className={cn(tdCls, "text-muted max-md:hidden")}>
@@ -152,6 +152,10 @@ export function AdminCourseEnrollments() {
                 </td>
                 <td className={tdCls}>
                   <Progress enrollment={enrollment} />
+                  {/* Phones drop the payout column, so the payout rides under the progress. */}
+                  <div className="mt-2 md:hidden">
+                    <Payout enrollment={enrollment} />
+                  </div>
                 </td>
                 <td className={cn(tdCls, "max-md:hidden")}>
                   <Payout enrollment={enrollment} />

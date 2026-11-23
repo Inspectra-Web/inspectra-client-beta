@@ -230,9 +230,15 @@ function Payout({ enrollment }: { enrollment: Enrollment }) {
       </div>
     );
 
+  if (incentive.status === "confirmed")
+    return <span className="text-sm font-semibold text-verified">Tokens delivered</span>;
+
+  if (incentive.status === "rejected")
+    return <span className="text-sm font-medium text-gold">Rejected by LambaCard</span>;
+
   return (
     <span className="text-sm text-muted">
-      {incentive.status === "sending" ? "On its way" : "Waiting to send"}
+      {incentive.status === "due" ? "Waiting to send" : "On its way"}
     </span>
   );
 }

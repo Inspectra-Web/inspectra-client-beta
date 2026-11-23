@@ -96,7 +96,14 @@ export interface Enrollment {
   incentive?: EnrollmentIncentive;
 }
 
-export type IncentiveStatus = "due" | "sending" | "sent";
+export type IncentiveStatus =
+  | "due"
+  | "funding"
+  | "forwarding"
+  | "purchasing"
+  | "confirmed"
+  | "rejected"
+  | "sent";
 
 export interface EnrollmentIncentive {
   status: IncentiveStatus;

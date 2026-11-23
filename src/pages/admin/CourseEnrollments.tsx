@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink, GraduationCap, Search } from "lucide-react";
+import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -11,12 +13,15 @@ import { CourseTabs } from "@/components/course/CourseTabs";
 import {
   ENROLLMENTS_PAGE_SIZE,
   useAdminEnrollments,
+  useEnrollmentRewardPreview,
+  useSendEnrollmentReward,
   type Enrollment,
   type EnrollmentFilter,
   type EnrollmentsQuery,
 } from "@/lib/course";
 import { formatDate, formatPhone, formatPriceFull } from "@/lib/format";
 import { formatTokenAmount } from "@/lib/wallet";
+import { apiMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 const FILTERS: { value: EnrollmentFilter; label: string }[] = [
@@ -38,9 +43,14 @@ export function AdminCourseEnrollments() {
     return () => clearTimeout(timer);
   }, [typed]);
 
-  const [open, setOpen] = useState<Enrollment | null>(null);
-  const { data, isPending, isError, isPlaceholderData } = useAdminEnrollments(query);
+  // The row as it was when opened, replaced by the live row from the list whenever there is one.
+  const [opened, setOpened] = useState<Enrollment | null>(null);
+  const [moving, setMoving] = useState(false);
+  const { data, isPending, isError, isPlaceholderData } = useAdminEnrollments(query, moving);
   const rows = data?.enrollments ?? [];
+  const open = opened && (rows.find((row) => row.id === opened.id) ?? opened);
+
+  useEffect(() => setMoving(!!open && rewardMoving(open)), [open]);
   const filtered = query.q !== "" || query.status !== "all";
 
   return (
@@ -133,7 +143,7 @@ export function AdminCourseEnrollments() {
             }
           >
             {rows.map((enrollment, i) => (
-              <tr key={enrollment.id} className={rowCls} onClick={() => setOpen(enrollment)}>
+              <tr key={enrollment.id} className={rowCls} onClick={() => setOpened(enrollment)}>
                 <td className={cn(tdCls, "tabular-nums text-faint")}>
                   {(query.page - 1) * ENROLLMENTS_PAGE_SIZE + i + 1}
                 </td>
@@ -193,10 +203,17 @@ export function AdminCourseEnrollments() {
         </div>
       )}
 
-      {open && <EnrollmentDetail enrollment={open} onClose={() => setOpen(null)} />}
+      {open && <EnrollmentDetail enrollment={open} onClose={() => setOpened(null)} onChange={setOpened} />}
     </div>
   );
 }
+
+/** A reward on its way, with no admin check pending: worth re-reading until it lands. */
+const rewardMoving = ({ incentive }: Enrollment) =>
+  !!incentive &&
+  !incentive.check &&
+  ["funding", "forwarding", "purchasing"].includes(incentive.status) &&
+  incentive.purchase?.status !== "RECONCILIATION_REQUIRED";
 
 const PROVIDER_NAMES = { flutterwave: "Flutterwave", planbok: "Planbok" };
 
@@ -284,7 +301,15 @@ function RewardSummary({ enrollment }: { enrollment: Enrollment }) {
  * One enrollment in full, opened from its row. A Dialog, like a payment's, so the search,
  * filter and page survive a look at one realtor. Nothing here is edited.
  */
-function EnrollmentDetail({ enrollment, onClose }: { enrollment: Enrollment; onClose: () => void }) {
+function EnrollmentDetail({
+  enrollment,
+  onClose,
+  onChange,
+}: {
+  enrollment: Enrollment;
+  onClose: () => void;
+  onChange: (enrollment: Enrollment) => void;
+}) {
   const { incentive } = enrollment;
   const reward = rewardState(enrollment);
   const purchase = incentive?.purchase;
@@ -313,7 +338,14 @@ function EnrollmentDetail({ enrollment, onClose }: { enrollment: Enrollment; onC
             <p className={cn("text-sm", TONE_CLS[reward.tone])}>{reward.title}</p>
             {reward.note && <p className="mt-1 text-sm text-muted">{reward.note}</p>}
           </div>
+          <SendFromBalance enrollment={enrollment} onChange={onChange} />
         </Section>
+
+        {incentive?.fromBalance && (
+          <Section title="1. Funded from the Planbok balance">
+            <Row label="Flutterwave" value="Skipped: paid before rewards existed" />
+          </Section>
+        )}
 
         {incentive?.funding?.reference && (
           <Section title="1. Flutterwave into Planbok">
@@ -358,6 +390,74 @@ function EnrollmentDetail({ enrollment, onClose }: { enrollment: Enrollment; onC
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * A course paid before rewards existed has no Flutterwave payout to start from, so an admin
+ * starts it from money already in our Planbok account. The server checks everything again
+ * and reads the balance live; this only decides whether to ask.
+ */
+function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onChange: (e: Enrollment) => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const send = useSendEnrollmentReward();
+
+  const eligible =
+    enrollment.status !== "pending" &&
+    enrollment.registered &&
+    (!enrollment.incentive || enrollment.incentive.status === "due");
+
+  const preview = useEnrollmentRewardPreview(enrollment.id, eligible);
+
+  if (!eligible) return null;
+
+  if (preview.isPending) return <div className="mt-3 h-10 animate-pulse rounded-xl bg-surface-2/60" />;
+
+  if (preview.isError)
+    return <p className="mt-3 text-sm text-muted">Cannot send a reward yet: {apiMessage(preview.error)}</p>;
+
+  const { amount, balance, accountName, walletAddress } = preview.data;
+  const short = balance < amount;
+
+  const confirm = async () => {
+    try {
+      const updated = await send.mutateAsync(enrollment.id);
+      onChange(updated);
+      toast.success("Reward started. The dialog shows each step as it lands.");
+    } catch (err) {
+      toast.error(apiMessage(err, "The reward could not be started."));
+    }
+  };
+
+  return (
+    <>
+      <div className="mt-3 flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
+        <p className="text-sm text-muted">
+          Planbok balance: <span className="font-medium tabular-nums text-ink">{formatPriceFull(balance)}</span>
+          {short && <span className="text-gold">, short of {formatPriceFull(amount)}</span>}
+        </p>
+        <Button type="button" variant="brand" size="sm" disabled={short} onClick={() => setConfirming(true)}>
+          Send reward from Planbok balance
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={`Send ${formatPriceFull(amount)} and buy this realtor's tokens?`}
+        description="This moves real money and cannot be undone. LambaCard buys LBT with it straight away."
+        confirmLabel={`Send ${formatPriceFull(amount)}`}
+        pending={send.isPending}
+        onConfirm={confirm}
+      >
+        <dl className="mt-4 space-y-2.5 rounded-xl bg-surface-2/60 p-4 text-sm">
+          <Row label="From" value={`${accountName}'s Planbok account`} />
+          <Row label="Balance" value={formatPriceFull(balance)} />
+          <Row label="To" value="LambaCard" />
+          <Row label="Tokens to" value={walletAddress} mono />
+        </dl>
+      </ConfirmDialog>
+    </>
   );
 }
 

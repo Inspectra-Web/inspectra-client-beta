@@ -112,6 +112,8 @@ export interface EnrollmentIncentive {
   sentAt?: string;
   /** A transfer went out and nothing came back: look it up with that provider. */
   check: { provider: "flutterwave" | "planbok"; reference: string } | null;
+  /** Started by an admin from the Planbok balance, so there is no Flutterwave hop. */
+  fromBalance: boolean;
   /** Flutterwave paying the ₦10,000 into our Planbok account. Our reference; Flutterwave's id. */
   funding?: { reference: string; transferId?: number; sentAt?: string };
   /** Planbok sending it on to LambaCard. Our key; Planbok's own reference, which buys the tokens. */
@@ -528,11 +530,45 @@ export function useSetCourseStatus() {
   });
 }
 
+/** What starting a reward from the Planbok balance would move, read live. Naira. */
+export interface RewardPreview {
+  amount: number;
+  balance: number;
+  accountName: string;
+  walletAddress: string;
+}
+
+/** Only asked for an enrollment that looks eligible; the server's refusal says why it is not. */
+export function useEnrollmentRewardPreview(id: string, enabled: boolean) {
+  return useQuery({
+    // Apart from ENROLLMENTS_KEY, so refreshing the list never re-asks a refused preview.
+    queryKey: ["admin", "course", "enrollment-reward", id],
+    enabled,
+    retry: false,
+    queryFn: async () =>
+      (await api.get<Envelope<RewardPreview>>(`/admin/course/enrollments/${id}/reward`)).data.data,
+  });
+}
+
+/** Moves real money: ₦10,000 from the Planbok account to LambaCard, then buys the tokens. */
+export function useSendEnrollmentReward() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (await api.post<Envelope<{ enrollment: Enrollment }>>(`/admin/course/enrollments/${id}/reward`)).data.data
+        .enrollment,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ENROLLMENTS_KEY }),
+  });
+}
+
 /** Everyone who started a checkout. Counts ignore the status filter. */
-export function useAdminEnrollments(query: EnrollmentsQuery) {
+/** `poll` re-reads the page every few seconds, while an open reward is still moving. */
+export function useAdminEnrollments(query: EnrollmentsQuery, poll = false) {
   return useQuery({
     queryKey: [...ENROLLMENTS_KEY, query],
     placeholderData: keepPreviousData,
+    refetchInterval: poll ? 4000 : false,
     queryFn: async () => {
       const res = await api.get<Envelope<EnrollmentsPage>>("/admin/course/enrollments", {
         params: { q: query.q || undefined, status: query.status, page: query.page, limit: ENROLLMENTS_PAGE_SIZE },

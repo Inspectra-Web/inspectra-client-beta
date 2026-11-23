@@ -209,11 +209,16 @@ export function AdminCourseEnrollments() {
 }
 
 /** A reward on its way, with no admin check pending: worth re-reading until it lands. */
-const rewardMoving = ({ incentive }: Enrollment) =>
-  !!incentive &&
-  !incentive.check &&
-  ["funding", "forwarding", "purchasing"].includes(incentive.status) &&
-  incentive.purchase?.status !== "RECONCILIATION_REQUIRED";
+/** An admin's send from the Planbok balance that Planbok turned down: nothing left, press again. */
+const unsentFromBalance = ({ incentive }: Enrollment) =>
+  !!incentive?.fromBalance && incentive.status === "forwarding" && !incentive.forwarding?.reference;
+
+const rewardMoving = (enrollment: Enrollment) =>
+  !!enrollment.incentive &&
+  !unsentFromBalance(enrollment) &&
+  !enrollment.incentive.check &&
+  ["funding", "forwarding", "purchasing"].includes(enrollment.incentive.status) &&
+  enrollment.incentive.purchase?.status !== "RECONCILIATION_REQUIRED";
 
 const PROVIDER_NAMES = { flutterwave: "Flutterwave", planbok: "Planbok" };
 
@@ -245,6 +250,13 @@ function rewardState(enrollment: Enrollment): { title: string; note?: string; to
   const { status, purchase, check } = incentive;
   const naira = formatPriceFull(incentive.amount);
   const tokens = purchase && `${formatTokenAmount(purchase.tokens)} LBT`;
+
+  if (unsentFromBalance(enrollment))
+    return {
+      title: "Not sent yet",
+      note: "Planbok turned the last attempt down, so nothing moved. Send it again from the Planbok balance.",
+      tone: "gold",
+    };
 
   if (check)
     return {
@@ -408,7 +420,7 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
   const eligible =
     enrollment.status !== "pending" &&
     enrollment.registered &&
-    (!enrollment.incentive || ["due", "sent"].includes(enrollment.incentive.status));
+    (!enrollment.incentive || ["due", "sent"].includes(enrollment.incentive.status) || unsentFromBalance(enrollment));
 
   const preview = useEnrollmentRewardPreview(enrollment.id, eligible);
 

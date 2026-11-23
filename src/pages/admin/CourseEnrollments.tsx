@@ -266,7 +266,7 @@ function rewardState(enrollment: Enrollment): { title: string; note?: string; to
   if (status === "sent")
     return {
       title: "Old payout, no tokens bought",
-      note: `${naira} paid straight to LambaCard${incentive.sentAt ? ` on ${formatDate(incentive.sentAt)}` : ""}, before purchases began. Settle it with LambaCard.`,
+      note: `${naira} paid straight to LambaCard${incentive.sentAt ? ` on ${formatDate(incentive.sentAt)}` : ""}, before purchases began. Settle it with LambaCard, or once they return it, send the reward from the Planbok balance.`,
       tone: "gold",
     };
 
@@ -344,6 +344,9 @@ function EnrollmentDetail({
         {incentive?.fromBalance && (
           <Section title="1. Funded from the Planbok balance">
             <Row label="Flutterwave" value="Skipped: paid before rewards existed" />
+            {incentive.oldPayoutSentAt && (
+              <Row label="Replaces" value={`The old payout of ${formatDate(incentive.oldPayoutSentAt)}, returned by LambaCard`} />
+            )}
           </Section>
         )}
 
@@ -405,7 +408,7 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
   const eligible =
     enrollment.status !== "pending" &&
     enrollment.registered &&
-    (!enrollment.incentive || enrollment.incentive.status === "due");
+    (!enrollment.incentive || ["due", "sent"].includes(enrollment.incentive.status));
 
   const preview = useEnrollmentRewardPreview(enrollment.id, eligible);
 
@@ -416,8 +419,11 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
   if (preview.isError)
     return <p className="mt-3 text-sm text-muted">Cannot send a reward yet: {apiMessage(preview.error)}</p>;
 
-  const { amount, balance, accountName, walletAddress } = preview.data;
+  const { amount, balance, accountName, walletAddress, oldPayoutSentAt } = preview.data;
   const short = balance < amount;
+  const replacing = oldPayoutSentAt
+    ? `The old ${formatPriceFull(amount)} payout of ${formatDate(oldPayoutSentAt)} went straight to LambaCard. Send only if LambaCard has returned it, or this pays twice.`
+    : null;
 
   const confirm = async () => {
     try {
@@ -431,6 +437,7 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
 
   return (
     <>
+      {replacing && <p className="mt-3 rounded-xl bg-gold/10 p-3 text-sm text-gold">{replacing}</p>}
       <div className="mt-3 flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
         <p className="text-sm text-muted">
           Planbok balance: <span className="font-medium tabular-nums text-ink">{formatPriceFull(balance)}</span>
@@ -445,7 +452,7 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
         open={confirming}
         onOpenChange={setConfirming}
         title={`Send ${formatPriceFull(amount)} and buy this realtor's tokens?`}
-        description="This moves real money and cannot be undone. LambaCard buys LBT with it straight away."
+        description={`This moves real money and cannot be undone. LambaCard buys LBT with it straight away.${replacing ? ` ${replacing}` : ""}`}
         confirmLabel={`Send ${formatPriceFull(amount)}`}
         pending={send.isPending}
         onConfirm={confirm}

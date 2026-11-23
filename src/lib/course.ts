@@ -114,6 +114,8 @@ export interface EnrollmentIncentive {
   check: { provider: "flutterwave" | "planbok"; reference: string } | null;
   /** Started by an admin from the Planbok balance, so there is no Flutterwave hop. */
   fromBalance: boolean;
+  /** When the old payout this reward replaces was paid (LambaCard returned it). */
+  oldPayoutSentAt?: string;
   /** Flutterwave paying the ₦10,000 into our Planbok account. Our reference; Flutterwave's id. */
   funding?: { reference: string; transferId?: number; sentAt?: string };
   /** Planbok sending it on to LambaCard. Our key; Planbok's own reference, which buys the tokens. */
@@ -536,6 +538,8 @@ export interface RewardPreview {
   balance: number;
   accountName: string;
   walletAddress: string;
+  /** Set when this would replace an old payout: only safe once LambaCard has returned it. */
+  oldPayoutSentAt: string | null;
 }
 
 /** Only asked for an enrollment that looks eligible; the server's refusal says why it is not. */

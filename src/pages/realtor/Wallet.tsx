@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
-import { Check, CircleAlert, Coins, Copy, Fuel, WalletMinimal } from "lucide-react";
+import { Check, CircleAlert, Coins, Copy, ExternalLink, Fuel, Gift, WalletMinimal } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { EmptyState } from "@/components/dashboard/EmptyState";
@@ -15,6 +15,8 @@ import {
   useOpenWallet,
   useWallet,
   useWalletBalances,
+  useWalletRewards,
+  type Reward,
   type TokenBalance,
   type Wallet,
 } from "@/lib/wallet";
@@ -37,6 +39,7 @@ export function RealtorWallet() {
         <div className="h-56 animate-pulse rounded-2xl border border-line bg-surface" />
       ) : wallet?.status === "active" ? (
         <>
+          <CourseRewards />
           <WalletBalances />
           <WalletAddress wallet={wallet} />
         </>
@@ -114,6 +117,81 @@ function BalanceCard({ balance, tint }: { balance: TokenBalance; tint?: string }
   );
 }
 
+/** The LBT bought with part of the course payment, shown until and after it lands. */
+function CourseRewards() {
+  const { data: rewards } = useWalletRewards();
+
+  if (!rewards?.length) return null;
+
+  return (
+    <Reveal y={16}>
+      <div className="space-y-4">
+        {rewards.map((reward) => (
+          <RewardCard key={reward.id} reward={reward} />
+        ))}
+      </div>
+    </Reveal>
+  );
+}
+
+function RewardCard({ reward }: { reward: Reward }) {
+  const amount = reward.tokens && `${formatTokenAmount(reward.tokens)} ${reward.symbol}`;
+  const delivered = reward.status === "delivered";
+
+  return (
+    <section
+      className={cn(
+        "flex items-start gap-5 rounded-2xl border bg-surface p-7 max-sm:gap-3 max-sm:p-5",
+        delivered ? "border-verified/30" : "border-line",
+      )}
+    >
+      <span
+        className={cn(
+          "grid size-11 shrink-0 place-items-center rounded-xl max-sm:hidden",
+          delivered ? "bg-verified/10 text-verified" : "bg-brand/10 text-brand",
+        )}
+      >
+        <Gift className="size-5" aria-hidden />
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-sm text-muted">Course reward</p>
+
+        {delivered ? (
+          <>
+            <p className="display mt-1 text-3xl tabular-nums text-ink">{amount}</p>
+            <p className="mt-2 text-sm text-muted">
+              Added to your wallet{reward.deliveredAt && ` on ${formatDate(reward.deliveredAt)}`}.
+            </p>
+            {reward.explorerUrl && (
+              <a
+                href={reward.explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
+              >
+                View the transaction <ExternalLink className="size-3.5" aria-hidden />
+              </a>
+            )}
+          </>
+        ) : reward.status === "delayed" ? (
+          <>
+            <p className="mt-1 font-medium text-ink">Your reward is delayed</p>
+            <p className="mt-1 text-sm text-muted">We are sorting it out and will update this page.</p>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 font-medium text-ink">
+              {amount ? `${amount} is on its way to your wallet` : "Your LBT tokens are on their way to your wallet"}
+            </p>
+            <p className="mt-1 text-sm text-muted">It shows here as soon as it arrives.</p>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function WalletAddress({ wallet }: { wallet: Wallet }) {
   const [copied, setCopied] = useState(false);
 
@@ -158,8 +236,10 @@ function WalletAddress({ wallet }: { wallet: Wallet }) {
 function CreateWallet() {
   const identity = useIdentity();
   const open = useOpenWallet();
+  const { data: rewards } = useWalletRewards();
 
   const verified = identity.data?.verified ?? false;
+  const waiting = rewards?.some((reward) => reward.status !== "delivered") ?? false;
 
   const submit = () =>
     open.mutate(undefined, {
@@ -177,6 +257,13 @@ function CreateWallet() {
         <p className="mt-2 text-muted">
           A wallet address in your name on BNB Smart Chain, held for you by INSPECTRA.
         </p>
+
+        {waiting && (
+          <p className="mt-5 flex items-start gap-3 rounded-xl bg-brand/10 p-4 text-sm text-ink">
+            <Gift className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+            Your course reward is waiting. Create your wallet to receive your LBT tokens.
+          </p>
+        )}
 
         <div className="mt-6 flex items-center gap-3 text-sm">
           <span

@@ -108,10 +108,24 @@ export type IncentiveStatus =
 export interface EnrollmentIncentive {
   status: IncentiveStatus;
   amount: number;
+  /** Only on `sent` rows, paid straight to LambaCard before tokens were bought. */
   sentAt?: string;
-  transferRef: string;
-  /** Whether it went out is unknown; only Flutterwave's dashboard can say. */
-  needsCheck: boolean;
+  /** A transfer went out and nothing came back: look it up with that provider. */
+  check: { provider: "flutterwave" | "planbok"; reference: string } | null;
+  /** Flutterwave paying the ₦10,000 into our Planbok account. Our reference; Flutterwave's id. */
+  funding?: { reference: string; transferId?: number; sentAt?: string };
+  /** Planbok sending it on to LambaCard. Our key; Planbok's own reference, which buys the tokens. */
+  forwarding?: { reference: string; providerReference?: string; sentAt?: string };
+  purchase?: {
+    id: string;
+    status: string;
+    /** A decimal string; never parsed to a number. */
+    tokens: string;
+    walletAddress: string;
+    transactionHash?: string;
+    explorerUrl?: string;
+    confirmedAt?: string;
+  };
 }
 
 /** What the player knows about the person watching. */

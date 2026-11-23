@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, GraduationCap, Search } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, ExternalLink, GraduationCap, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { EmptyState } from "@/components/dashboard/EmptyState";
-import { DataTable, tdCls, thCls } from "@/components/dashboard/DataTable";
+import { DataTable, rowCls, tdCls, thCls } from "@/components/dashboard/DataTable";
 import { CourseTabs } from "@/components/course/CourseTabs";
 import {
   ENROLLMENTS_PAGE_SIZE,
@@ -15,6 +16,7 @@ import {
   type EnrollmentsQuery,
 } from "@/lib/course";
 import { formatDate, formatPhone, formatPriceFull } from "@/lib/format";
+import { formatTokenAmount } from "@/lib/wallet";
 import { cn } from "@/lib/cn";
 
 const FILTERS: { value: EnrollmentFilter; label: string }[] = [
@@ -36,6 +38,7 @@ export function AdminCourseEnrollments() {
     return () => clearTimeout(timer);
   }, [typed]);
 
+  const [open, setOpen] = useState<Enrollment | null>(null);
   const { data, isPending, isError, isPlaceholderData } = useAdminEnrollments(query);
   const rows = data?.enrollments ?? [];
   const filtered = query.q !== "" || query.status !== "all";
@@ -118,20 +121,19 @@ export function AdminCourseEnrollments() {
       ) : (
         <div className={cn("transition-opacity", isPlaceholderData && "opacity-60")}>
           <DataTable
-            minWidthClass="sm:min-w-[880px]"
+            minWidthClass="sm:min-w-[760px]"
             head={
               <tr>
                 <th className={cn(thCls, "w-14")}>S/N</th>
                 <th className={thCls}>Realtor</th>
-                <th className={cn(thCls, "max-xl:hidden")}>Phone</th>
-                <th className={cn(thCls, "max-md:hidden")}>Paid on</th>
+                <th className={cn(thCls, "whitespace-nowrap max-md:hidden")}>Paid on</th>
                 <th className={thCls}>Progress</th>
-                <th className={cn(thCls, "max-md:hidden")}>LambaCard payout</th>
+                <th className={cn(thCls, "whitespace-nowrap max-md:hidden")}>Token reward</th>
               </tr>
             }
           >
             {rows.map((enrollment, i) => (
-              <tr key={enrollment.id} className="transition-colors hover:bg-surface-2/40">
+              <tr key={enrollment.id} className={rowCls} onClick={() => setOpen(enrollment)}>
                 <td className={cn(tdCls, "tabular-nums text-faint")}>
                   {(query.page - 1) * ENROLLMENTS_PAGE_SIZE + i + 1}
                 </td>
@@ -139,26 +141,19 @@ export function AdminCourseEnrollments() {
                   <div className="flex items-center gap-3">
                     <UserAvatar name={enrollment.fullname} avatar="" className="size-8" />
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-ink">{enrollment.fullname}</p>
+                      <p className="truncate font-medium capitalize text-ink">{enrollment.fullname}</p>
                       <p className="truncate text-xs text-faint">{enrollment.email}</p>
                     </div>
                   </div>
                 </td>
-                <td className={cn(tdCls, "tabular-nums text-muted max-xl:hidden")}>
-                  {formatPhone(enrollment.phone)}
-                </td>
-                <td className={cn(tdCls, "text-muted max-md:hidden")}>
+                <td className={cn(tdCls, "whitespace-nowrap text-muted max-md:hidden")}>
                   {enrollment.paidAt ? formatDate(enrollment.paidAt) : <span className="text-faint">Not yet</span>}
                 </td>
                 <td className={tdCls}>
                   <Progress enrollment={enrollment} />
-                  {/* Phones drop the payout column, so the payout rides under the progress. */}
-                  <div className="mt-2 md:hidden">
-                    <Payout enrollment={enrollment} />
-                  </div>
                 </td>
                 <td className={cn(tdCls, "max-md:hidden")}>
-                  <Payout enrollment={enrollment} />
+                  <RewardSummary enrollment={enrollment} />
                 </td>
               </tr>
             ))}
@@ -197,49 +192,192 @@ export function AdminCourseEnrollments() {
           )}
         </div>
       )}
+
+      {open && <EnrollmentDetail enrollment={open} onClose={() => setOpen(null)} />}
     </div>
   );
 }
 
-/** The ₦10,000 sent to LambaCard for this realtor's token incentive. */
-function Payout({ enrollment }: { enrollment: Enrollment }) {
+const PROVIDER_NAMES = { flutterwave: "Flutterwave", planbok: "Planbok" };
+
+/** "RECONCILIATION_REQUIRED" -> "Reconciliation required". */
+const purchaseStatus = (status: string) => {
+  const words = status.toLowerCase().replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+type Tone = "muted" | "gold" | "verified";
+
+const TONE_CLS: Record<Tone, string> = {
+  muted: "text-muted",
+  gold: "font-medium text-gold",
+  verified: "font-semibold text-verified",
+};
+
+/**
+ * The realtor's LBT reward in a line, plus the one detail that explains it. ₦10,000 of the
+ * payment goes from Flutterwave into our Planbok account, on to LambaCard, and buys tokens
+ * into the realtor's wallet. The table shows the title; the detail shows both.
+ */
+function rewardState(enrollment: Enrollment): { title: string; note?: string; tone: Tone } {
   const { incentive } = enrollment;
 
   if (!incentive)
-    return (
-      <span className="text-sm text-faint">
-        {enrollment.status === "pending" ? "After payment" : "None for this course"}
-      </span>
-    );
+    return { title: enrollment.status === "pending" ? "After payment" : "None for this course", tone: "muted" };
 
-  if (incentive.needsCheck)
-    return (
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-gold">Check this transfer in Flutterwave</p>
-        <p className="truncate text-xs tabular-nums text-faint">{incentive.transferRef}</p>
-      </div>
-    );
+  const { status, purchase, check } = incentive;
+  const naira = formatPriceFull(incentive.amount);
+  const tokens = purchase && `${formatTokenAmount(purchase.tokens)} LBT`;
 
-  if (incentive.status === "sent")
-    return (
-      <div>
-        <p className="text-sm font-semibold text-verified">
-          Sent {formatPriceFull(incentive.amount)}
-        </p>
-        {incentive.sentAt && <p className="text-xs text-faint">{formatDate(incentive.sentAt)}</p>}
-      </div>
-    );
+  if (check)
+    return {
+      title: `Check this transfer in ${PROVIDER_NAMES[check.provider]}`,
+      note: `Sent, but nothing came back. Look up ${check.reference} there.`,
+      tone: "gold",
+    };
 
-  if (incentive.status === "confirmed")
-    return <span className="text-sm font-semibold text-verified">Tokens delivered</span>;
+  if (status === "confirmed")
+    return {
+      title: `${tokens ?? "Tokens"} delivered`,
+      note: purchase?.confirmedAt && `In the realtor's wallet since ${formatDate(purchase.confirmedAt)}.`,
+      tone: "verified",
+    };
 
-  if (incentive.status === "rejected")
-    return <span className="text-sm font-medium text-gold">Rejected by LambaCard</span>;
+  if (status === "rejected")
+    return { title: "Rejected by LambaCard", note: "Settle it with LambaCard.", tone: "gold" };
+
+  if (status === "sent")
+    return {
+      title: "Old payout, no tokens bought",
+      note: `${naira} paid straight to LambaCard${incentive.sentAt ? ` on ${formatDate(incentive.sentAt)}` : ""}, before purchases began. Settle it with LambaCard.`,
+      tone: "gold",
+    };
+
+  if (status === "purchasing" && !purchase)
+    return {
+      title: "Waiting for the realtor's wallet",
+      note: `${naira} is with LambaCard. The tokens are bought once the realtor has an active wallet.`,
+      tone: "muted",
+    };
+
+  if (purchase?.status === "RECONCILIATION_REQUIRED")
+    return { title: "LambaCard is reconciling", note: `${tokens} on hold until LambaCard settles it.`, tone: "gold" };
+
+  if (purchase)
+    return { title: `Buying ${tokens}`, note: `LambaCard: ${purchaseStatus(purchase.status)}.`, tone: "muted" };
+
+  const titles: Partial<Record<typeof status, string>> = {
+    due: `Waiting to send ${naira}`,
+    funding: `Paying ${naira} into Planbok`,
+    forwarding: `Forwarding ${naira} to LambaCard`,
+  };
+
+  return { title: titles[status] ?? "On its way", tone: "muted" };
+}
+
+function RewardSummary({ enrollment }: { enrollment: Enrollment }) {
+  const { title, tone } = rewardState(enrollment);
+  return <p className={cn("max-w-52 truncate text-sm", TONE_CLS[tone])} title={title}>{title}</p>;
+}
+
+/**
+ * One enrollment in full, opened from its row. A Dialog, like a payment's, so the search,
+ * filter and page survive a look at one realtor. Nothing here is edited.
+ */
+function EnrollmentDetail({ enrollment, onClose }: { enrollment: Enrollment; onClose: () => void }) {
+  const { incentive } = enrollment;
+  const reward = rewardState(enrollment);
+  const purchase = incentive?.purchase;
 
   return (
-    <span className="text-sm text-muted">
-      {incentive.status === "due" ? "Waiting to send" : "On its way"}
-    </span>
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent closeLabel="Close enrollment" className="max-w-xl">
+        <DialogTitle className="capitalize">{enrollment.fullname}</DialogTitle>
+        <DialogDescription>
+          {enrollment.email} · {formatPhone(enrollment.phone)}
+        </DialogDescription>
+
+        <div className="mt-5 rounded-xl bg-surface-2/60 p-4">
+          <Progress enrollment={enrollment} />
+        </div>
+
+        <Section title="Course payment">
+          <Row label="Reference" value={enrollment.reference} mono />
+          <Row label="Amount" value={formatPriceFull(enrollment.amount)} />
+          <Row label="Paid on" value={enrollment.paidAt ? formatDate(enrollment.paidAt) : "Not yet"} />
+          <Row label="Started" value={formatDate(enrollment.createdAt)} />
+        </Section>
+
+        <Section title="Token reward">
+          <div className="rounded-xl border border-line p-4">
+            <p className={cn("text-sm", TONE_CLS[reward.tone])}>{reward.title}</p>
+            {reward.note && <p className="mt-1 text-sm text-muted">{reward.note}</p>}
+          </div>
+        </Section>
+
+        {incentive?.funding?.reference && (
+          <Section title="1. Flutterwave into Planbok">
+            <Row label="Our reference" value={incentive.funding.reference} mono />
+            {incentive.funding.transferId !== undefined && (
+              <Row label="Flutterwave transfer id" value={String(incentive.funding.transferId)} mono />
+            )}
+            {incentive.funding.sentAt && <Row label="Landed" value={formatDate(incentive.funding.sentAt)} />}
+          </Section>
+        )}
+
+        {incentive?.forwarding?.reference && (
+          <Section title="2. Planbok to LambaCard">
+            <Row label="Our key" value={incentive.forwarding.reference} mono />
+            {incentive.forwarding.providerReference && (
+              <Row label="Planbok reference" value={incentive.forwarding.providerReference} mono />
+            )}
+            {incentive.forwarding.sentAt && <Row label="Settled" value={formatDate(incentive.forwarding.sentAt)} />}
+          </Section>
+        )}
+
+        {purchase && (
+          <Section title="3. LambaCard purchase">
+            <Row label="Purchase id" value={purchase.id} mono />
+            <Row label="Status" value={purchaseStatus(purchase.status)} />
+            <Row label="Tokens" value={`${formatTokenAmount(purchase.tokens)} LBT`} />
+            <Row label="Wallet" value={purchase.walletAddress} mono />
+            {purchase.transactionHash && <Row label="Transaction" value={purchase.transactionHash} mono />}
+            {purchase.confirmedAt && <Row label="Delivered" value={formatDate(purchase.confirmedAt)} />}
+          </Section>
+        )}
+
+        {purchase?.explorerUrl && (
+          <a
+            href={purchase.explorerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
+          >
+            View the transaction on BscScan <ExternalLink className="size-3.5" aria-hidden />
+          </a>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="mt-5">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-faint">{title}</p>
+      <dl className="mt-2 space-y-2.5 text-sm">{children}</dl>
+    </div>
+  );
+}
+
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-6 border-b border-line pb-2.5 last:border-0 last:pb-0">
+      <dt className="shrink-0 text-muted">{label}</dt>
+      <dd className={cn("min-w-0 break-all text-right font-medium text-ink", mono && "text-xs tracking-wide")}>
+        {value}
+      </dd>
+    </div>
   );
 }
 
@@ -270,7 +408,7 @@ function Progress({ enrollment }: { enrollment: Enrollment }) {
       </div>
       <span
         className={cn(
-          "text-sm",
+          "whitespace-nowrap text-sm",
           step === 1 ? "font-semibold text-verified" : step === -1 ? "text-gold" : "text-ink",
         )}
       >

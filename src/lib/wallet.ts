@@ -28,8 +28,27 @@ export interface BalancesResponse {
   data: { balances: TokenBalance[] | null };
 }
 
+/** LBT earned on the platform; today one per paid course. */
+export interface Reward {
+  id: string;
+  source: "course";
+  earnedAt?: string;
+  status: "delivered" | "on_its_way" | "delayed";
+  /** A decimal string, known once the purchase is quoted. */
+  tokens: string | null;
+  symbol: string;
+  explorerUrl: string | null;
+  deliveredAt: string | null;
+}
+
+interface RewardsResponse {
+  status: string;
+  data: { rewards: Reward[] };
+}
+
 export const WALLET_KEY = ["wallet"];
 export const WALLET_BALANCES_KEY = ["wallet", "balances"];
+export const WALLET_REWARDS_KEY = ["wallet", "rewards"];
 
 export const CHAIN_NAMES: Record<string, string> = { BSC: "BNB Smart Chain" };
 
@@ -58,6 +77,13 @@ export function useWalletBalances() {
   return useQuery({
     queryKey: WALLET_BALANCES_KEY,
     queryFn: async () => (await api.get<BalancesResponse>("/wallets/me/balances")).data.data.balances,
+  });
+}
+
+export function useWalletRewards() {
+  return useQuery({
+    queryKey: WALLET_REWARDS_KEY,
+    queryFn: async () => (await api.get<RewardsResponse>("/wallets/me/rewards")).data.data.rewards,
   });
 }
 

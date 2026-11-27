@@ -52,6 +52,42 @@ export const WALLET_KEY = ["wallet"];
 export const WALLET_BALANCES_KEY = ["wallet", "balances"];
 export const WALLET_REWARDS_KEY = ["wallet", "rewards"];
 export const WALLET_REFERRAL_KEY = ["wallet", "referral"];
+export const TOKEN_PRICES_KEY = ["wallet", "prices"];
+
+/** Naira and dollars per token, decimal strings. Null when that currency has no price. */
+export interface TokenPrice {
+  ngn: string | null;
+  usd: string | null;
+}
+
+/** LBT from LambaCard, BNB from the market. A token whose price could not be had is null. */
+export type TokenPrices = Record<"LBT" | "BNB", TokenPrice | null>;
+
+const naira = (value: number) =>
+  `₦${value.toLocaleString("en-NG", { maximumFractionDigits: value >= 100 ? 0 : 2 })}`;
+
+const dollars = (value: number) =>
+  value > 0 && value < 0.01
+    ? "<$0.01"
+    : `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/**
+ * What an amount of a token is worth today: "≈ ₦3,387 · $2.14". Null when the token has no
+ * price, so the caller shows nothing rather than a guess. Display only: the amount is cut
+ * to a number here, which is fine for a rounded value and never used for money.
+ */
+export function tokenValue(amount: string, symbol: string, prices: TokenPrices | undefined): string | null {
+  const price = prices?.[symbol as keyof TokenPrices];
+  if (!price) return null;
+
+  const tokens = Number(amount);
+  const parts = [
+    price.ngn !== null && naira(tokens * Number(price.ngn)),
+    price.usd !== null && dollars(tokens * Number(price.usd)),
+  ].filter(Boolean);
+
+  return parts.length ? `≈ ${parts.join(" · ")}` : null;
+}
 
 /** The realtor's referral link and what it has earned. Counts only paid courses. */
 export interface Referral {
@@ -98,6 +134,16 @@ export function useWalletRewards() {
   return useQuery({
     queryKey: WALLET_REWARDS_KEY,
     queryFn: async () => (await api.get<RewardsResponse>("/wallets/me/rewards")).data.data.rewards,
+  });
+}
+
+/** Kept for five minutes, as long as the server keeps them. */
+export function useTokenPrices() {
+  return useQuery({
+    queryKey: TOKEN_PRICES_KEY,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () =>
+      (await api.get<{ status: string; data: { prices: TokenPrices } }>("/wallets/prices")).data.data.prices,
   });
 }
 

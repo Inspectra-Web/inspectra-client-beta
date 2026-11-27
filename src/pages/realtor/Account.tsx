@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { Loader2, ScanFace, ShieldCheck, UserRound, Settings2 } from "lucide-react";
+import { Loader2, ScanFace, ShieldCheck, UserPlus, UserRound, Settings2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/Panel";
 import { PasswordField } from "@/components/auth/AuthField";
@@ -11,6 +11,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { AccountProfile } from "@/components/realtor/AccountProfile";
 import { AccountSettings } from "@/components/realtor/AccountSettings";
 import { IdentityVerification } from "@/components/realtor/IdentityVerification";
+import { ReferralCard } from "@/components/realtor/ReferralCard";
 import { securitySchema, type SecurityValues } from "@/lib/accountSchema";
 import { apiMessage } from "@/lib/api";
 import { useUpdatePassword } from "@/lib/auth";
@@ -23,6 +24,7 @@ const TABS = [
   { id: "profile", label: "Profile", Icon: UserRound },
   { id: "settings", label: "Settings", Icon: Settings2 },
   { id: "identity", label: "Identity", Icon: ScanFace },
+  { id: "referral", label: "Referral", Icon: UserPlus },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -57,6 +59,8 @@ export function RealtorAccount() {
             return (
               <button
                 key={t.id}
+                // On a phone the bar scrolls, and a tab opened by link can sit past its edge.
+                ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
@@ -94,6 +98,8 @@ export function RealtorAccount() {
           <IdentityVerification />
         </Reveal>
       )}
+
+      {tab === "referral" && <ReferralCard />}
 
     </div>
   );

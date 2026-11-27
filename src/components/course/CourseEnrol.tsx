@@ -12,6 +12,7 @@ import {
   Play,
   Smartphone,
   Sparkles,
+  UserCheck,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -23,9 +24,13 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { apiMessage, apiStatus } from "@/lib/api";
 import { useMe, type AuthUser } from "@/lib/auth";
 import {
+  forgetReferralCode,
+  referralCodeFrom,
+  rememberReferralCode,
   useCourseCheckout,
   useJoinCourse,
   useMyEnrollment,
+  useReferrer,
   type PublicCourse,
 } from "@/lib/course";
 import { joinCourseSchema, type JoinCourseValues } from "@/lib/courseSchema";
@@ -38,6 +43,7 @@ const PAY_BUTTON =
 export function CourseEnrol({ course }: { course: PublicCourse }) {
   const { data: user } = useMe();
   const { hash } = useLocation();
+  const referral = useReferral();
   const sectionRef = useRef<HTMLElement>(null);
 
   // Links to /course#enrol arrive before the course has loaded, so the browser finds no
@@ -91,11 +97,157 @@ export function CourseEnrol({ course }: { course: PublicCourse }) {
             <p className="display mt-1 text-5xl tabular-nums tracking-[-0.03em] text-ink">
               {formatPriceFull(course.price)}
             </p>
-            {user ? <SignedInCard user={user} course={course} /> : <JoinForm course={course} />}
+            {user ? (
+              <SignedInCard user={user} course={course} referral={referral} />
+            ) : (
+              <JoinForm course={course} referral={referral} />
+            )}
           </div>
         </Reveal>
       </Container>
     </section>
+  );
+}
+
+interface Referral {
+  /** The code to send with the checkout; empty when there is none or it does not work. */
+  code: string;
+  /** Set once the code is confirmed. */
+  firstName: string | null;
+  checking: boolean;
+  broken: boolean;
+  /** Where the code came from, so a bad one is explained in the right place. */
+  typed: boolean;
+  /** A code the buyer typed in. */
+  apply: (code: string) => void;
+  /** Drops the referral: the buyer removed it, or the checkout turned it down. */
+  drop: () => void;
+}
+
+/**
+ * The referral this visitor arrived with, from a link or typed in. A code the server says
+ * does not work is dropped and said so; one it could not check yet is still sent, and the
+ * checkout checks it again.
+ */
+function useReferral(): Referral {
+  const { search } = useLocation();
+  const [code, setCode] = useState(() => referralCodeFrom(search));
+  const [typed, setTyped] = useState(false);
+  const referrer = useReferrer(code);
+
+  const status = referrer.isError ? apiStatus(referrer.error) : undefined;
+  const broken = code !== "" && (status === 400 || status === 422);
+
+  useEffect(() => {
+    if (broken) forgetReferralCode();
+  }, [broken]);
+
+  return {
+    code: broken ? "" : code,
+    firstName: referrer.data ?? null,
+    checking: code !== "" && referrer.isFetching,
+    broken,
+    typed,
+    apply: (next) => {
+      const clean = next.trim().toUpperCase();
+      if (!clean) return;
+      rememberReferralCode(clean);
+      setTyped(true);
+      setCode(clean);
+    },
+    drop: () => {
+      forgetReferralCode();
+      setCode("");
+    },
+  };
+}
+
+/** A refusal that names the referral link means the link went bad: pay without it. */
+const referralRefused = (message: string) => /referral link/i.test(message);
+
+function ReferralNote({ referral }: { referral: Referral }) {
+  if (referral.firstName)
+    return (
+      <div className="mt-6 flex items-center gap-2.5 rounded-2xl border border-brand/25 bg-brand/8 px-4 py-3 text-sm text-ink">
+        <UserCheck className="size-4 shrink-0 text-brand-ink" aria-hidden />
+        <span className="min-w-0 flex-1">
+          Referred by <span className="font-semibold capitalize">{referral.firstName}</span>
+        </span>
+        <button
+          type="button"
+          onClick={referral.drop}
+          className="shrink-0 text-xs font-semibold text-muted hover:text-ink hover:underline"
+        >
+          Remove
+        </button>
+      </div>
+    );
+
+  return (
+    <>
+      {referral.broken && !referral.typed && (
+        <p className="mt-6 rounded-2xl border border-line bg-surface-2/50 px-4 py-3 text-sm text-muted">
+          This referral link does not work. You can still join, just without a referrer.
+        </p>
+      )}
+      <ReferralCodeEntry referral={referral} />
+    </>
+  );
+}
+
+/** For a buyer given a code rather than a link. Closed until asked for, so it stays out of the way. */
+function ReferralCodeEntry({ referral }: { referral: Referral }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+
+  if (!open)
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-6 text-sm font-semibold text-brand-ink hover:underline"
+      >
+        Have a referral code?
+      </button>
+    );
+
+  return (
+    <form
+      className="mt-6"
+      onSubmit={(event) => {
+        event.preventDefault();
+        referral.apply(value);
+      }}
+    >
+      <label htmlFor="referral-code" className="text-sm font-medium text-ink">
+        Referral code
+      </label>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="referral-code"
+          value={value}
+          onChange={(event) => setValue(event.target.value.toUpperCase())}
+          maxLength={8}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="e.g. A6S3T56V"
+          aria-invalid={referral.typed && referral.broken}
+          className="h-11 min-w-0 flex-1 rounded-full border border-line bg-bg px-4 text-sm tracking-[0.12em] text-ink outline-none placeholder:tracking-normal placeholder:text-faint focus:border-brand"
+        />
+        <button
+          type="submit"
+          disabled={!value.trim() || referral.checking}
+          className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-bg transition-opacity disabled:opacity-50"
+        >
+          {referral.checking ? <Loader2 className="size-4 animate-spin" aria-hidden /> : "Apply"}
+        </button>
+      </div>
+      {referral.typed && referral.broken && (
+        <p role="alert" className="mt-2 text-sm text-muted">
+          That code does not work. Check it with the realtor who gave it to you, or join without one.
+        </p>
+      )}
+    </form>
   );
 }
 
@@ -123,7 +275,7 @@ function Problem({ children }: { children: ReactNode }) {
 }
 
 /** Signed out: the account and the payment in one form. */
-function JoinForm({ course }: { course: PublicCourse }) {
+function JoinForm({ course, referral }: { course: PublicCourse; referral: Referral }) {
   const join = useJoinCourse();
   // A refusal worth reading, like "already paid, link re-sent", stays in the card.
   const [problem, setProblem] = useState<{ message: string; signIn: boolean } | null>(null);
@@ -144,11 +296,19 @@ function JoinForm({ course }: { course: PublicCourse }) {
   async function pay() {
     if (!review) return;
     try {
-      const { link } = await join.mutateAsync(review);
+      const { link } = await join.mutateAsync({
+        ...review,
+        ...(referral.code && { referralCode: referral.code }),
+      });
       await goToCheckout(link);
     } catch (error) {
       setReview(null);
       const message = apiMessage(error, "Checkout did not start. Try again.");
+      if (referralRefused(message)) {
+        referral.drop();
+        setProblem({ message: `${message} Pay again to join without a referrer.`, signIn: false });
+        return;
+      }
       setProblem({
         message,
         // The 409s that mean the email has an account say so; "link emailed again" does not.
@@ -159,6 +319,7 @@ function JoinForm({ course }: { course: PublicCourse }) {
 
   return (
     <>
+      <ReferralNote referral={referral} />
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4" noValidate>
         <AuthField
           label="Full name"
@@ -235,11 +396,18 @@ function JoinForm({ course }: { course: PublicCourse }) {
                 ["Full name", review.fullname],
                 ["Email", review.email],
                 ["Phone", review.phone],
+                ...(referral.firstName ? [["Referred by", referral.firstName]] : []),
               ] as const
             ).map(([label, value]) => (
               <div key={label} className="flex items-center justify-between gap-4 px-4 py-3">
                 <dt className="text-sm text-muted">{label}</dt>
-                <dd className={cn("min-w-0 truncate text-right text-sm font-semibold text-ink", label === "Email" && "text-brand-ink")}>
+                <dd
+                  className={cn(
+                    "min-w-0 truncate text-right text-sm font-semibold text-ink",
+                    label === "Email" && "text-brand-ink",
+                    label === "Referred by" && "capitalize",
+                  )}
+                >
                   {value}
                 </dd>
               </div>
@@ -257,7 +425,15 @@ function JoinForm({ course }: { course: PublicCourse }) {
  * paid, they watch. A seeker is told the course opens a realtor account of its own, and
  * an admin is sent to watch it free.
  */
-function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }) {
+function SignedInCard({
+  user,
+  course,
+  referral,
+}: {
+  user: AuthUser;
+  course: PublicCourse;
+  referral: Referral;
+}) {
   const realtor = user.role === "realtor";
   const locked = realtor && user.courseLocked;
   const mine = useMyEnrollment(realtor);
@@ -304,15 +480,22 @@ function SignedInCard({ user, course }: { user: AuthUser; course: PublicCourse }
   async function pay() {
     setProblem(null);
     try {
-      const { link } = await checkout.mutateAsync();
+      const { link } = await checkout.mutateAsync(referral.code || undefined);
       await goToCheckout(link);
     } catch (error) {
-      setProblem(apiMessage(error, "Checkout did not start. Try again."));
+      const message = apiMessage(error, "Checkout did not start. Try again.");
+      if (referralRefused(message)) {
+        referral.drop();
+        setProblem(`${message} Pay again to continue without a referrer.`);
+        return;
+      }
+      setProblem(message);
     }
   }
 
   return (
     <>
+      <ReferralNote referral={referral} />
       <Note>
         {locked
           ? "Complete your payment and your realtor dashboard opens straight away."

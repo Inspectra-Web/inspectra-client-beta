@@ -92,6 +92,14 @@ export interface Enrollment {
   /** Has an account: opened at checkout, or by a guest's invite. */
   registered: boolean;
   createdAt: string;
+  /** Who referred this buyer. The name and email are null if that account is gone. */
+  referral?: {
+    referrerId: string;
+    name: string | null;
+    email: string | null;
+    code: string;
+    walletAddress: string;
+  };
   /** The LambaCard payout. Absent before payment, and on courses paid before payouts began. */
   incentive?: EnrollmentIncentive;
 }
@@ -107,7 +115,14 @@ export type IncentiveStatus =
 
 export interface EnrollmentIncentive {
   status: IncentiveStatus;
-  amount: number;
+  /** Naira Flutterwave sends to Planbok. Set when the transfer is first sent. */
+  amount?: number;
+  /** INSPECTRA's share of the price: 30%, or 25% when referred. */
+  kept?: number;
+  /** Flutterwave's fee on the course payment. */
+  collectionFee?: number;
+  /** Flutterwave's fee on the transfer to Planbok. */
+  transferFee?: number;
   /** Only on `sent` rows, paid straight to LambaCard before tokens were bought. */
   sentAt?: string;
   /** A transfer went out and nothing came back: look it up with that provider. */
@@ -116,16 +131,19 @@ export interface EnrollmentIncentive {
   fromBalance: boolean;
   /** When the old payout this reward replaces was paid (LambaCard returned it). */
   oldPayoutSentAt?: string;
-  /** Flutterwave paying the ₦10,000 into our Planbok account. Our reference; Flutterwave's id. */
+  /** Flutterwave paying the reward's naira into our Planbok account. Our reference; Flutterwave's id. */
   funding?: { reference: string; transferId?: number; sentAt?: string };
   /** Planbok sending it on to LambaCard. Our key; Planbok's own reference, which buys the tokens. */
-  forwarding?: { reference: string; providerReference?: string; sentAt?: string };
+  forwarding?: { reference: string; providerReference?: string; amount?: number; sentAt?: string };
   purchase?: {
     id: string;
     status: string;
     /** A decimal string; never parsed to a number. */
     tokens: string;
     walletAddress: string;
+    referrerAddress?: string;
+    /** The referrer's LBT, a decimal string; null with no referrer. */
+    referralTokens: string | null;
     transactionHash?: string;
     explorerUrl?: string;
     confirmedAt?: string;
@@ -141,6 +159,7 @@ export interface JoinCourseBody {
   phone: string;
   password: string;
   confirmPassword: string;
+  referralCode?: string;
 }
 
 /**
@@ -181,10 +200,12 @@ export interface Invite {
 }
 
 export type EnrollmentFilter = EnrollmentStatus | "all";
+export type ReferralFilter = "all" | "referred" | "direct";
 
 export interface EnrollmentsQuery {
   q: string;
   status: EnrollmentFilter;
+  referral: ReferralFilter;
   page: number;
 }
 
@@ -193,6 +214,8 @@ export interface EnrollmentsPage {
   total: number;
   pages: number;
   counts: Record<EnrollmentFilter, number>;
+  /** Came through a referral or not. Like the status counts, they ignore the filter. */
+  referrals: Record<ReferralFilter, number>;
   /** Of everyone, how many watched and have an account: realtors who have joined. */
   registered: number;
 }
@@ -204,7 +227,7 @@ export const ADMIN_COURSE_KEY = ["admin", "course"];
 export const ENROLLMENTS_KEY = ["admin", "course", "enrollments"];
 
 export const ENROLLMENTS_PAGE_SIZE = 10;
-export const ALL_ENROLLMENTS: EnrollmentsQuery = { q: "", status: "all", page: 1 };
+export const ALL_ENROLLMENTS: EnrollmentsQuery = { q: "", status: "all", referral: "all", page: 1 };
 
 interface Envelope<T> {
   status: string;
@@ -238,11 +261,63 @@ export function useJoinCourse() {
 /** A signed-in realtor whose console is still locked, paying from their account. */
 export function useCourseCheckout() {
   return useMutation({
-    mutationFn: async () => {
-      const res = await api.post<Envelope<EnrollResult>>("/course/checkout");
+    mutationFn: async (referralCode: string | void) => {
+      const res = await api.post<Envelope<EnrollResult>>(
+        "/course/checkout",
+        referralCode ? { referralCode } : undefined,
+      );
       return res.data.data;
     },
   });
+}
+
+/** Who a referral link belongs to, by first name. A link that does not work comes back as an error. */
+export function useReferrer(code: string) {
+  return useQuery({
+    queryKey: ["course", "referrer", code],
+    enabled: code !== "",
+    retry: false,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await api.get<Envelope<{ firstName: string }>>(`/course/referrers/${encodeURIComponent(code)}`);
+      return res.data.data.firstName;
+    },
+  });
+}
+
+const REFERRAL_KEY = "inspectra:referral";
+
+/**
+ * The referral code a visitor arrived with: `?ref=` on the course link, kept for the tab so
+ * it survives a reload or a detour through sign in. Storage can be unavailable (a private
+ * window), so every read and write is guarded and the page works without it.
+ */
+export function referralCodeFrom(search: string): string {
+  const fromLink = new URLSearchParams(search).get("ref")?.trim().toUpperCase() ?? "";
+
+  try {
+    if (fromLink) sessionStorage.setItem(REFERRAL_KEY, fromLink);
+    return fromLink || (sessionStorage.getItem(REFERRAL_KEY) ?? "");
+  } catch {
+    return fromLink;
+  }
+}
+
+/** A code the buyer typed in, kept the same way as one from a link. */
+export function rememberReferralCode(code: string) {
+  try {
+    sessionStorage.setItem(REFERRAL_KEY, code);
+  } catch {
+    /* Kept for this page only. */
+  }
+}
+
+export function forgetReferralCode() {
+  try {
+    sessionStorage.removeItem(REFERRAL_KEY);
+  } catch {
+    /* Nothing stored to forget. */
+  }
 }
 
 /** The signed-in realtor's course: whether they have paid, and their link once they have. */
@@ -534,7 +609,10 @@ export function useSetCourseStatus() {
 
 /** What starting a reward from the Planbok balance would move, read live. Naira. */
 export interface RewardPreview {
+  /** What leaves the Planbok balance. */
   amount: number;
+  /** What reaches LambaCard: the amount less Planbok's ₦15 transfer fee. */
+  forwarded: number;
   balance: number;
   accountName: string;
   walletAddress: string;
@@ -554,7 +632,7 @@ export function useEnrollmentRewardPreview(id: string, enabled: boolean) {
   });
 }
 
-/** Moves real money: ₦10,000 from the Planbok account to LambaCard, then buys the tokens. */
+/** Moves real money: ₦10,000 from the Planbok account (₦9,985 to LambaCard, ₦15 Planbok's fee), then buys the tokens. */
 export function useSendEnrollmentReward() {
   const queryClient = useQueryClient();
 
@@ -575,7 +653,13 @@ export function useAdminEnrollments(query: EnrollmentsQuery, poll = false) {
     refetchInterval: poll ? 4000 : false,
     queryFn: async () => {
       const res = await api.get<Envelope<EnrollmentsPage>>("/admin/course/enrollments", {
-        params: { q: query.q || undefined, status: query.status, page: query.page, limit: ENROLLMENTS_PAGE_SIZE },
+        params: {
+          q: query.q || undefined,
+          status: query.status,
+          referral: query.referral,
+          page: query.page,
+          limit: ENROLLMENTS_PAGE_SIZE,
+        },
       });
       return res.data.data;
     },

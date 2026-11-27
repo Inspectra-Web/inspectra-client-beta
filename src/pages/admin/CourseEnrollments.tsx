@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, ExternalLink, GraduationCap, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, GraduationCap, Search, UserPlus } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,7 @@ import {
   type Enrollment,
   type EnrollmentFilter,
   type EnrollmentsQuery,
+  type ReferralFilter,
 } from "@/lib/course";
 import { formatDate, formatPhone, formatPriceFull } from "@/lib/format";
 import { formatTokenAmount } from "@/lib/wallet";
@@ -31,8 +32,20 @@ const FILTERS: { value: EnrollmentFilter; label: string }[] = [
   { value: "completed", label: "Opened by a guest" },
 ];
 
+const REFERRAL_FILTERS: { value: ReferralFilter; label: string }[] = [
+  { value: "all", label: "Any source" },
+  { value: "referred", label: "Referred" },
+  { value: "direct", label: "Direct" },
+];
+
+const PLANBOK_TRANSFER_FEE = 15;
+
+/** Money to the kobo, always two places: "₦10,263.12", "₦26.88". */
+const formatNaira = (value: number) =>
+  `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export function AdminCourseEnrollments() {
-  const [query, setQuery] = useState<EnrollmentsQuery>({ q: "", status: "all", page: 1 });
+  const [query, setQuery] = useState<EnrollmentsQuery>({ q: "", status: "all", referral: "all", page: 1 });
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
@@ -51,7 +64,7 @@ export function AdminCourseEnrollments() {
   const open = opened && (rows.find((row) => row.id === opened.id) ?? opened);
 
   useEffect(() => setMoving(!!open && rewardMoving(open)), [open]);
-  const filtered = query.q !== "" || query.status !== "all";
+  const filtered = query.q !== "" || query.status !== "all" || query.referral !== "all";
 
   return (
     <div className="space-y-6">
@@ -65,33 +78,31 @@ export function AdminCourseEnrollments() {
       <CourseTabs />
 
 
-      <div className="flex items-center justify-between gap-4 max-lg:flex-col max-lg:items-stretch">
-        <div role="tablist" aria-label="Filter by status" className="flex flex-wrap gap-2">
-          {FILTERS.map(({ value, label }) => {
-            const active = query.status === value;
-            return (
-              <button
+      <div className="flex items-start justify-between gap-4 max-lg:flex-col max-lg:items-stretch">
+        <div className="space-y-3">
+          <div role="tablist" aria-label="Filter by status" className="flex flex-wrap gap-2">
+            {FILTERS.map(({ value, label }) => (
+              <FilterPill
                 key={value}
-                type="button"
-                role="tab"
-                aria-selected={active}
+                label={label}
+                count={data?.counts[value]}
+                active={query.status === value}
                 onClick={() => setQuery((prev) => ({ ...prev, status: value, page: 1 }))}
-                className={cn(
-                  "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
-                  active
-                    ? "border-ink bg-ink text-bg"
-                    : "border-line text-muted hover:bg-surface-2 hover:text-ink",
-                )}
-              >
-                {label}
-                {data && (
-                  <span className={cn("tabular-nums", active ? "text-bg/70" : "text-faint")}>
-                    {data.counts[value]}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+              />
+            ))}
+          </div>
+          <div role="tablist" aria-label="Filter by referral" className="flex flex-wrap gap-2">
+            {REFERRAL_FILTERS.map(({ value, label }) => (
+              <FilterPill
+                key={value}
+                label={label}
+                count={data?.referrals[value]}
+                active={query.referral === value}
+                onClick={() => setQuery((prev) => ({ ...prev, referral: value, page: 1 }))}
+                small
+              />
+            ))}
+          </div>
         </div>
 
         <div className="relative w-80 max-lg:w-full">
@@ -124,7 +135,7 @@ export function AdminCourseEnrollments() {
           title={filtered ? "No one matches" : "No enrollments yet"}
           message={
             filtered
-              ? "Nobody fits that search and status. Clear the search or pick another status."
+              ? "Nobody fits that search and those filters. Clear the search or pick other filters."
               : "When a realtor pays for the course, they appear here."
           }
         />
@@ -151,7 +162,10 @@ export function AdminCourseEnrollments() {
                   <div className="flex items-center gap-3">
                     <UserAvatar name={enrollment.fullname} avatar="" className="size-8" />
                     <div className="min-w-0">
-                      <p className="truncate font-medium capitalize text-ink">{enrollment.fullname}</p>
+                      <p className="flex items-center gap-2">
+                        <span className="truncate font-medium capitalize text-ink">{enrollment.fullname}</span>
+                        {enrollment.referral && <ReferredBadge />}
+                      </p>
                       <p className="truncate text-xs text-faint">{enrollment.email}</p>
                     </div>
                   </div>
@@ -208,11 +222,53 @@ export function AdminCourseEnrollments() {
   );
 }
 
-/** A reward on its way, with no admin check pending: worth re-reading until it lands. */
+function FilterPill({
+  label,
+  count,
+  active,
+  onClick,
+  small,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+  small?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border font-medium transition-colors",
+        small ? "h-8 px-3.5 text-xs" : "h-9 px-4 text-sm",
+        active ? "border-ink bg-ink text-bg" : "border-line text-muted hover:bg-surface-2 hover:text-ink",
+      )}
+    >
+      {label}
+      {count !== undefined && (
+        <span className={cn("tabular-nums", active ? "text-bg/70" : "text-faint")}>{count}</span>
+      )}
+    </button>
+  );
+}
+
+function ReferredBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[0.7rem] font-semibold text-brand-ink">
+      <UserPlus className="size-3" aria-hidden />
+      Referred
+    </span>
+  );
+}
+
 /** An admin's send from the Planbok balance that Planbok turned down: nothing left, press again. */
 const unsentFromBalance = ({ incentive }: Enrollment) =>
   !!incentive?.fromBalance && incentive.status === "forwarding" && !incentive.forwarding?.reference;
 
+/** A reward on its way, with no admin check pending: worth re-reading until it lands. */
 const rewardMoving = (enrollment: Enrollment) =>
   !!enrollment.incentive &&
   !unsentFromBalance(enrollment) &&
@@ -237,9 +293,10 @@ const TONE_CLS: Record<Tone, string> = {
 };
 
 /**
- * The realtor's LBT reward in a line, plus the one detail that explains it. ₦10,000 of the
- * payment goes from Flutterwave into our Planbok account, on to LambaCard, and buys tokens
- * into the realtor's wallet. The table shows the title; the detail shows both.
+ * The realtor's LBT reward in a line, plus the one detail that explains it. What is left of
+ * the payment after INSPECTRA's share (30%, or 25% when referred) and Flutterwave's fees goes
+ * into our Planbok account, on to LambaCard less Planbok's ₦15, and buys tokens into the
+ * realtor's wallet. The table shows the title; the detail shows both.
  */
 function rewardState(enrollment: Enrollment): { title: string; note?: string; tone: Tone } {
   const { incentive } = enrollment;
@@ -248,7 +305,8 @@ function rewardState(enrollment: Enrollment): { title: string; note?: string; to
     return { title: enrollment.status === "pending" ? "After payment" : "None for this course", tone: "muted" };
 
   const { status, purchase, check } = incentive;
-  const naira = formatPriceFull(incentive.amount);
+  // Not known until the transfer to Planbok is first sent.
+  const naira = incentive.amount ? formatNaira(incentive.amount) : "the reward";
   const tokens = purchase && `${formatTokenAmount(purchase.tokens)} LBT`;
 
   if (unsentFromBalance(enrollment))
@@ -345,6 +403,21 @@ function EnrollmentDetail({
           <Row label="Started" value={formatDate(enrollment.createdAt)} />
         </Section>
 
+        {incentive && <MoneySection enrollment={enrollment} />}
+
+        {enrollment.referral && (
+          <Section title="Referral">
+            <Row label="Referred by" value={enrollment.referral.name ?? "Account no longer exists"} capitalize />
+            {enrollment.referral.email && <Row label="Referrer email" value={enrollment.referral.email} />}
+            <Row label="Code" value={enrollment.referral.code} mono />
+            <Row label="Referrer wallet" value={enrollment.referral.walletAddress} mono />
+            <Row
+              label="Referrer tokens"
+              value={purchase?.referralTokens ? `${formatTokenAmount(purchase.referralTokens)} LBT` : "With the purchase"}
+            />
+          </Section>
+        )}
+
         <Section title="Token reward">
           <div className="rounded-xl border border-line p-4">
             <p className={cn("text-sm", TONE_CLS[reward.tone])}>{reward.title}</p>
@@ -386,8 +459,11 @@ function EnrollmentDetail({
           <Section title="3. LambaCard purchase">
             <Row label="Purchase id" value={purchase.id} mono />
             <Row label="Status" value={purchaseStatus(purchase.status)} />
-            <Row label="Tokens" value={`${formatTokenAmount(purchase.tokens)} LBT`} />
-            <Row label="Wallet" value={purchase.walletAddress} mono />
+            <Row label="Realtor tokens" value={`${formatTokenAmount(purchase.tokens)} LBT`} />
+            <Row label="Realtor wallet" value={purchase.walletAddress} mono />
+            {purchase.referralTokens && (
+              <Row label="Referrer tokens" value={`${formatTokenAmount(purchase.referralTokens)} LBT`} />
+            )}
             {purchase.transactionHash && <Row label="Transaction" value={purchase.transactionHash} mono />}
             {purchase.confirmedAt && <Row label="Delivered" value={formatDate(purchase.confirmedAt)} />}
           </Section>
@@ -405,6 +481,60 @@ function EnrollmentDetail({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Where the course payment went, to the kobo. Each line shows once it is known: the share
+ * and the payment fee when the course is paid, the transfer fee and the amount when the
+ * transfer to Planbok goes out, the forwarded amount when Planbok sends it on.
+ */
+function MoneySection({ enrollment }: { enrollment: Enrollment }) {
+  const incentive = enrollment.incentive!;
+  const forwarded = incentive.forwarding?.amount;
+  const pending = "Not yet";
+
+  if (incentive.fromBalance)
+    return (
+      <Section title="Money">
+        <Row label="From the Planbok balance" value={incentive.amount ? formatNaira(incentive.amount) : pending} />
+        <Row label="Planbok fee" value={formatNaira(PLANBOK_TRANSFER_FEE)} />
+        <Row label="Reached LambaCard" value={forwarded ? formatNaira(forwarded) : pending} />
+      </Section>
+    );
+
+  // Rows from before the shares existed carry only the flat amount.
+  if (incentive.kept === undefined)
+    return (
+      <Section title="Money">
+        <Row label="Course price" value={formatNaira(enrollment.amount)} />
+        <Row
+          // An old payout went straight to LambaCard, with no Planbok step.
+          label={incentive.status === "sent" ? "Paid straight to LambaCard" : "Sent to Planbok"}
+          value={incentive.amount ? formatNaira(incentive.amount) : pending}
+        />
+        {forwarded && <Row label="Reached LambaCard" value={formatNaira(forwarded)} />}
+      </Section>
+    );
+
+  const share = enrollment.referral ? "25%" : "30%";
+
+  return (
+    <Section title="Money">
+      <Row label="Course price" value={formatNaira(enrollment.amount)} />
+      <Row label={`INSPECTRA keeps (${share})`} value={formatNaira(incentive.kept)} />
+      <Row
+        label="Flutterwave fee, payment"
+        value={incentive.collectionFee !== undefined ? formatNaira(incentive.collectionFee) : "Not recorded"}
+      />
+      <Row
+        label="Flutterwave fee, transfer"
+        value={incentive.transferFee !== undefined ? formatNaira(incentive.transferFee) : pending}
+      />
+      <Row label="Sent to Planbok" value={incentive.amount ? formatNaira(incentive.amount) : pending} />
+      <Row label="Planbok fee" value={formatNaira(PLANBOK_TRANSFER_FEE)} />
+      <Row label="Reached LambaCard" value={forwarded ? formatNaira(forwarded) : pending} />
+    </Section>
   );
 }
 
@@ -431,7 +561,7 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
   if (preview.isError)
     return <p className="mt-3 text-sm text-muted">Cannot send a reward yet: {apiMessage(preview.error)}</p>;
 
-  const { amount, balance, accountName, walletAddress, oldPayoutSentAt } = preview.data;
+  const { amount, forwarded, balance, accountName, walletAddress, oldPayoutSentAt } = preview.data;
   const short = balance < amount;
   const replacing = oldPayoutSentAt
     ? `The old ${formatPriceFull(amount)} payout of ${formatDate(oldPayoutSentAt)} went straight to LambaCard. Send only if LambaCard has returned it, or this pays twice.`
@@ -472,7 +602,8 @@ function SendFromBalance({ enrollment, onChange }: { enrollment: Enrollment; onC
         <dl className="mt-4 space-y-2.5 rounded-xl bg-surface-2/60 p-4 text-sm">
           <Row label="From" value={`${accountName}'s Planbok account`} />
           <Row label="Balance" value={formatPriceFull(balance)} />
-          <Row label="To" value="LambaCard" />
+          <Row label="To LambaCard" value={formatPriceFull(forwarded)} />
+          <Row label="Planbok fee" value={formatPriceFull(amount - forwarded)} />
           <Row label="Tokens to" value={walletAddress} mono />
         </dl>
       </ConfirmDialog>
@@ -489,11 +620,27 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+  capitalize,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  capitalize?: boolean;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-6 border-b border-line pb-2.5 last:border-0 last:pb-0">
       <dt className="shrink-0 text-muted">{label}</dt>
-      <dd className={cn("min-w-0 break-all text-right font-medium text-ink", mono && "text-xs tracking-wide")}>
+      <dd
+        className={cn(
+          "min-w-0 break-all text-right font-medium tabular-nums text-ink",
+          mono && "text-xs tracking-wide",
+          capitalize && "capitalize",
+        )}
+      >
         {value}
       </dd>
     </div>

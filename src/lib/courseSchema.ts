@@ -10,7 +10,7 @@ export const courseSchema = z.object({
   price: z
     .number({ error: "Enter a price" })
     .int("Whole naira only")
-    .gt(10_000, "More than ₦10,000, which funds the realtor's incentive"),
+    .min(14_286, "At least ₦14,286, so the realtor's reward stays above ₦10,000"),
 });
 
 export type CourseValues = z.infer<typeof courseSchema>;
